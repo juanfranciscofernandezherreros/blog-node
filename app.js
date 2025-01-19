@@ -1,15 +1,20 @@
 const express = require('express');
 const app = express();
-const mainRouter = require('./server/routes/main'); // Asegúrate de que la ruta sea correcta
+const mainRouter = require('./server/routes/main'); // Asegúrate de que esta ruta sea correcta
+const expressLayout = require('express-ejs-layouts');
 
 // Configuración de EJS
-app.set('view engine', 'ejs');
-app.set('views', __dirname + '/views'); // La carpeta 'views' está en la raíz del proyecto
+app.use(express.static('public'));
 
-// Middleware para usar el enrutador
+// Templating Engine
+app.use(expressLayout);
+app.set('layout', './layouts/main');
+app.set('view engine', 'ejs');
+
+// Usa el enrutador
 app.use('/', mainRouter);
 
-// Iniciar el servidor
+// Inicia el servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);

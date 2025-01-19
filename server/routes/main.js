@@ -1,14 +1,18 @@
 const express = require('express');
 const router = express.Router();
 
-// Define tus rutas
+// Ruta principal
 router.get('/', (req, res) => {
-    res.render('index'); // Renderiza la vista 'index.ejs'
+    const locals = {
+        title: "NodeJs Blog",
+        description: "Simple Blog created with NodeJs, Express & MongoDb."
+    };
+    res.render('index', { locals });
 });
 
-// Define tus rutas
+// Ruta 'about'
 router.get('/about', (req, res) => {
-    res.render('about'); // Renderiza la vista 'index.ejs'
+    res.render('about'); // Renderiza la vista 'about.ejs'
 });
 
 module.exports = router; // Exporta el enrutador correctamente
