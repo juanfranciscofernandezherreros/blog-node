@@ -1,22 +1,14 @@
 const express = require('express');
 const router = express.Router();
 
-// Routes
-router.get('', (req, res) => {
-    res.send(`
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Hello World</title>
-            <link rel="stylesheet" href="/css/styles.css">
-        </head>
-        <body>
-            <h1>Hello World</h1>
-        </body>
-        </html>
-    `);
+// Define tus rutas
+router.get('/', (req, res) => {
+    res.render('index'); // Renderiza la vista 'index.ejs'
 });
 
-module.exports = router;
+// Define tus rutas
+router.get('/about', (req, res) => {
+    res.render('about'); // Renderiza la vista 'index.ejs'
+});
+
+module.exports = router; // Exporta el enrutador correctamente

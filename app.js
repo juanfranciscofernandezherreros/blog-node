@@ -1,21 +1,16 @@
-require('dotenv').config();
-
 const express = require('express');
-const expressLayout = require('express-ejs-layouts');
-
 const app = express();
-const PORT = 5000 || process.env.PORT;
+const mainRouter = require('./server/routes/main'); // Asegúrate de que la ruta sea correcta
 
-app.use(express.static('public'));
+// Configuración de EJS
+app.set('view engine', 'ejs');
+app.set('views', __dirname + '/views'); // La carpeta 'views' está en la raíz del proyecto
 
-// Template engine
-app.use(expressLayout);
-app.set('layout', './layouts/main');
-app.set('view engine', 'ejs'); // Corregido 'view engine'
+// Middleware para usar el enrutador
+app.use('/', mainRouter);
 
-app.use('/',require('./server/routes/main'))
-
-// Servidor escuchando en el puerto configurado
+// Iniciar el servidor
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`App listening on port ${PORT}`);
+    console.log(`Server is running on http://localhost:${PORT}`);
 });
