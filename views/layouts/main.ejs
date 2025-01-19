@@ -9,7 +9,14 @@
   <link rel="stylesheet" href="/css/style.css">
   <script type="text/javascript" defer src="/js/script.js"></script>
 </head>
-<body
-    <%- body %>
+<body>
+  <div class="container">
+    <!-- Incluir el archivo de encabezado -->
+    <%- include('../partials/header.ejs') %>
+    <!-- Contenido dinámico de la página -->
+    <%- body %>  
+    <!-- Incluir el archivo de Footer -->
+    <%- include('../partials/footer.ejs') %>
+  </div>
 </body>
 </html>
