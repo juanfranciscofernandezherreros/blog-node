@@ -15,4 +15,5 @@ router.get('/about', (req, res) => {
     res.render('about'); // Renderiza la vista 'about.ejs'
 });
 
+
 module.exports = router; // Exporta el enrutador correctamente
