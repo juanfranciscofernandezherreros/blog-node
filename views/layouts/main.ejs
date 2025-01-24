@@ -10,13 +10,15 @@
   <script type="text/javascript" defer src="/js/script.js"></script>
 </head>
 <body>
+  
+  <%- include('../partials/search.ejs')  %>
   <div class="container">
-    <!-- Incluir el archivo de encabezado -->
-    <%- include('../partials/header.ejs') %>
-    <!-- Contenido dinámico de la página -->
-    <%- body %>  
-    <!-- Incluir el archivo de Footer -->
-    <%- include('../partials/footer.ejs') %>
-  </div>
+    <%- include('../partials/header.ejs')  %>
+    <main class="main">
+      <%- body %>
+    </main>
+    <%- include('../partials/footer.ejs')  %>
+  </div>  
+
 </body>
 </html>

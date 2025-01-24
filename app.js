@@ -1,26 +1,30 @@
 const express = require('express');
-const app = express();
-const mainRouter = require('./server/routes/main'); // Asegúrate de que esta ruta sea correcta
 const expressLayout = require('express-ejs-layouts');
-//Configuracion de DB
 const connectDB = require('./server/config/db');
-// Configuración de EJS
-app.use(express.static('public'));
+const mainRouter = require('./server/routes/main'); // Asegúrate de que esta ruta sea correcta
 
-// Templating Engine
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Conexión a la base de datos
+connectDB();
+
+// Middlewares
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+
+// Configuración del motor de plantillas
 app.use(expressLayout);
 app.set('layout', './layouts/main');
 app.set('view engine', 'ejs');
 
-// Usa el enrutador
+// Archivos estáticos
+app.use(express.static('public'));
+
+// Rutas
 app.use('/', mainRouter);
 
-// Inicia el servidor
-const PORT = process.env.PORT || 3000;
-
-// Connect to DB
-connectDB();
-
+// Arranque del servidor
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
