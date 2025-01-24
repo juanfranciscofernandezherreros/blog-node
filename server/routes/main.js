@@ -105,6 +105,16 @@ router.get('/about', (req, res) => {
 });
 
 /**
+ * GET /
+ * contact
+ */
+router.get('/contact', (req, res) => {
+  res.render('contact', {
+    currentRoute: '/contact'
+  });
+});
+
+/**
  * Insert sample data into the database
  */
 async function insertPostData() {
