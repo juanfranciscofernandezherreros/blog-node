@@ -82,4 +82,48 @@ router.post('/register', async (req, res) => {
     }
   });
 
+  /**
+ * 
+ * Check Login
+*/
+const authMiddleware = (req, res, next ) => {
+    const token = req.cookies.token;
+  
+    if(!token) {
+      return res.status(401).json( { message: 'Unauthorized'} );
+    }
+  
+    try {
+      const decoded = jwt.verify(token, jwtSecret);
+      req.userId = decoded.userId;
+      next();
+    } catch(error) {
+      res.status(401).json( { message: 'Unauthorized'} );
+    }
+  }
+
+  /**
+ * GET /
+ * Admin Dashboard
+*/
+router.get('/dashboard', authMiddleware, async (req, res) => {
+    try {
+      const locals = {
+        title: 'Dashboard',
+        description: 'Simple Blog created with NodeJs, Express & MongoDb.'
+      }
+  
+      const data = await Post.find();
+      res.render('admin/dashboard', {
+        locals,
+        data,
+        layout: adminLayout
+      });
+  
+    } catch (error) {
+      console.log(error);
+    }
+  
+  });
+
 module.exports = router;
