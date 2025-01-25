@@ -66,6 +66,32 @@ router.get('/post/:id', async (req, res) => {
  * POST /
  * Post - searchTerm
  */
+router.post('/contact', (req, res) => {
+  const { name, email, message } = req.body;
+
+  // Validar datos si es necesario
+  if (!name || !email || !message) {
+    return res.status(400).render('contact', {
+      currentRoute: '/contact',
+      error: 'Todos los campos son obligatorios.',
+    });
+  }
+
+  // Aquí puedes procesar los datos, como enviarlos a una base de datos o por correo
+  console.log(`Contacto recibido: Nombre: ${name}, Email: ${email}, Mensaje: ${message}`);
+
+  // Renderizar la página de contacto con un mensaje de éxito
+  res.render('contact', {
+    currentRoute: '/contact',
+    success: 'Tu mensaje ha sido enviado con éxito.',
+  });
+});
+
+
+/**
+ * POST /
+ * Post - searchTerm
+ */
 router.post('/search', async (req, res) => {
   try {
     const locals = {
