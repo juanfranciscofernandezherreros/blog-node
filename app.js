@@ -22,8 +22,8 @@ app.set('view engine', 'ejs');
 app.use(express.static('public'));
 
 // Rutas
-app.use('/', mainRouter);
-
+app.use('/', require('./server/routes/main'));
+app.use('/', require('./server/routes/admin'));
 // Arranque del servidor
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
