@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Post = require('../models/Post');
 const nodemailer = require('nodemailer');
+const Newsletter = require('../models/Newsletter'); // Importamos el modelo
 require('dotenv').config(); // Cargar variables de entorno
 
 // Configurar el transporter de Nodemailer
@@ -186,6 +187,36 @@ router.get('/about', (req, res) => {
   res.render('about', {
     currentRoute: '/about'
   });
+});
+
+/**
+ * POST 
+ * Newsletter
+ **/
+
+router.post('/newsletter', async (req, res) => {
+  const { email } = req.body;
+
+  console.log("Datos recibidos del formulario:", { email });
+
+  // Validación básica
+  if (!email || !email.trim()) {
+    return res.status(400).json({ error: 'El campo de email es obligatorio.' });
+  }
+
+  try {
+    // Intentamos guardar el correo en la base de datos
+    const newSubscription = new Newsletter({ email });
+    await newSubscription.save();
+
+    res.json({ success: 'Te has suscrito con éxito al boletín.' });
+  } catch (error) {
+    if (error.code === 11000) { // Código de error para duplicados en MongoDB
+      return res.status(400).json({ error: 'Este email ya está suscrito.' });
+    }
+    console.error('Error al suscribirse:', error);
+    res.status(500).json({ error: 'Ocurrió un error al procesar tu solicitud.' });
+  }
 });
 
 /**
