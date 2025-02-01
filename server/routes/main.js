@@ -1,8 +1,10 @@
 const express = require('express');
+const bcrypt = require('bcrypt');
 const router = express.Router();
 const Post = require('../models/Post');
 const nodemailer = require('nodemailer');
 const Newsletter = require('../models/Newsletter'); // Importamos el modelo
+const User = require('../models/User'); // Importa el modelo
 require('dotenv').config(); // Cargar variables de entorno
 
 // Configurar el transporter de Nodemailer
@@ -189,10 +191,18 @@ router.get('/about', (req, res) => {
   });
 });
 
+
 /**
- * POST 
- * Newsletter
- **/
+ * GET /
+ * Signup
+ */
+router.get('/signup', (req, res) => {
+  res.render('signup', {
+    currentRoute: '/signup'
+  });
+});
+
+
 
 router.post('/newsletter', async (req, res) => {
   const { email } = req.body;
@@ -281,6 +291,38 @@ async function insertPostData() {
     console.log("Error inserting sample data:", error);
   }
 }
+
+router.post('/register', async (req, res) => {
+  const { username, password } = req.body;
+
+  console.log("Datos recibidos del formulario:", { username, password });
+
+  // Validación básica
+  if (!username.trim() || !password.trim()) {
+    return res.status(400).json({ error: 'Todos los campos son obligatorios.' });
+  }
+
+  try {
+    // Verificar si el usuario ya existe
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
+      return res.status(400).json({ error: 'El nombre de usuario ya está en uso.' });
+    }
+
+    // Encriptar la contraseña
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Guardar en la base de datos
+    const newUser = new User({ username, password: hashedPassword });
+    await newUser.save();
+
+    res.json({ success: 'Usuario registrado con éxito.' });
+  } catch (error) {
+    console.error("Error al registrar usuario:", error);
+    res.status(500).json({ error: 'Ocurrió un error al procesar tu registro.' });
+  }
+});
+
 
 // Uncomment the following line to insert sample data (run only once)
 //insertPostData();
