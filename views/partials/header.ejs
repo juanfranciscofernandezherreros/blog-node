@@ -1,27 +1,58 @@
-<header class="header">
-  <a href="/" class="header__logo">NodeJs</a>
+<header>
+  <nav class="site-nav">
+    <div class="container">
+      <div class="menu-bg-wrap">
+        <div class="site-navigation">
+          <div class="row g-0 align-items-center">
+            <div class="col-2">
+              <a href="index.html" class="logo m-0 float-start">Blogy<span class="text-primary">.</span></a>
+            </div>
+            <div class="col-8 text-center">
+              <form action="#" class="search-form d-inline-block d-lg-none">
+                <input type="text" class="form-control" placeholder="Search...">
+                <span class="bi-search"></span>
+              </form>
 
-  <nav class="header__nav">
-    <ul>
-      <li>
-        <a href="/" class="active">Home</a>
-      </li>
-      <li>
-        <a href="/about">About</a>
-      </li>
-      <li>
-        <a href="/contact">Contact</a>
-      </li>
-    </ul>
+              <ul class="js-clone-nav d-none d-lg-inline-block text-start site-menu mx-auto">
+                <li><a href="index.html">Homes</a></li>
+                <li class="has-children active">
+                  <a href="financing.html">Pagess</a>
+                  <ul class="dropdown">
+                    <li><a href="search-result.html">Search Result</a></li>
+                    <li class="active"><a href="blog.html">Blog</a></li>
+                    <li><a href="single.html">Blog Single</a></li>
+                    <li><a href="category.html">Category</a></li>
+                    <li><a href="about.html">About</a></li>
+                    <li><a href="contact.html">Contact Us</a></li>
+                    <li><a href="#">Menu One</a></li>
+                    <li><a href="#">Menu Two</a></li>
+                    <li class="has-children">
+                      <a href="#">Dropdown</a>
+                      <ul class="dropdown">
+                        <li><a href="#">Sub Menu One</a></li>
+                        <li><a href="#">Sub Menu Two</a></li>
+                        <li><a href="#">Sub Menu Three</a></li>
+                      </ul>
+                    </li>
+                  </ul>
+                </li>
+                <li><a href="category.html">Culture</a></li>
+                <li><a href="services.html">Business</a></li>
+                <li><a href="about.html">Politics</a></li>
+              </ul>
+            </div>
+            <div class="col-2 text-end">
+              <a href="#" class="burger ms-auto float-end site-menu-toggle js-menu-toggle d-inline-block d-lg-none light">
+                <span></span>
+              </a>
+              <form action="#" class="search-form d-none d-lg-inline-block">
+                <input type="text" class="form-control" placeholder="Search...">
+                <span class="bi-search"></span>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </nav>
-
-  <div class="header__button">
-    <button class="searchBtn" aria-expanded="false">
-      Search
-      <svg width="17" height="17" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M7.79167 13.4583C10.9213 13.4583 13.4583 10.9213 13.4583 7.79167C13.4583 4.66205 10.9213 2.125 7.79167 2.125C4.66205 2.125 2.125 4.66205 2.125 7.79167C2.125 10.9213 4.66205 13.4583 7.79167 13.4583Z" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M14.875 14.875L11.7938 11.7938" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
-  </div>
 </header>
