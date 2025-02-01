@@ -112,44 +112,56 @@ router.get('/add-post', authMiddleware, async (req, res) => {
     const locals = {
       title: 'Add Post',
       description: 'Simple Blog created with NodeJs, Express & MongoDb.'
-    }
+    };
 
-    const data = await Post.find();
+    const users = await User.find({}, 'username'); // Obtener solo los nombres de usuario
+
     res.render('admin/add-post', {
       locals,
-      layout: adminLayout
+      layout: adminLayout,
+      users // Pasamos la lista de usuarios a la plantilla
     });
 
   } catch (error) {
-    console.log(error);
+    console.error("Error al cargar la página de agregar post:", error);
+    res.status(500).send("Error interno del servidor");
   }
-
 });
+
 
 
 /**
- * POST /
- * Admin - Create New Post
-*/
+ * POST /add-post
+ * Admin - Crear un nuevo post y asignarlo a varios usuarios
+ */
 router.post('/add-post', authMiddleware, async (req, res) => {
   try {
-    try {
-      const newPost = new Post({
-        title: req.body.title,
-        body: req.body.body
-      });
+    const { title, body, users } = req.body;
 
-      await Post.create(newPost);
-      res.redirect('/dashboard');
-    } catch (error) {
-      console.log(error);
+    if (!title || !body || !users) {
+      return res.status(400).send('Todos los campos son obligatorios');
     }
 
+    const newPost = new Post({
+      title,
+      body,
+      users // Aquí recibimos un array de IDs de usuarios
+    });
+
+    await newPost.save();
+
+    // Añadir el post a la lista de posts de cada usuario
+    await User.updateMany(
+      { _id: { $in: users } },
+      { $push: { posts: newPost._id } }
+    );
+
+    res.redirect('/dashboard');
   } catch (error) {
-    console.log(error);
+    console.error(error);
+    res.status(500).send('Error al crear el post');
   }
 });
-
 
 /**
  * GET /
