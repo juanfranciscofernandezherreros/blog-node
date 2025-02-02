@@ -74,23 +74,26 @@ router.get('', async (req, res) => {
       description: "Simple Blog created with NodeJs, Express & MongoDb."
     };
 
-    let perPage = 10;
-    let page = req.query.page || 1;
+    let perPage = 10; // Cantidad de posts por página
+    let page = parseInt(req.query.page) || 1;
 
     const data = await Post.aggregate([{ $sort: { createdAt: -1 } }])
-      .skip(perPage * page - perPage)
+      .skip(perPage * (page - 1)) // Se ajusta el cálculo de skip
       .limit(perPage)
       .exec();
 
     const count = await Post.countDocuments({});
-    const nextPage = parseInt(page) + 1;
-    const hasNextPage = nextPage <= Math.ceil(count / perPage);
+    const totalPages = Math.ceil(count / perPage);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
 
     res.render('index', { 
       locals,
       data,
-      current: page,
-      nextPage: hasNextPage ? nextPage : null,
+      currentPage: page,
+      totalPages: totalPages,
+      hasNextPage: hasNextPage,
+      hasPrevPage: hasPrevPage,
       currentRoute: '/'
     });
   } catch (error) {
