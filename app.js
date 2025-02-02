@@ -12,7 +12,8 @@ const { isActiveRoute } = require('./server/helpers/routeHelpers');
 // Modelos de Tags y Categorías
 const Tag = require('./server/models/Tags'); 
 const Category = require('./server/models/Category'); 
-
+const Post = require('./server/models/Post'); // Importa el modelo de Post
+const Comment = require('./server/models/Comment'); // Importa el modelo de Comentarios
 // Configuración del servidor
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -61,6 +62,40 @@ app.use(async (req, res, next) => {
     console.error("❌ Error al cargar Tags y Categorías:", error);
     res.locals.tags = [];
     res.locals.categories = [];
+  }
+  next();
+});
+
+// ✅ Middleware para cargar los posts más comentados
+app.use(async (req, res, next) => {
+  try {
+    const popularPosts = await Post.aggregate([
+      {
+        $lookup: {
+          from: "comments", // Nombre de la colección de comentarios en MongoDB
+          localField: "_id",
+          foreignField: "postId",
+          as: "comments"
+        }
+      },
+      {
+        $addFields: {
+          commentCount: { $size: "$comments" }
+        }
+      },
+      {
+        $sort: { commentCount: -1 } // 🔹 Ordenar por más comentarios primero
+      },
+      {
+        $limit: 5 // 🔹 Solo los 5 más populares
+      }
+    ]);
+
+    res.locals.popularPosts = popularPosts || [];
+
+  } catch (error) {
+    console.error("❌ Error al obtener los posts más comentados:", error);
+    res.locals.popularPosts = [];
   }
   next();
 });
