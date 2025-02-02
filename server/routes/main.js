@@ -1,6 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const mongoose = require('mongoose');
+
 const router = express.Router();
 const Post = require('../models/Post');
 const nodemailer = require('nodemailer');
@@ -107,11 +108,15 @@ router.get('', async (req, res) => {
  * GET /post/:id
  * Mostrar un artículo por ID
  */
+/**
+ * GET /post/:id
+ * Mostrar un artículo por ID
+ */
 router.get('/post/:id', async (req, res) => {
   try {
     let postId = req.params.id;
 
-    // 🔹 Validar si el ID es un ObjectId de MongoDB válido
+    // 🔹 Verificar si el ID es válido antes de hacer la consulta
     if (!mongoose.Types.ObjectId.isValid(postId)) {
       return res.status(400).render('404', { title: "ID inválido" });
     }
