@@ -66,6 +66,19 @@ app.use(async (req, res, next) => {
   next();
 });
 
+// ✅ Middleware para obtener 3 artículos aleatorios
+app.use(async (req, res, next) => {
+  try {
+    const randomPosts = await Post.aggregate([{ $sample: { size: 3 } }]);
+
+    res.locals.randomPosts = randomPosts || []; // Asignamos los artículos a `res.locals`
+  } catch (error) {
+    console.error("❌ Error al obtener artículos aleatorios:", error);
+    res.locals.randomPosts = [];
+  }
+  next();
+});
+
 // ✅ Middleware para cargar los posts más comentados
 app.use(async (req, res, next) => {
   try {
