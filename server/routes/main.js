@@ -8,6 +8,7 @@ const nodemailer = require('nodemailer');
 const Newsletter = require('../models/Newsletter'); // Importamos el modelo
 const User = require('../models/User'); // Importa el modelo
 const Comment = require('../models/Comment'); // Importa el modelo
+const Category = require('../models/Category'); // Importa el modelo
 require('dotenv').config(); // Cargar variables de entorno
 
 // Configurar el transporter de Nodemailer
@@ -110,6 +111,59 @@ router.get('', async (req, res) => {
     });
   } catch (error) {
     console.log(error);
+  }
+});
+
+/**
+ * GET /category/:slug
+ * Filtrar artículos por categoría y paginarlos
+ */
+router.get('/category/:name', async (req, res) => {
+  try {
+    const locals = {
+      title: "Artículos por Categoría",
+      description: "Encuentra artículos relacionados en nuestro blog."
+    };
+
+    let perPage = 10; // 🔹 Cantidad de posts por página
+    let page = parseInt(req.query.page) || 1;
+
+    // 🔹 Buscar la categoría por slug (NO por name)
+    const category = await Category.findOne({ name: req.params.name });
+
+    if (!category) {
+      return res.status(404).render('404', { title: "Categoría no encontrada" });
+    }
+
+    // 🔹 Obtener los posts de la categoría con autor y paginación
+    const data = await Post.find({ category: category._id })
+      .populate('author', 'username') // Traer el nombre del usuario
+      .populate('category', 'name') // Traer el nombre y slug de la categoría
+      .sort({ createdAt: -1 }) // Ordenar por fecha de creación
+      .skip(perPage * (page - 1))
+      .limit(perPage)
+      .exec();
+
+    // 🔹 Contar los posts de la categoría
+    const count = await Post.countDocuments({ category: category._id });
+    const totalPages = Math.ceil(count / perPage);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+
+    res.render('articles_categories', { 
+      locals,
+      category,
+      data,
+      currentPage: page,
+      totalPages,
+      hasNextPage,
+      hasPrevPage,
+      currentRoute: `/category/${req.params.slug}`
+    });
+
+  } catch (error) {
+    console.error("❌ Error al obtener artículos por categoría:", error);
+    res.status(500).render('500', { title: "Error del servidor" });
   }
 });
 

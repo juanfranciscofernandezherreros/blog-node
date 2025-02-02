@@ -20,14 +20,14 @@ async function insertPostData() {
     });
     console.log("✅ Conectado a la base de datos.");
 
-    // 🟢 Obtener una categoría existente
-    const category = await Category.findOne();
-    if (!category) {
+    // 🟢 Obtener las categorías disponibles
+    const categories = await Category.find();
+    if (categories.length === 0) {
       throw new Error("❌ No hay categorías disponibles en la base de datos.");
     }
 
-    // 🟢 Obtener algunos tags existentes
-    const tags = await Tag.find().limit(3); // Selecciona hasta 3 tags aleatorios
+    // 🟢 Obtener los tags disponibles
+    const tags = await Tag.find();
     if (tags.length === 0) {
       throw new Error("❌ No hay tags disponibles en la base de datos.");
     }
@@ -45,30 +45,17 @@ async function insertPostData() {
       return;
     }
 
-    // 🔹 Insertar Posts referenciando Categorías y Tags existentes
-    await Post.insertMany([
-      {
-        title: "Introducción a Spring Boot",
-        body: "Aprende cómo funciona Spring Boot y cómo simplifica el desarrollo de aplicaciones Java.",
-        category: category._id, // Referencia a categoría existente
-        tags: tags.map(tag => tag._id), // Referencia a tags existentes
-        author: user._id // Referencia a usuario existente
-      },
-      {
-        title: "Spring Security con JWT",
-        body: "Implementación de autenticación con JWT en una aplicación Spring Boot.",
-        category: category._id,
-        tags: tags.map(tag => tag._id),
-        author: user._id
-      },
-      {
-        title: "Microservicios con Spring Cloud",
-        body: "Arquitectura basada en microservicios con Spring Cloud y Eureka.",
-        category: category._id,
-        tags: tags.map(tag => tag._id),
-        author: user._id
-      }
-    ]);
+    // 🔹 Crear un post para cada categoría disponible
+    const posts = categories.map((category, index) => ({
+      title: `Artículo sobre ${category.name}`,
+      body: `Este es un artículo detallado sobre ${category.name}. Exploramos los conceptos más importantes y las mejores prácticas.`,
+      category: category._id, // Asignamos una categoría diferente a cada post
+      tags: tags.slice(index % tags.length, (index % tags.length) + 3).map(tag => tag._id), // Asignamos hasta 3 tags
+      author: user._id, // Referencia al usuario
+    }));
+
+    // Insertar los posts generados
+    await Post.insertMany(posts);
 
     console.log("✅ Posts insertados correctamente.");
 
