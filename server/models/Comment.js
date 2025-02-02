@@ -1,15 +1,21 @@
 const mongoose = require('mongoose');
 
-const CommentSchema = new mongoose.Schema({
+const Schema = mongoose.Schema;
+
+const CommentSchema = new Schema({
   postId: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: Schema.Types.ObjectId,
     ref: 'Post',
     required: true
   },
+  parentId: {
+    type: Schema.Types.ObjectId,
+    ref: 'Comment',
+    default: null // Si es null, significa que es un comentario principal
+  },
   author: {
     type: String,
-    required: true,
-    trim: true
+    required: true
   },
   body: {
     type: String,
