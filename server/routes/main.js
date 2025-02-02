@@ -1,5 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
+const mongoose = require('mongoose');
 const router = express.Router();
 const Post = require('../models/Post');
 const nodemailer = require('nodemailer');
@@ -101,28 +102,35 @@ router.get('', async (req, res) => {
   }
 });
 
+
 /**
- * GET /
- * Post :id
+ * GET /post/:id
+ * Mostrar un artículo por ID
  */
 router.get('/post/:id', async (req, res) => {
   try {
-    let slug = req.params.id;
+    let postId = req.params.id;
 
-    const data = await Post.findById({ _id: slug });
+    // 🔹 Validar si el ID es un ObjectId de MongoDB válido
+    if (!mongoose.Types.ObjectId.isValid(postId)) {
+      return res.status(400).render('404', { title: "ID inválido" });
+    }
 
-    const locals = {
+    const data = await Post.findById(postId);
+
+    if (!data) {
+      return res.status(404).render('404', { title: "Artículo no encontrado" });
+    }
+
+    res.render('post', {
       title: data.title,
-      description: "Simple Blog created with NodeJs, Express & MongoDb.",
-    };
-
-    res.render('post', { 
-      locals,
-      data,
-      currentRoute: `/post/${slug}`
+      data, // Pasar el post al EJS
+      currentRoute: `/post/${postId}`
     });
+
   } catch (error) {
-    console.log(error);
+    console.error("Error al obtener el post:", error);
+    res.status(500).render('500', { title: "Error del servidor" });
   }
 });
 

@@ -1,3 +1,13 @@
-<h1><%= data.title %></h1>
-<article class="article"><%= data.body %></article>
-
+<div class="container mt-4">
+    <h1 class="fw-bold"><%= data.title %></h1>
+    <p class="text-muted">Publicado el <%= new Date(data.createdAt).toLocaleDateString('es-ES') %></p>
+  
+    <img src="<%= data.image || '/images/hero_1.jpg' %>" alt="<%= data.title %>" class="img-fluid my-3">
+  
+    <p class="article-body">
+      <%= data.body %>
+    </p>
+  
+    <a href="/" class="btn btn-primary mt-3">Volver al inicio</a>
+  </div>
+  
