@@ -70,6 +70,10 @@ router.post('/contact', async (req, res) => {
  * GET /
  * HOME
  */
+/**
+ * GET /
+ * HOME
+ */
 router.get('', async (req, res) => {
   try {
     const locals = {
@@ -80,11 +84,16 @@ router.get('', async (req, res) => {
     let perPage = 10; // Cantidad de posts por página
     let page = parseInt(req.query.page) || 1;
 
-    const data = await Post.aggregate([{ $sort: { createdAt: -1 } }])
-      .skip(perPage * (page - 1)) // Se ajusta el cálculo de skip
+    // 🔹 Obtener los posts con la información del autor y la categoría
+    const data = await Post.find({})
+      .populate('author', 'username') // Solo traer el nombre del usuario
+      .populate('category', 'name') // Solo traer el nombre de la categoría
+      .sort({ createdAt: -1 }) // Ordenar por fecha de creación
+      .skip(perPage * (page - 1))
       .limit(perPage)
       .exec();
 
+    // Obtener el total de posts
     const count = await Post.countDocuments({});
     const totalPages = Math.ceil(count / perPage);
     const hasNextPage = page < totalPages;
@@ -94,15 +103,16 @@ router.get('', async (req, res) => {
       locals,
       data,
       currentPage: page,
-      totalPages: totalPages,
-      hasNextPage: hasNextPage,
-      hasPrevPage: hasPrevPage,
+      totalPages,
+      hasNextPage,
+      hasPrevPage,
       currentRoute: '/'
     });
   } catch (error) {
     console.log(error);
   }
 });
+
 
 /**
  * GET /post/:id

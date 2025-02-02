@@ -3,7 +3,7 @@
     <% categories.forEach(category => { %>
       <li>
         <a href="/categories/<%= category._id %>">
-          <%= category.name %> <span>0</span>
+          <%= category.name %> <span>(<%= category.count %>)</span>
         </a>
       </li>
     <% }) %>

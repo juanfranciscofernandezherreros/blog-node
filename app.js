@@ -79,6 +79,40 @@ app.use(async (req, res, next) => {
   next();
 });
 
+// Middleware para contar artículos por categoría
+app.use(async (req, res, next) => {
+  try {
+    // 🔹 Obtener el conteo de artículos por categoría
+    const categoryCounts = await Post.aggregate([
+      { $group: { _id: "$category", count: { $sum: 1 } } } // Agrupar por categoría y contar
+    ]);
+
+    // 🔹 Obtener todas las categorías y asignarles su conteo
+    const categories = await Category.find({}).sort({ name: 1 });
+
+    // 🔹 Convertir los resultados en un objeto para acceder rápido
+    const categoryCountMap = {};
+    categoryCounts.forEach(cat => {
+      categoryCountMap[cat._id] = cat.count;
+    });
+
+    // 🔹 Añadir el número de posts a cada categoría
+    const categoriesWithCount = categories.map(category => ({
+      _id: category._id,
+      name: category.name,
+      count: categoryCountMap[category._id] || 0 // Si no hay posts en la categoría, asignar 0
+    }));
+
+    res.locals.categories = categoriesWithCount;
+
+  } catch (error) {
+    console.error("❌ Error al contar artículos por categoría:", error);
+    res.locals.categories = [];
+  }
+  next();
+});
+
+
 // ✅ Middleware para cargar los posts más comentados
 app.use(async (req, res, next) => {
   try {

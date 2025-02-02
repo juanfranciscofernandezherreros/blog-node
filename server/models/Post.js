@@ -1,19 +1,29 @@
 const mongoose = require('mongoose');
 
-const Schema = mongoose.Schema;
-const PostSchema = new Schema({
+const PostSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: true
+    required: true,
+    trim: true
   },
   body: {
     type: String,
     required: true
   },
-  users: [{ 
-    type: Schema.Types.ObjectId, 
-    ref: 'User' 
-  }],
+  category: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Category', 
+    required: true 
+  }, // Relación con Categoría (Un post pertenece a una categoría)
+  tags: [{ 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Tags' 
+  }], // Relación con Tags (Un post puede tener varios tags)
+  author: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User', 
+    required: true 
+  }, // Autor del post (Usuario)
   createdAt: {
     type: Date,
     default: Date.now
