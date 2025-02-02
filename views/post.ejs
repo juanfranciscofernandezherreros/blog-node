@@ -1,13 +1,43 @@
 <div class="container mt-4">
-    <h1 class="fw-bold"><%= data.title %></h1>
-    <p class="text-muted">Publicado el <%= new Date(data.createdAt).toLocaleDateString('es-ES') %></p>
-  
-    <img src="<%= data.image || '/images/hero_1.jpg' %>" alt="<%= data.title %>" class="img-fluid my-3">
-  
-    <p class="article-body">
-      <%= data.body %>
-    </p>
-  
-    <a href="/" class="btn btn-primary mt-3">Volver al inicio</a>
-  </div>
-  
+  <h1 class="fw-bold"><%= data.title %></h1>
+  <p class="text-muted">Publicado el <%= new Date(data.createdAt).toLocaleDateString('es-ES') %></p>
+
+  <img src="<%= data.image || '/images/hero_1.jpg' %>" alt="<%= data.title %>" class="img-fluid my-3">
+
+  <p class="article-body">
+    <%= data.body %>
+  </p>
+
+  <a href="/" class="btn btn-primary mt-3">Volver al inicio</a>
+
+  <!-- Sección de Comentarios -->
+  <hr>
+  <h3>Comentarios</h3>
+
+  <% if (comments.length > 0) { %>
+    <ul class="list-group mb-4">
+      <% comments.forEach(comment => { %>
+        <li class="list-group-item">
+          <strong><%= comment.author %></strong> 
+          <span class="text-muted small"> - <%= new Date(comment.createdAt).toLocaleDateString('es-ES') %></span>
+          <p class="mt-1"><%= comment.body %></p>
+        </li>
+      <% }) %>
+    </ul>
+  <% } else { %>
+    <p class="text-muted">No hay comentarios aún.</p>
+  <% } %>
+
+  <!-- Formulario para agregar un comentario -->
+  <form action="/post/<%= data._id %>/comment" method="POST" class="mb-4">
+    <div class="mb-3">
+      <label for="author" class="form-label">Nombre</label>
+      <input type="text" class="form-control" id="author" name="author" required>
+    </div>
+    <div class="mb-3">
+      <label for="body" class="form-label">Comentario</label>
+      <textarea class="form-control" id="body" name="body" rows="3" required></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Enviar Comentario</button>
+  </form>
+</div>

@@ -7,6 +7,7 @@ const Post = require('../models/Post');
 const nodemailer = require('nodemailer');
 const Newsletter = require('../models/Newsletter'); // Importamos el modelo
 const User = require('../models/User'); // Importa el modelo
+const Comment = require('../models/Comment'); // Importa el modelo
 require('dotenv').config(); // Cargar variables de entorno
 
 // Configurar el transporter de Nodemailer
@@ -110,31 +111,63 @@ router.get('', async (req, res) => {
  */
 /**
  * GET /post/:id
- * Mostrar un artículo por ID
+ * Muestra un artículo y sus comentarios
  */
 router.get('/post/:id', async (req, res) => {
   try {
     let postId = req.params.id;
 
-    // 🔹 Verificar si el ID es válido antes de hacer la consulta
+    // ✅ Validar si el ID es un ObjectId válido
     if (!mongoose.Types.ObjectId.isValid(postId)) {
       return res.status(400).render('404', { title: "ID inválido" });
     }
 
+    // Buscar el post y los comentarios relacionados
     const data = await Post.findById(postId);
+    const comments = await Comment.find({ postId }).sort({ createdAt: -1 });
 
+    // Si no se encuentra el post, mostrar la página 404
     if (!data) {
       return res.status(404).render('404', { title: "Artículo no encontrado" });
     }
 
     res.render('post', {
       title: data.title,
-      data, // Pasar el post al EJS
+      data,
+      comments, // Pasar comentarios a la vista
       currentRoute: `/post/${postId}`
     });
 
   } catch (error) {
     console.error("Error al obtener el post:", error);
+    res.status(500).render('500', { title: "Error del servidor" });
+  }
+});
+
+/**
+ * POST /post/:id/comment
+ * Agrega un comentario a un post
+ */
+router.post('/post/:id/comment', async (req, res) => {
+  try {
+    const { author, body } = req.body;
+    const postId = req.params.id;
+
+    if (!author.trim() || !body.trim()) {
+      return res.redirect(`/post/${postId}`);
+    }
+
+    const newComment = new Comment({
+      postId,
+      author,
+      body
+    });
+
+    await newComment.save();
+
+    res.redirect(`/post/${postId}`);
+  } catch (error) {
+    console.error("Error al agregar comentario:", error);
     res.status(500).render('500', { title: "Error del servidor" });
   }
 });
