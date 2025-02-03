@@ -9,6 +9,7 @@ const Newsletter = require('../models/Newsletter'); // Importamos el modelo
 const User = require('../models/User'); // Importa el modelo
 const Comment = require('../models/Comment'); // Importa el modelo
 const Category = require('../models/Category'); // Importa el modelo
+const Tag = require('../models/Tags'); // Importa el modelo
 require('dotenv').config(); // Cargar variables de entorno
 
 // Configurar el transporter de Nodemailer
@@ -186,6 +187,57 @@ router.get('/articles', async (req, res) => {
 });
 
 
+router.get('/articles/tags/:tagId', async (req, res) => {
+  try {
+    const { tagId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(tagId)) {
+      return res.status(400).json({ error: "❌ Tag ID inválido." });
+    }
+
+    let perPage = 10; 
+    let page = parseInt(req.query.page) || 1;
+
+    // 🔹 Buscar los artículos que contienen el tag
+    const articles = await Post.find({ tags: tagId })
+      .populate('category', 'name')
+      .populate('author', 'username')
+      .sort({ createdAt: -1 })
+      .skip(perPage * (page - 1))
+      .limit(perPage);
+
+    // 🔹 Contar los artículos que tienen el tag
+    const count = await Post.countDocuments({ tags: tagId });
+    const totalPages = Math.ceil(count / perPage);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+
+    // Obtener el nombre del tag para mostrar en la vista
+    const tag = await Tag.findById(tagId);
+    if (!tag) {
+      return res.status(404).render('404', { title: "Tag no encontrado" });
+    }
+
+    const locals = {
+      title: `Artículos con el tag: ${tag.name}`,
+      description: `Lista de artículos etiquetados con ${tag.name}.`
+    };
+
+    res.render('articles_tags', { 
+      locals,
+      articles,
+      currentPage: page,
+      totalPages,
+      hasNextPage,
+      hasPrevPage,
+      currentRoute: `/articles/tags/${tagId}`
+    });
+
+  } catch (error) {
+    console.error("❌ Error al obtener artículos por tag:", error);
+    res.status(500).json({ error: "❌ Error del servidor" });
+  }
+});
 
 
 
