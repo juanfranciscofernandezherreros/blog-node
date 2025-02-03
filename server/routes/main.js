@@ -114,6 +114,54 @@ router.get('', async (req, res) => {
   }
 });
 
+router.get('/users/:username', async (req, res) => {
+  try {
+    const locals = {
+      title: "Artículos del usuario",
+      description: "Encuentra artículos escritos por este usuario."
+    };
+
+    let perPage = 10; // Cantidad de posts por página
+    let page = parseInt(req.query.page) || 1;
+
+    // 🔹 Buscar el usuario por username
+    const user = await User.findOne({ username: req.params.username });
+
+    if (!user) {
+      return res.status(404).render('404', { title: "Usuario no encontrado" });
+    }
+
+    // 🔹 Obtener los posts del usuario con categoría y paginación
+    const data = await Post.find({ author: user._id })
+      .populate('author', 'username') // Traer el nombre del usuario
+      .populate('category', 'name') // Traer el nombre de la categoría
+      .sort({ createdAt: -1 }) // Ordenar por fecha de creación
+      .skip(perPage * (page - 1))
+      .limit(perPage)
+      .exec();
+
+    // 🔹 Contar los posts del usuario
+    const count = await Post.countDocuments({ author: user._id });
+    const totalPages = Math.ceil(count / perPage);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+
+    res.render('articles_users', { 
+      locals,
+      user,
+      data,
+      currentPage: page,
+      totalPages,
+      hasNextPage,
+      hasPrevPage,
+      currentRoute: `/users/${req.params.username}`
+    });
+
+  } catch (error) {
+    console.error("❌ Error al obtener artículos del usuario:", error);
+    res.status(500).render('500', { title: "Error del servidor" });
+  }
+});
 /**
  * GET /category/:slug
  * Filtrar artículos por categoría y paginarlos
