@@ -114,6 +114,81 @@ router.get('', async (req, res) => {
   }
 });
 
+router.get('/articles', async (req, res) => {
+  try {
+    const { date } = req.query;
+
+    if (!date) {
+      return res.status(400).json({ error: "❌ Debes proporcionar una fecha en formato DD/MM/YYYY" });
+    }
+
+    // 🔹 Validar el formato de la fecha
+    const dateParts = date.split('/');
+    if (dateParts.length !== 3) {
+      return res.status(400).json({ error: "❌ Formato de fecha inválido. Usa DD/MM/YYYY" });
+    }
+
+    const [day, month, year] = dateParts.map(Number);
+    if (!day || !month || !year || day > 31 || month > 12) {
+      return res.status(400).json({ error: "❌ Fecha no válida. Asegúrate de que sea numérica y en formato DD/MM/YYYY" });
+    }
+
+    // 🔹 Convertir la fecha a formato UTC
+    const startDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
+    const endDate = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
+
+    if (isNaN(startDate.getTime())) {
+      return res.status(400).json({ error: "❌ Fecha inválida. Verifica el formato." });
+    }
+
+    let perPage = 10;
+    let page = parseInt(req.query.page) || 1;
+
+    // 🔹 Buscar los artículos creados en la fecha especificada
+    const data = await Post.find({
+      createdAt: { $gte: startDate, $lte: endDate }
+    })
+      .populate('category', 'name')
+      .populate('author', 'username')
+      .sort({ createdAt: -1 })
+      .skip(perPage * (page - 1))
+      .limit(perPage);
+
+    // 🔹 Contar los artículos que cumplen la condición
+    const count = await Post.countDocuments({
+      createdAt: { $gte: startDate, $lte: endDate }
+    });
+
+    const totalPages = Math.ceil(count / perPage);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+
+    // 🔹 Definir variables para la vista
+    const locals = {
+      title: `Artículos del ${date}`,
+      description: "Lista de artículos publicados en la fecha seleccionada."
+    };
+
+    res.render('articles_fecha', { 
+      locals,
+      data, // 🔹 Aquí cambiamos `articles` por `data`
+      currentPage: page,
+      totalPages,
+      hasNextPage,
+      hasPrevPage,
+      currentRoute: `/articles?date=${date}`
+    });
+
+  } catch (error) {
+    console.error("❌ Error al obtener artículos:", error);
+    res.status(500).json({ error: "❌ Error del servidor" });
+  }
+});
+
+
+
+
+
 router.get('/users/:username', async (req, res) => {
   try {
     const locals = {
@@ -162,6 +237,10 @@ router.get('/users/:username', async (req, res) => {
     res.status(500).render('500', { title: "Error del servidor" });
   }
 });
+
+
+
+
 /**
  * GET /category/:slug
  * Filtrar artículos por categoría y paginarlos
