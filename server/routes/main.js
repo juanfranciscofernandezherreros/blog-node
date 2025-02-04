@@ -79,8 +79,8 @@ router.post('/contact', async (req, res) => {
 router.get('', async (req, res) => {
   try {
     const locals = {
-      title: "NodeJs Blog",
-      description: "Simple Blog created with NodeJs, Express & MongoDb."
+      title: "Juan Francisco Fernandez Herreros | Senior Software Engineer",
+      learning:"Aprende con @kiferhe"
     };
 
     let perPage = 10; // Cantidad de posts por página
@@ -217,7 +217,7 @@ router.get('/articles/tags/:tagId', async (req, res) => {
     if (!tag) {
       return res.status(404).render('404', { title: "Tag no encontrado" });
     }
-
+ 
     const locals = {
       title: `Artículos con el tag: ${tag.name}`,
       description: `Lista de artículos etiquetados con ${tag.name}.`
@@ -243,10 +243,12 @@ router.get('/articles/tags/:tagId', async (req, res) => {
 
 router.get('/users/:username', async (req, res) => {
   try {
+    const { username } = req.params;
+
     const locals = {
-      title: "Artículos del usuario",
-      description: "Encuentra artículos escritos por este usuario."
+      title: `Artículos por ${username}`
     };
+
 
     let perPage = 10; // Cantidad de posts por página
     let page = parseInt(req.query.page) || 1;
@@ -299,8 +301,10 @@ router.get('/users/:username', async (req, res) => {
  */
 router.get('/category/:name', async (req, res) => {
   try {
+    const { name } = req.params;
+
     const locals = {
-      title: "Artículos por Categoría",
+      title: `Artículos por ${name}`,
       description: "Encuentra artículos relacionados en nuestro blog."
     };
 
