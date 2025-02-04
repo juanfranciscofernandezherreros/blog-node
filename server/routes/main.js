@@ -628,6 +628,75 @@ router.post('/register', async (req, res) => {
   }
 });
 
+router.post('/keyword/search', async (req, res) => {
+  try {
+    const { keyword } = req.body;
+    let perPage = 10; // 🔹 Cantidad de resultados por página
+    let page = parseInt(req.query.page) || 1; // 🔹 Página actual (por defecto es 1)
+
+    if (!keyword || !keyword.trim()) {
+      return res.status(400).json({ error: 'Debes ingresar una palabra clave válida.' });
+    }
+
+    // 🔹 Limpiar la palabra clave de caracteres especiales
+    const sanitizedKeyword = keyword.trim().replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ ]/g, "");
+
+    // 🔹 Contar el total de documentos que coinciden con la búsqueda
+    const count = await Post.countDocuments({
+      $or: [
+        { title: { $regex: sanitizedKeyword, $options: 'i' } },
+        { body: { $regex: sanitizedKeyword, $options: 'i' } }
+      ]
+    });
+
+    // 🔹 Calcular total de páginas
+    const totalPages = Math.ceil(count / perPage);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+
+    // 🔹 Obtener los resultados con paginación
+    const data = await Post.find({
+      $or: [
+        { title: { $regex: sanitizedKeyword, $options: 'i' } },
+        { body: { $regex: sanitizedKeyword, $options: 'i' } }
+      ]
+    })
+    .populate('author', 'username')
+    .populate('category', 'name')
+    .sort({ createdAt: -1 }) // 🔹 Ordenar por fecha más reciente
+    .skip(perPage * (page - 1)) // 🔹 Saltar los elementos de páginas anteriores
+    .limit(perPage); // 🔹 Limitar a `perPage` resultados
+
+    if (!data.length) {
+      return res.render('search_results', {
+        title: `Resultados para: "${keyword}"`,
+        message: 'No se encontraron resultados para la palabra clave proporcionada.',
+        data: [],
+        currentPage: page,
+        totalPages,
+        hasNextPage,
+        hasPrevPage,
+        keyword, // 🔹 Para mantener la palabra clave en la URL de paginación
+        currentRoute: '/keyword/search'
+      });
+    }
+
+    res.render('search_results', {
+      title: `Resultados para: "${keyword}"`,
+      data,
+      currentPage: page,
+      totalPages,
+      hasNextPage,
+      hasPrevPage,
+      keyword, // 🔹 Se pasa la palabra clave a la vista para mantener la búsqueda en paginación
+      currentRoute: '/keyword/search'
+    });
+
+  } catch (error) {
+    console.error("❌ Error en la búsqueda por palabra clave:", error);
+    res.status(500).json({ error: "Error del servidor. Intenta nuevamente más tarde." });
+  }
+});
 
 // Uncomment the following line to insert sample data (run only once)
 //insertPostData();
