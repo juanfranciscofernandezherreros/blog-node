@@ -1,7 +1,10 @@
 <div class="container mt-4">
   <h1 class="fw-bold"><%= data.title %></h1>
-  <p class="text-muted">Publicado el <%= new Date(data.createdAt).toLocaleDateString('es-ES') %></p>
-
+  <p class="text-muted">
+    Publicado el <a href="/articles?date=<%= new Date(data.createdAt).toLocaleDateString('es-ES') %>">
+      <%= new Date(data.createdAt).toLocaleDateString('es-ES') %>
+    </a>
+  </p>
   <img src="<%= data.image || '/images/hero_1.jpg' %>" alt="<%= data.title %>" class="img-fluid my-3">
 
   <p class="article-body">
@@ -15,7 +18,39 @@
 
   <% if (comments.length > 0) { %>
     <ul class="list-group mb-4">
-      <%= renderComments(comments) %>
+      <% comments.forEach(comment => { %>
+        <li class="list-group-item">
+          <strong><%= comment.author %></strong>
+          <span class="text-muted small"> - <%= new Date(comment.createdAt).toLocaleDateString('es-ES') %></span>
+          <p class="mt-1"><%= comment.body %></p>
+
+          <button class="btn btn-sm btn-link text-primary" onclick="toggleReplyForm('<%= comment._id %>')">Responder</button>
+
+          <form id="reply-form-<%= comment._id %>" action="/post/<%= data._id %>/comment" method="POST" class="mt-2 d-none">
+            <input type="hidden" name="parentId" value="<%= comment._id %>">
+            <div class="mb-2">
+              <input type="text" class="form-control" name="author" placeholder="Tu nombre" required>
+            </div>
+            <div class="mb-2">
+              <textarea class="form-control" name="body" placeholder="Escribe tu respuesta..." rows="2" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-sm btn-primary">Enviar Respuesta</button>
+          </form>
+
+          <% if (comment.replies.length > 0) { %>
+            <ul class="list-group mt-2">
+              <% comment.replies.forEach(reply => { %>
+                <li class="list-group-item" style="margin-left: 30px;">
+                  <strong><%= reply.author %></strong>
+                  <span class="text-muted small"> - <%= new Date(reply.createdAt).toLocaleDateString('es-ES') %></span>
+                  <p class="mt-1"><%= reply.body %></p>
+                </li>
+              <% }) %>
+            </ul>
+          <% } %>
+
+        </li>
+      <% }) %>
     </ul>
   <% } else { %>
     <p class="text-muted">No hay comentarios aún.</p>
@@ -41,33 +76,3 @@
     form.classList.toggle('d-none');
   }
 </script>
-
-<% function renderComments(comments, level = 0) { %>
-  <% comments.forEach(comment => { %>
-    <li class="list-group-item" style="margin-left: <%= level * 30 %>px;">
-      <strong><%= comment.author %></strong>
-      <span class="text-muted small"> - <%= new Date(comment.createdAt).toLocaleDateString('es-ES') %></span>
-      <p class="mt-1"><%= comment.body %></p>
-
-      <button class="btn btn-sm btn-link text-primary" onclick="toggleReplyForm('<%= comment._id %>')">Responder</button>
-
-      <form id="reply-form-<%= comment._id %>" action="/post/<%= data._id %>/comment" method="POST" class="mt-2 d-none">
-        <input type="hidden" name="parentId" value="<%= comment._id %>">
-        <div class="mb-2">
-          <input type="text" class="form-control" name="author" placeholder="Tu nombre" required>
-        </div>
-        <div class="mb-2">
-          <textarea class="form-control" name="body" placeholder="Escribe tu respuesta..." rows="2" required></textarea>
-        </div>
-        <button type="submit" class="btn btn-sm btn-primary">Enviar Respuesta</button>
-      </form>
-
-      <% if (comment.replies.length > 0) { %>
-        <ul class="list-group mt-2">
-          <%= renderComments(comment.replies, level + 1) %>
-        </ul>
-      <% } %>
-
-    </li>
-  <% }) %>
-<% } %>

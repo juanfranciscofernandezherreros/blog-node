@@ -1,22 +1,43 @@
-<% data.forEach(post => { %>
-    <div class="blog-entry d-flex blog-entry-search-item align-items-center">
-      <a href="/post/<%= post._id %>" class="img-link me-4">
-        <img src="/images/img_5_sq.jpg" alt="<%= post.title %>" class="img-fluid">
-      </a>
+<% data.forEach(post => { %> 
+  <div class="blog-entry d-flex blog-entry-search-item align-items-center">
+    <a href="/post/<%= post._id %>" class="img-link me-4">
+      <img src="/images/img_5_sq.jpg" alt="<%= post.title %>" class="img-fluid">
+    </a>
+    
+    <div>
+      <span class="date text-muted">
+        <!-- 🔹 Enlace para buscar artículos en una fecha específica -->
+        <a href="/articles?date=<%= new Date(post.createdAt).toLocaleDateString('es-ES') %>" class="text-primary">
+          <%= new Date(post.createdAt).toLocaleDateString('es-ES') %>
+        </a> 
+        &bullet;
+        
+        <% if (post.category && post.category.name) { %>
+          <a href="/category/<%= post.category.name %>" class="text-primary">
+            <%= post.category.name %>
+          </a>
+        <% } else { %>
+          <span class="text-muted">Sin categoría</span>
+        <% } %>
+      </span>
       
-      <div>
-        <span class="date text-muted">
-          <%= new Date(post.createdAt).toLocaleDateString('es-ES') %> &bullet; 
-          <a href="#" class="text-primary"><%= post.category ? post.category.name : 'Sin categoría' %></a>
-        </span>
-        <h2><a href="/post/<%= post._id %>" class="text-dark fw-bold"><%= post.title %></a></h2>
-        <p class="text-muted"><%= post.body.length > 200 ? post.body.substring(0, 200) + '...' : post.body %></p>
-        <p class="text-muted"><strong>Autor:</strong> <%= post.author ? post.author.username : 'Desconocido' %></p>
-        <p><a href="/post/<%= post._id %>" class="btn btn-sm btn-outline-primary">Leer más</a></p>
-      </div>
+      <h2><a href="/post/<%= post._id %>" class="text-dark fw-bold"><%= post.title %></a></h2>
+      <p class="text-muted"><%= post.body.length > 200 ? post.body.substring(0, 200) + '...' : post.body %></p>
+
+      <!-- 🔹 Enlace para buscar por usuario -->
+      <p class="text-muted">
+        <strong>Autor:</strong> 
+        <% if (post.author) { %>
+          <a href="/users/<%= post.author.username %>" class="text-primary"><%= post.author.username %></a>
+        <% } else { %>
+          Desconocido
+        <% } %>
+      </p>
+
+      <p><a href="/post/<%= post._id %>" class="btn btn-sm btn-outline-primary">Leer más</a></p>
     </div>
-  <% }) %>
-  
+  </div>
+<% }) %>
     
     <!-- Sección de paginación con botones y números -->
     <% if (totalPages > 1) { %>
