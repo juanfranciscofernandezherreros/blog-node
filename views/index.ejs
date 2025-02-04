@@ -1,73 +1,80 @@
-<% data.forEach(post => { %> 
-  <div class="blog-entry d-flex blog-entry-search-item align-items-center">
-    <a href="/post/<%= post._id %>" class="img-link me-4">
-      <img src="/images/img_5_sq.jpg" alt="<%= post.title %>" class="img-fluid">
-    </a>
-    
-    <div>
-      <span class="date text-muted">
-        <!-- 🔹 Enlace para buscar artículos en una fecha específica -->
-        <a href="/articles?date=<%= new Date(post.createdAt).toLocaleDateString('es-ES') %>" class="text-primary">
-          <%= new Date(post.createdAt).toLocaleDateString('es-ES') %>
-        </a> 
-        &bullet;
-        
-        <% if (post.category && post.category.name) { %>
-          <a href="/category/<%= post.category.name %>" class="text-primary">
-            <%= post.category.name %>
-          </a>
-        <% } else { %>
-          <span class="text-muted">Sin categoría</span>
-        <% } %>
-      </span>
+<% if (data.length > 0) { %> 
+  <% data.forEach(post => { %> 
+    <div class="blog-entry d-flex blog-entry-search-item align-items-center">
+      <a href="/post/<%= post._id %>" class="img-link me-4">
+        <img src="/images/img_5_sq.jpg" alt="<%= post.title %>" class="img-fluid">
+      </a>
       
-      <h2><a href="/post/<%= post._id %>" class="text-dark fw-bold"><%= post.title %></a></h2>
-      <p class="text-muted"><%= post.body.length > 200 ? post.body.substring(0, 200) + '...' : post.body %></p>
+      <div>
+        <span class="date text-muted">
+          <!-- 🔹 Enlace para buscar artículos en una fecha específica -->
+          <a href="/articles?date=<%= new Date(post.createdAt).toLocaleDateString('es-ES') %>" class="text-primary">
+            <%= new Date(post.createdAt).toLocaleDateString('es-ES') %>
+          </a> 
+          &bullet;
+          
+          <% if (post.category && post.category.name) { %>
+            <a href="/category/<%= post.category.name %>" class="text-primary">
+              <%= post.category.name %>
+            </a>
+          <% } else { %>
+            <span class="text-muted">Sin categoría</span>
+          <% } %>
+        </span>
+        
+        <h2><a href="/post/<%= post._id %>" class="text-dark fw-bold"><%= post.title %></a></h2>
+        <p class="text-muted"><%= post.body.length > 200 ? post.body.substring(0, 200) + '...' : post.body %></p>
 
-      <!-- 🔹 Enlace para buscar por usuario -->
-      <p class="text-muted">
-        <strong>Autor:</strong> 
-        <% if (post.author) { %>
-          <a href="/users/<%= post.author.username %>" class="text-primary"><%= post.author.username %></a>
-        <% } else { %>
-          Desconocido
-        <% } %>
-      </p>
+        <!-- 🔹 Enlace para buscar por usuario -->
+        <p class="text-muted">
+          <strong>Autor:</strong> 
+          <% if (post.author) { %>
+            <a href="/users/<%= post.author.username %>" class="text-primary"><%= post.author.username %></a>
+          <% } else { %>
+            Desconocido
+          <% } %>
+        </p>
 
-      <p><a href="/post/<%= post._id %>" class="btn btn-sm btn-outline-primary">Leer más</a></p>
-    </div>
-  </div>
-<% }) %>
-  
-  <!-- Sección de paginación con botones y números -->
-  <% if (totalPages > 1) { %>
-    <div class="row text-center pt-5 border-top">
-      <div class="col-md-12">
-        <nav aria-label="Page navigation">
-          <div class="d-flex justify-content-center">
-            
-            <!-- Botón Anterior -->
-            <% if (currentPage > 1) { %>
-              <a href="/?page=<%= currentPage - 1 %>" class="btn btn-outline-primary me-2">Anterior</a>
-            <% } %>
-  
-            <!-- Números de página alineados correctamente -->
-            <ul class="pagination mb-0">
-              <% for (let i = 1; i <= totalPages; i++) { %>
-                <li class="page-item <%= i === currentPage ? 'active' : '' %>">
-                  <a class="page-link" href="/?page=<%= i %>"><%= i %></a>
-                </li>
-              <% } %>
-            </ul>
-  
-            <!-- Botón Siguiente -->
-            <% if (currentPage < totalPages) { %>
-              <a href="/?page=<%= currentPage + 1 %>" class="btn btn-outline-primary ms-2">Siguiente</a>
-            <% } %>
-  
-          </div>
-        </nav>
+        <p><a href="/post/<%= post._id %>" class="btn btn-sm btn-outline-primary">Leer más</a></p>
       </div>
     </div>
-  <% } %>
-  
+  <% }) %>
+<% } else { %>
+  <!-- Mensaje cuando no hay artículos -->
+  <div class="text-center mt-5">
+    <h3 class="text-muted">No hay artículos disponibles en este momento.</h3>
+    <p class="text-muted">Vuelve más tarde para ver nuevas publicaciones.</p>
+  </div>
+<% } %>
+
+<!-- Sección de paginación con botones y números -->
+<% if (totalPages > 1) { %>
+  <div class="row text-center pt-5 border-top">
+    <div class="col-md-12">
+      <nav aria-label="Page navigation">
+        <div class="d-flex justify-content-center">
+          
+          <!-- Botón Anterior -->
+          <% if (currentPage > 1) { %>
+            <a href="/?page=<%= currentPage - 1 %>" class="btn btn-outline-primary me-2">Anterior</a>
+          <% } %>
+
+          <!-- Números de página alineados correctamente -->
+          <ul class="pagination mb-0">
+            <% for (let i = 1; i <= totalPages; i++) { %>
+              <li class="page-item <%= i === currentPage ? 'active' : '' %>">
+                <a class="page-link" href="/?page=<%= i %>"><%= i %></a>
+              </li>
+            <% } %>
+          </ul>
+
+          <!-- Botón Siguiente -->
+          <% if (currentPage < totalPages) { %>
+            <a href="/?page=<%= currentPage + 1 %>" class="btn btn-outline-primary ms-2">Siguiente</a>
+          <% } %>
+
+        </div>
+      </nav>
+    </div>
+  </div>
+<% } %>

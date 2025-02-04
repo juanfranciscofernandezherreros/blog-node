@@ -170,7 +170,7 @@ router.get('/articles', async (req, res) => {
       description: "Lista de artículos publicados en la fecha seleccionada."
     };
 
-    res.render('articles_fecha', { 
+    res.render('index', { 
       locals,
       data, // 🔹 Aquí cambiamos `articles` por `data`
       currentPage: page,
@@ -217,15 +217,16 @@ router.get('/articles/tags/:tagId', async (req, res) => {
     if (!tag) {
       return res.status(404).render('404', { title: "Tag no encontrado" });
     }
- 
+
     const locals = {
       title: `Artículos con el tag: ${tag.name}`,
       description: `Lista de artículos etiquetados con ${tag.name}.`
     };
 
-    res.render('articles_tags', { 
+    // 🔹 Aquí cambiamos 'articles' por 'data' para que coincida con la vista
+    res.render('index', { 
       locals,
-      articles,
+      data: articles,  // 🔹 Cambié "articles" por "data" para que coincida con EJS
       currentPage: page,
       totalPages,
       hasNextPage,
@@ -238,6 +239,7 @@ router.get('/articles/tags/:tagId', async (req, res) => {
     res.status(500).json({ error: "❌ Error del servidor" });
   }
 });
+
 
 
 
@@ -275,7 +277,7 @@ router.get('/users/:username', async (req, res) => {
     const hasNextPage = page < totalPages;
     const hasPrevPage = page > 1;
 
-    res.render('articles_users', { 
+    res.render('index', { 
       locals,
       user,
       data,
@@ -333,7 +335,7 @@ router.get('/category/:name', async (req, res) => {
     const hasNextPage = page < totalPages;
     const hasPrevPage = page > 1;
 
-    res.render('articles_categories', { 
+    res.render('index', { 
       locals,
       category,
       data,
@@ -672,7 +674,7 @@ router.post('/keyword/search', async (req, res) => {
     .limit(perPage); // 🔹 Limitar a `perPage` resultados
 
     if (!data.length) {
-      return res.render('search_results', {
+      return res.render('index', {
         title: `Resultados para: "${keyword}"`,
         message: 'No se encontraron resultados para la palabra clave proporcionada.',
         data: [],

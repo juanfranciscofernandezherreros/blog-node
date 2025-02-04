@@ -2,7 +2,7 @@
   <h1 class="fw-bold"><%= data.title %></h1>
   <p class="text-muted">
     Publicado el <a href="/articles?date=<%= new Date(data.createdAt).toLocaleDateString('es-ES') %>">
-      <%= new Date(data.createdAt).toLocaleDateString('es-ES') %>
+      <%= new Date(data.createdAt).toLocaleDateString('es-ES') %> por el usuario 
     </a>
   </p>
   <img src="<%= data.image || '/images/hero_1.jpg' %>" alt="<%= data.title %>" class="img-fluid my-3">
