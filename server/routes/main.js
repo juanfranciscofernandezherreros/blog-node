@@ -365,27 +365,26 @@ router.get('/post/:id', async (req, res) => {
       return res.status(400).render('404', { title: "ID inválido" });
     }
 
-    const data = await Post.findById(postId);
+    // 🔹 Asegúrate de hacer populate en `author` para obtener el username
+    const data = await Post.findById(postId)
+      .populate('author', 'username') // 🔹 Traer solo el `username` del autor
 
     if (!data) {
       return res.status(404).render('404', { title: "Artículo no encontrado" });
     }
 
-    // 🔹 Obtener todos los comentarios del post
+    // 🔹 Obtener los comentarios relacionados con el post
     const comments = await Comment.find({ postId }).sort({ createdAt: 1 });
-
-    // 🔹 Construir comentarios anidados
-    const nestedComments = buildNestedComments(comments);
 
     res.render('post', {
       title: data.title,
       data,
-      comments: nestedComments, // 🔹 Ahora los comentarios están anidados correctamente
+      comments,
       currentRoute: `/post/${postId}`
     });
 
   } catch (error) {
-    console.error("Error al obtener el post:", error);
+    console.error("❌ Error al obtener el post:", error);
     res.status(500).render('500', { title: "Error del servidor" });
   }
 });
