@@ -1,3 +1,20 @@
-<footer class="footer">
-    &copy; <%= new Date().getFullYear(); %> Juan Francisco Fernandez Herreros • Built with NodeJs & MongoDB
-  </footer>
+<div class="col-lg-8">
+  <div class="widget">
+    <h3 class="mb-4">About</h3>
+    <p>Desarrollador Back-End con experiencia en arquitectura de microservicios y un fuerte enfoque en pruebas end-to-end. Apasionado por el aprendizaje continuo y la mejora constante, con una mentalidad autodidacta y adaptable a nuevos desafíos y sectores. Especial interés en el sector bancario y en la optimización de soluciones tecnológicas escalables. Movilidad disponible a nivel nacional.</p>
+  </div> <!-- /.widget -->
+  <div class="widget">
+    <h3>Social</h3>
+    <%- include('../partials/social_networks.ejs') %>
+  </div> <!-- /.widget -->
+</div> <!-- /.col-lg-4 -->
+<div class="col-lg-4">
+  <div class="widget">
+    <h3 class="mb-4">Random Post</h3>
+    <div class="post-entry-footer">
+      <%- include('../partials/random.ejs') %>
+    </div>
+
+
+  </div> <!-- /.widget -->
+</div> <!-- /.col-lg-4 -->

@@ -1,0 +1,9 @@
+<ul class="tags">
+  <% if (tags.length > 0) { %>
+    <% tags.forEach(tag => { %>
+      <li><a href="/articles/tags/<%= tag._id %>" ><%= tag.name %></a></li>
+    <% }) %>
+  <% } else { %>
+    <li>No hay etiquetas disponibles</li>
+  <% } %>
+</ul>

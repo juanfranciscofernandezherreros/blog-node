@@ -1,0 +1,13 @@
+<ul class="categories">
+  <% if (categories.length > 0) { %>
+    <% categories.forEach(category => { %>
+      <li>
+        <a href="/category/<%= category.name %>">
+          <%= category.name %> <span>(<%= category.count %>)</span>
+        </a>
+      </li>
+    <% }) %>
+  <% } else { %>
+    <li>No hay categorías disponibles</li>
+  <% } %>
+</ul>

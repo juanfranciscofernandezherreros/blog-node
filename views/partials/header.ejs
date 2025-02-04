@@ -1,27 +1,27 @@
-<header class="header">
-  <a href="/" class="header__logo">NodeJs</a>
+<header>
+  <nav class="site-nav">
+    <div class="container">
+      <div class="menu-bg-wrap">
+        <div class="site-navigation">
+          <div class="row g-0 align-items-center">
+            <div class="col-2">
+              <a href="/"" class="logo m-0 float-start">@kiferhe<span class="text-primary"></a>
+            </div>
+            <div class="col-8 text-center">
+              <%- include('../partials/contact_search_little') %>    
 
-  <nav class="header__nav">
-    <ul>
-      <li>
-        <a href="/" class="active">Home</a>
-      </li>
-      <li>
-        <a href="/about">About</a>
-      </li>
-      <li>
-        <a href="/contact">Contact</a>
-      </li>
-    </ul>
+              <%- include('../partials/menu_links.ejs') %>    
+
+            </div>
+            <div class="col-2 text-end">
+              <a href="#" class="burger ms-auto float-end site-menu-toggle js-menu-toggle d-inline-block d-lg-none light">
+                <span></span>
+              </a>
+              <%- include('../partials/contact_search_big') %>    
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </nav>
-
-  <div class="header__button">
-    <button class="searchBtn" aria-expanded="false">
-      Search
-      <svg width="17" height="17" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M7.79167 13.4583C10.9213 13.4583 13.4583 10.9213 13.4583 7.79167C13.4583 4.66205 10.9213 2.125 7.79167 2.125C4.66205 2.125 2.125 4.66205 2.125 7.79167C2.125 10.9213 4.66205 13.4583 7.79167 13.4583Z" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M14.875 14.875L11.7938 11.7938" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
-  </div>
 </header>

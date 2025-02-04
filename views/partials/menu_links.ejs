@@ -1,0 +1,25 @@
+<ul class="js-clone-nav d-none d-lg-inline-block text-start site-menu mx-auto">
+  <li><a href="/">Home</a></li>
+  <li><a href="/contact">Contact</a></li>
+
+  <!-- Menú de Categorías -->
+  <li class="has-children">
+      <a href="#">Categorías</a>
+      <ul class="dropdown">
+          <% categories.forEach(category => { %>
+              <li><a href="/category/<%= category.name %>"><%= category.name %></a></li>
+          <% }) %>
+      </ul>
+  </li>
+
+  <!-- Menú de Tags -->
+  <li class="has-children">
+      <a href="#">Tags</a>
+      <ul class="dropdown">
+          <% tags.forEach(tag => { %>
+              <li><a href="/articles/tags/<%= tag._id %>"><%= tag.name %></a></li>
+          <% }) %>
+      </ul>
+  </li>
+</ul>
+

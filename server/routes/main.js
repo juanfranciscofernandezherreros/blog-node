@@ -1,10 +1,15 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
+const mongoose = require('mongoose');
+
 const router = express.Router();
 const Post = require('../models/Post');
 const nodemailer = require('nodemailer');
 const Newsletter = require('../models/Newsletter'); // Importamos el modelo
 const User = require('../models/User'); // Importa el modelo
+const Comment = require('../models/Comment'); // Importa el modelo
+const Category = require('../models/Category'); // Importa el modelo
+const Tag = require('../models/Tags'); // Importa el modelo
 require('dotenv').config(); // Cargar variables de entorno
 
 // Configurar el transporter de Nodemailer
@@ -67,30 +72,42 @@ router.post('/contact', async (req, res) => {
  * GET /
  * HOME
  */
+/**
+ * GET /
+ * HOME
+ */
 router.get('', async (req, res) => {
   try {
     const locals = {
-      title: "NodeJs Blog",
-      description: "Simple Blog created with NodeJs, Express & MongoDb."
+      title: "Juan Francisco Fernandez Herreros | Senior Software Engineer",
+      learning:"Aprende con @kiferhe"
     };
 
-    let perPage = 10;
-    let page = req.query.page || 1;
+    let perPage = 10; // Cantidad de posts por página
+    let page = parseInt(req.query.page) || 1;
 
-    const data = await Post.aggregate([{ $sort: { createdAt: -1 } }])
-      .skip(perPage * page - perPage)
+    // 🔹 Obtener los posts con la información del autor y la categoría
+    const data = await Post.find({})
+      .populate('author', 'username') // Solo traer el nombre del usuario
+      .populate('category', 'name') // Solo traer el nombre de la categoría
+      .sort({ createdAt: -1 }) // Ordenar por fecha de creación
+      .skip(perPage * (page - 1))
       .limit(perPage)
       .exec();
 
+    // Obtener el total de posts
     const count = await Post.countDocuments({});
-    const nextPage = parseInt(page) + 1;
-    const hasNextPage = nextPage <= Math.ceil(count / perPage);
+    const totalPages = Math.ceil(count / perPage);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
 
     res.render('index', { 
       locals,
       data,
-      current: page,
-      nextPage: hasNextPage ? nextPage : null,
+      currentPage: page,
+      totalPages,
+      hasNextPage,
+      hasPrevPage,
       currentRoute: '/'
     });
   } catch (error) {
@@ -98,30 +115,323 @@ router.get('', async (req, res) => {
   }
 });
 
+router.get('/articles', async (req, res) => {
+  try {
+    const { date } = req.query;
+
+    if (!date) {
+      return res.status(400).json({ error: "❌ Debes proporcionar una fecha en formato DD/MM/YYYY" });
+    }
+
+    // 🔹 Validar el formato de la fecha
+    const dateParts = date.split('/');
+    if (dateParts.length !== 3) {
+      return res.status(400).json({ error: "❌ Formato de fecha inválido. Usa DD/MM/YYYY" });
+    }
+
+    const [day, month, year] = dateParts.map(Number);
+    if (!day || !month || !year || day > 31 || month > 12) {
+      return res.status(400).json({ error: "❌ Fecha no válida. Asegúrate de que sea numérica y en formato DD/MM/YYYY" });
+    }
+
+    // 🔹 Convertir la fecha a formato UTC
+    const startDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
+    const endDate = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
+
+    if (isNaN(startDate.getTime())) {
+      return res.status(400).json({ error: "❌ Fecha inválida. Verifica el formato." });
+    }
+
+    let perPage = 10;
+    let page = parseInt(req.query.page) || 1;
+
+    // 🔹 Buscar los artículos creados en la fecha especificada
+    const data = await Post.find({
+      createdAt: { $gte: startDate, $lte: endDate }
+    })
+      .populate('category', 'name')
+      .populate('author', 'username')
+      .sort({ createdAt: -1 })
+      .skip(perPage * (page - 1))
+      .limit(perPage);
+
+    // 🔹 Contar los artículos que cumplen la condición
+    const count = await Post.countDocuments({
+      createdAt: { $gte: startDate, $lte: endDate }
+    });
+
+    const totalPages = Math.ceil(count / perPage);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+
+    // 🔹 Definir variables para la vista
+    const locals = {
+      title: `Artículos del ${date}`,
+      description: "Lista de artículos publicados en la fecha seleccionada."
+    };
+
+    res.render('index', { 
+      locals,
+      data, // 🔹 Aquí cambiamos `articles` por `data`
+      currentPage: page,
+      totalPages,
+      hasNextPage,
+      hasPrevPage,
+      currentRoute: `/articles?date=${date}`
+    });
+
+  } catch (error) {
+    console.error("❌ Error al obtener artículos:", error);
+    res.status(500).json({ error: "❌ Error del servidor" });
+  }
+});
+
+
+router.get('/articles/tags/:tagId', async (req, res) => {
+  try {
+    const { tagId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(tagId)) {
+      return res.status(400).json({ error: "❌ Tag ID inválido." });
+    }
+
+    let perPage = 10; 
+    let page = parseInt(req.query.page) || 1;
+
+    // 🔹 Buscar los artículos que contienen el tag
+    const articles = await Post.find({ tags: tagId })
+      .populate('category', 'name')
+      .populate('author', 'username')
+      .sort({ createdAt: -1 })
+      .skip(perPage * (page - 1))
+      .limit(perPage);
+
+    // 🔹 Contar los artículos que tienen el tag
+    const count = await Post.countDocuments({ tags: tagId });
+    const totalPages = Math.ceil(count / perPage);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+
+    // Obtener el nombre del tag para mostrar en la vista
+    const tag = await Tag.findById(tagId);
+    if (!tag) {
+      return res.status(404).render('404', { title: "Tag no encontrado" });
+    }
+
+    const locals = {
+      title: `Artículos con el tag: ${tag.name}`,
+      description: `Lista de artículos etiquetados con ${tag.name}.`
+    };
+
+    // 🔹 Aquí cambiamos 'articles' por 'data' para que coincida con la vista
+    res.render('index', { 
+      locals,
+      data: articles,  // 🔹 Cambié "articles" por "data" para que coincida con EJS
+      currentPage: page,
+      totalPages,
+      hasNextPage,
+      hasPrevPage,
+      currentRoute: `/articles/tags/${tagId}`
+    });
+
+  } catch (error) {
+    console.error("❌ Error al obtener artículos por tag:", error);
+    res.status(500).json({ error: "❌ Error del servidor" });
+  }
+});
+
+
+
+
+router.get('/users/:username', async (req, res) => {
+  try {
+    const { username } = req.params;
+
+    const locals = {
+      title: `Artículos por ${username}`
+    };
+
+
+    let perPage = 10; // Cantidad de posts por página
+    let page = parseInt(req.query.page) || 1;
+
+    // 🔹 Buscar el usuario por username
+    const user = await User.findOne({ username: req.params.username });
+
+    if (!user) {
+      return res.status(404).render('404', { title: "Usuario no encontrado" });
+    }
+
+    // 🔹 Obtener los posts del usuario con categoría y paginación
+    const data = await Post.find({ author: user._id })
+      .populate('author', 'username') // Traer el nombre del usuario
+      .populate('category', 'name') // Traer el nombre de la categoría
+      .sort({ createdAt: -1 }) // Ordenar por fecha de creación
+      .skip(perPage * (page - 1))
+      .limit(perPage)
+      .exec();
+
+    // 🔹 Contar los posts del usuario
+    const count = await Post.countDocuments({ author: user._id });
+    const totalPages = Math.ceil(count / perPage);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+
+    res.render('index', { 
+      locals,
+      user,
+      data,
+      currentPage: page,
+      totalPages,
+      hasNextPage,
+      hasPrevPage,
+      currentRoute: `/users/${req.params.username}`
+    });
+
+  } catch (error) {
+    console.error("❌ Error al obtener artículos del usuario:", error);
+    res.status(500).render('500', { title: "Error del servidor" });
+  }
+});
+
+
+
+
 /**
- * GET /
- * Post :id
+ * GET /category/:slug
+ * Filtrar artículos por categoría y paginarlos
+ */
+router.get('/category/:name', async (req, res) => {
+  try {
+    const { name } = req.params;
+
+    const locals = {
+      title: `Artículos por ${name}`,
+      description: "Encuentra artículos relacionados en nuestro blog."
+    };
+
+    let perPage = 10; // 🔹 Cantidad de posts por página
+    let page = parseInt(req.query.page) || 1;
+
+    // 🔹 Buscar la categoría por slug (NO por name)
+    const category = await Category.findOne({ name: req.params.name });
+
+    if (!category) {
+      return res.status(404).render('404', { title: "Categoría no encontrada" });
+    }
+
+    // 🔹 Obtener los posts de la categoría con autor y paginación
+    const data = await Post.find({ category: category._id })
+      .populate('author', 'username') // Traer el nombre del usuario
+      .populate('category', 'name') // Traer el nombre y slug de la categoría
+      .sort({ createdAt: -1 }) // Ordenar por fecha de creación
+      .skip(perPage * (page - 1))
+      .limit(perPage)
+      .exec();
+
+    // 🔹 Contar los posts de la categoría
+    const count = await Post.countDocuments({ category: category._id });
+    const totalPages = Math.ceil(count / perPage);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+
+    res.render('index', { 
+      locals,
+      category,
+      data,
+      currentPage: page,
+      totalPages,
+      hasNextPage,
+      hasPrevPage,
+      currentRoute: `/category/${req.params.slug}`
+    });
+
+  } catch (error) {
+    console.error("❌ Error al obtener artículos por categoría:", error);
+    res.status(500).render('500', { title: "Error del servidor" });
+  }
+});
+
+
+/**
+ * GET /post/:id
+ * Muestra un artículo con comentarios anidados
  */
 router.get('/post/:id', async (req, res) => {
   try {
-    let slug = req.params.id;
+    let postId = req.params.id;
 
-    const data = await Post.findById({ _id: slug });
+    if (!mongoose.Types.ObjectId.isValid(postId)) {
+      return res.status(400).render('404', { title: "ID inválido" });
+    }
 
-    const locals = {
+    // 🔹 Asegúrate de hacer populate en `author` para obtener el username
+    const data = await Post.findById(postId)
+      .populate('author', 'username') // 🔹 Traer solo el `username` del autor
+
+    if (!data) {
+      return res.status(404).render('404', { title: "Artículo no encontrado" });
+    }
+
+    // 🔹 Obtener los comentarios relacionados con el post
+    const comments = await Comment.find({ postId }).sort({ createdAt: 1 });
+
+    res.render('post', {
       title: data.title,
-      description: "Simple Blog created with NodeJs, Express & MongoDb.",
-    };
-
-    res.render('post', { 
-      locals,
       data,
-      currentRoute: `/post/${slug}`
+      comments,
+      currentRoute: `/post/${postId}`
     });
+
   } catch (error) {
-    console.log(error);
+    console.error("❌ Error al obtener el post:", error);
+    res.status(500).render('500', { title: "Error del servidor" });
   }
 });
+
+
+/**
+ * POST /post/:id/comment
+ * Agregar un comentario o responder a uno
+ */
+router.post('/post/:id/comment', async (req, res) => {
+  try {
+    let postId = req.params.id;
+    let { author, body, parentId } = req.body;
+
+    if (!author.trim() || !body.trim()) {
+      return res.redirect(`/post/${postId}?error=Campos obligatorios`);
+    }
+
+    const newComment = new Comment({
+      postId,
+      parentId: parentId || null,
+      author,
+      body
+    });
+
+    await newComment.save();
+    res.redirect(`/post/${postId}`);
+
+  } catch (error) {
+    console.error("Error al agregar comentario:", error);
+    res.redirect(`/post/${postId}?error=Error al guardar el comentario`);
+  }
+});
+
+/**
+ * Función para construir una estructura de comentarios anidados
+ */
+function buildNestedComments(comments, parentId = null) {
+  return comments
+    .filter(comment => String(comment.parentId) === String(parentId))
+    .map(comment => ({
+      ...comment.toObject(),
+      replies: buildNestedComments(comments, comment._id) // 🔹 Llamada recursiva correcta
+    }));
+}
+
+
 
 /**
  * POST /
@@ -323,8 +633,78 @@ router.post('/register', async (req, res) => {
   }
 });
 
+router.post('/keyword/search', async (req, res) => {
+  try {
+    const { keyword } = req.body;
+    let perPage = 10; // 🔹 Cantidad de resultados por página
+    let page = parseInt(req.query.page) || 1; // 🔹 Página actual (por defecto es 1)
+
+    if (!keyword || !keyword.trim()) {
+      return res.status(400).json({ error: 'Debes ingresar una palabra clave válida.' });
+    }
+
+    // 🔹 Limpiar la palabra clave de caracteres especiales
+    const sanitizedKeyword = keyword.trim().replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ ]/g, "");
+
+    // 🔹 Contar el total de documentos que coinciden con la búsqueda
+    const count = await Post.countDocuments({
+      $or: [
+        { title: { $regex: sanitizedKeyword, $options: 'i' } },
+        { body: { $regex: sanitizedKeyword, $options: 'i' } }
+      ]
+    });
+
+    // 🔹 Calcular total de páginas
+    const totalPages = Math.ceil(count / perPage);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+
+    // 🔹 Obtener los resultados con paginación
+    const data = await Post.find({
+      $or: [
+        { title: { $regex: sanitizedKeyword, $options: 'i' } },
+        { body: { $regex: sanitizedKeyword, $options: 'i' } }
+      ]
+    })
+    .populate('author', 'username')
+    .populate('category', 'name')
+    .sort({ createdAt: -1 }) // 🔹 Ordenar por fecha más reciente
+    .skip(perPage * (page - 1)) // 🔹 Saltar los elementos de páginas anteriores
+    .limit(perPage); // 🔹 Limitar a `perPage` resultados
+
+    if (!data.length) {
+      return res.render('index', {
+        title: `Resultados para: "${keyword}"`,
+        message: 'No se encontraron resultados para la palabra clave proporcionada.',
+        data: [],
+        currentPage: page,
+        totalPages,
+        hasNextPage,
+        hasPrevPage,
+        keyword, // 🔹 Para mantener la palabra clave en la URL de paginación
+        currentRoute: '/keyword/search'
+      });
+    }
+
+    res.render('search_results', {
+      title: `Resultados para: "${keyword}"`,
+      data,
+      currentPage: page,
+      totalPages,
+      hasNextPage,
+      hasPrevPage,
+      keyword, // 🔹 Se pasa la palabra clave a la vista para mantener la búsqueda en paginación
+      currentRoute: '/keyword/search'
+    });
+
+  } catch (error) {
+    console.error("❌ Error en la búsqueda por palabra clave:", error);
+    res.status(500).json({ error: "Error del servidor. Intenta nuevamente más tarde." });
+  }
+});
 
 // Uncomment the following line to insert sample data (run only once)
 //insertPostData();
+
 
 module.exports = router;
