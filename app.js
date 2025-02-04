@@ -158,6 +158,13 @@ app.locals.isActiveRoute = isActiveRoute;
 app.use('/', require('./server/routes/main'));
 app.use('/', require('./server/routes/admin'));
 
+
+// Middleware para manejar rutas no encontradas (404)
+app.use((req, res) => {
+  res.status(404).render('404');
+});
+
+
 // 🚀 Iniciar el servidor
 app.listen(PORT, () => {
   console.log(`✅ Servidor corriendo en el puerto ${PORT}`);
