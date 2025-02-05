@@ -29,15 +29,19 @@ const PostSchema = new mongoose.Schema({
     required: true 
   },
   image: {  
-    type: Buffer, // 🔹 Almacena la imagen en formato binario
+    type: Buffer, 
   },
   image_mime: {  
-    type: String, // 🔹 Almacena el tipo MIME de la imagen (ej. 'image/png', 'image/jpeg')
+    type: String,
     required: false
   },
   isVisible: {  
     type: Boolean,
     default: true
+  },
+  publishDate: { 
+    type: Date, 
+    required: true 
   },
   createdAt: {
     type: Date,

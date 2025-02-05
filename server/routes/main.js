@@ -72,22 +72,18 @@ router.post('/contact', async (req, res) => {
  * GET /
  * HOME
  */
-/**
- * GET /
- * HOME
- */
 router.get('', async (req, res) => {
   try {
     const locals = {
       title: "Juan Francisco Fernandez Herreros | Senior Software Engineer",
-      learning:"Aprende con @kiferhe"
+      learning: "Aprende con @kiferhe"
     };
 
     let perPage = 10; // Cantidad de posts por página
     let page = parseInt(req.query.page) || 1;
 
-    // 🔹 Obtener los posts con la información del autor y la categoría
-    const data = await Post.find({})
+    // 🔹 Obtener solo los posts que tienen isVisible en true
+    const data = await Post.find({ isVisible: true }) // Filtra los posts visibles
       .populate('author', 'username') // Solo traer el nombre del usuario
       .populate('category', 'name') // Solo traer el nombre de la categoría
       .sort({ createdAt: -1 }) // Ordenar por fecha de creación
@@ -95,8 +91,8 @@ router.get('', async (req, res) => {
       .limit(perPage)
       .exec();
 
-    // Obtener el total de posts
-    const count = await Post.countDocuments({});
+    // Obtener el total de posts visibles
+    const count = await Post.countDocuments({ isVisible: true });
     const totalPages = Math.ceil(count / perPage);
     const hasNextPage = page < totalPages;
     const hasPrevPage = page > 1;
@@ -112,8 +108,10 @@ router.get('', async (req, res) => {
     });
   } catch (error) {
     console.log(error);
+    res.status(500).send("Error interno del servidor");
   }
 });
+
 
 router.get('/articles', async (req, res) => {
   try {
@@ -646,8 +644,9 @@ router.post('/keyword/search', async (req, res) => {
     // 🔹 Limpiar la palabra clave de caracteres especiales
     const sanitizedKeyword = keyword.trim().replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ ]/g, "");
 
-    // 🔹 Contar el total de documentos que coinciden con la búsqueda
+    // 🔹 Contar el total de documentos que coinciden con la búsqueda (solo visibles)
     const count = await Post.countDocuments({
+      isVisible: true, // 🔹 Filtrar solo artículos visibles
       $or: [
         { title: { $regex: sanitizedKeyword, $options: 'i' } },
         { body: { $regex: sanitizedKeyword, $options: 'i' } }
@@ -659,8 +658,9 @@ router.post('/keyword/search', async (req, res) => {
     const hasNextPage = page < totalPages;
     const hasPrevPage = page > 1;
 
-    // 🔹 Obtener los resultados con paginación
+    // 🔹 Obtener los resultados con paginación (solo artículos visibles)
     const data = await Post.find({
+      isVisible: true, // 🔹 Filtrar solo artículos visibles
       $or: [
         { title: { $regex: sanitizedKeyword, $options: 'i' } },
         { body: { $regex: sanitizedKeyword, $options: 'i' } }
@@ -682,7 +682,7 @@ router.post('/keyword/search', async (req, res) => {
         hasNextPage,
         hasPrevPage,
         keyword, // 🔹 Para mantener la palabra clave en la URL de paginación
-        currentRoute: '/keyword/search'
+        currentRoute: 'index'
       });
     }
 
@@ -694,7 +694,7 @@ router.post('/keyword/search', async (req, res) => {
       hasNextPage,
       hasPrevPage,
       keyword, // 🔹 Se pasa la palabra clave a la vista para mantener la búsqueda en paginación
-      currentRoute: '/keyword/search'
+      currentRoute: 'index'
     });
 
   } catch (error) {
