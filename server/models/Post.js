@@ -6,6 +6,10 @@ const PostSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  summary: {  // 🔹 Nuevo campo para la mini descripción
+    type: String,
+    required: true
+  },
   body: {
     type: String,
     required: true
@@ -14,16 +18,16 @@ const PostSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Category', 
     required: true 
-  }, // Relación con Categoría (Un post pertenece a una categoría)
+  },
   tags: [{ 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Tags' 
-  }], // Relación con Tags (Un post puede tener varios tags)
+  }],
   author: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'User', 
     required: true 
-  }, // Autor del post (Usuario)
+  },
   createdAt: {
     type: Date,
     default: Date.now

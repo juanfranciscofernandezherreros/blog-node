@@ -10,13 +10,15 @@
     <a href="/users/<%= data.userId %>">
       <%= data.author ? data.author.username : 'Anónimo' %>
     </a>
-    
-</p>
+  </p>
+
   <img src="<%= data.image || '/images/hero_1.jpg' %>" alt="<%= data.title %>" class="img-fluid my-3">
 
-  <p class="article-body">
-    <%= data.body %>
-  </p>
+  <!-- 🔹 Contenedor donde se almacena el contenido sin escapado -->
+  <div id="article-body" data-body="<%= encodeURIComponent(data.body) %>"></div>
+
+  <!-- 🔹 Contenedor donde se renderizará el contenido en el frontend -->
+  <div class="article-body border rounded p-4" id="rendered-article-body"></div>
 
   <a href="/" class="btn btn-primary mt-3">Volver al inicio</a>
 
@@ -55,8 +57,6 @@
               <% }) %>
             </ul>
         <% } %>
-        
-
         </li>
       <% }) %>
     </ul>
@@ -79,8 +79,20 @@
 </div>
 
 <script>
+  // Función para alternar el formulario de respuesta en los comentarios
   function toggleReplyForm(commentId) {
     const form = document.getElementById(`reply-form-${commentId}`);
     form.classList.toggle('d-none');
   }
+
+  // 🔹 Renderizar el contenido HTML en el frontend sin escapar
+  document.addEventListener("DOMContentLoaded", function () {
+    const articleBodyDiv = document.getElementById("article-body");
+    const renderedArticleBodyDiv = document.getElementById("rendered-article-body");
+
+    if (articleBodyDiv && renderedArticleBodyDiv) {
+      // Decodificar y renderizar el HTML sin escapado
+      renderedArticleBodyDiv.innerHTML = decodeURIComponent(articleBodyDiv.dataset.body);
+    }
+  });
 </script>
