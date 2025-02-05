@@ -14,6 +14,7 @@ const Tag = require('./server/models/Tags');
 const Category = require('./server/models/Category'); 
 const Post = require('./server/models/Post'); // Importa el modelo de Post
 const Comment = require('./server/models/Comment'); // Importa el modelo de Comentarios
+
 // Configuración del servidor
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -40,10 +41,24 @@ app.use(session({
 // ✅ Servir archivos estáticos desde "public"
 app.use(express.static('public'));
 
+// ✅ Middleware global para que todas las búsquedas solo devuelvan artículos visibles
+app.use((req, res, next) => {
+  req.queryFilter = { isVisible: true }; // Filtro global para todas las búsquedas
+  next();
+});
+
 // ✅ Cargar variables del `.env` en `res.locals` para usarlas en las vistas
 app.use((req, res, next) => {
   res.locals.siteTitle = process.env.TITLE || 'Blog';
   res.locals.nameEngineer = process.env.NAME_ENGINEER || 'Admin';
+  res.locals.description = process.env.DESCRIPTION || '';
+  res.locals.searchByTitleOrContent = process.env.SEARCHBYTITLEORCONTENT || 'Search By Title Or Content';
+  res.locals.popularposts = process.env.POPULARPOSTS || 'Popular Posts';
+  res.locals.categoriesList = process.env.CATEGORIES || 'Categories';
+  res.locals.tagslist = process.env.TAGSLIST || 'Tags';
+  res.locals.random = process.env.RANDOM || 'Random';
+  res.locals.about = process.env.ABOUT || 'About';
+  res.locals.social = process.env.SOCIAL || 'Social Network';
   next();
 });
 
@@ -66,10 +81,13 @@ app.use(async (req, res, next) => {
   next();
 });
 
-// ✅ Middleware para obtener 3 artículos aleatorios
+// ✅ Middleware para obtener 3 artículos aleatorios (solo visibles)
 app.use(async (req, res, next) => {
   try {
-    const randomPosts = await Post.aggregate([{ $sample: { size: 3 } }]);
+    const randomPosts = await Post.aggregate([
+      { $match: req.queryFilter }, // Aplicar filtro de artículos visibles
+      { $sample: { size: 3 } }
+    ]);
 
     res.locals.randomPosts = randomPosts || []; // Asignamos los artículos a `res.locals`
   } catch (error) {
@@ -79,63 +97,49 @@ app.use(async (req, res, next) => {
   next();
 });
 
-// Middleware para contar artículos por categoría
+// ✅ Middleware para contar artículos visibles por categoría
 app.use(async (req, res, next) => {
   try {
-    // 🔹 Obtener el conteo de artículos por categoría
     const categoryCounts = await Post.aggregate([
-      { $group: { _id: "$category", count: { $sum: 1 } } } // Agrupar por categoría y contar
+      { $match: req.queryFilter }, // Solo artículos visibles
+      { $group: { _id: "$category", count: { $sum: 1 } } }
     ]);
 
-    // 🔹 Obtener todas las categorías y asignarles su conteo
     const categories = await Category.find({}).sort({ name: 1 });
 
-    // 🔹 Convertir los resultados en un objeto para acceder rápido
-    const categoryCountMap = {};
-    categoryCounts.forEach(cat => {
-      categoryCountMap[cat._id] = cat.count;
-    });
+    const categoryCountMap = new Map(
+      categoryCounts.map(cat => [cat._id.toString(), cat.count])
+    );
 
-    // 🔹 Añadir el número de posts a cada categoría
-    const categoriesWithCount = categories.map(category => ({
+    res.locals.categories = categories.map(category => ({
       _id: category._id,
       name: category.name,
-      count: categoryCountMap[category._id] || 0 // Si no hay posts en la categoría, asignar 0
+      count: categoryCountMap.get(category._id.toString()) || 0
     }));
 
-    res.locals.categories = categoriesWithCount;
-
   } catch (error) {
-    console.error("❌ Error al contar artículos por categoría:", error);
+    console.error("❌ Error al contar artículos visibles por categoría:", error);
     res.locals.categories = [];
   }
   next();
 });
 
-
-// ✅ Middleware para cargar los posts más comentados
+// ✅ Middleware para cargar los posts más comentados (solo visibles)
 app.use(async (req, res, next) => {
   try {
     const popularPosts = await Post.aggregate([
+      { $match: req.queryFilter }, // Solo artículos visibles
       {
         $lookup: {
-          from: "comments", // Nombre de la colección de comentarios en MongoDB
+          from: "comments",
           localField: "_id",
           foreignField: "postId",
           as: "comments"
         }
       },
-      {
-        $addFields: {
-          commentCount: { $size: "$comments" }
-        }
-      },
-      {
-        $sort: { commentCount: -1 } // 🔹 Ordenar por más comentarios primero
-      },
-      {
-        $limit: 5 // 🔹 Solo los 5 más populares
-      }
+      { $addFields: { commentCount: { $size: "$comments" } } },
+      { $sort: { commentCount: -1 } },
+      { $limit: 5 }
     ]);
 
     res.locals.popularPosts = popularPosts || [];
@@ -158,12 +162,10 @@ app.locals.isActiveRoute = isActiveRoute;
 app.use('/', require('./server/routes/main'));
 app.use('/', require('./server/routes/admin'));
 
-
 // Middleware para manejar rutas no encontradas (404)
 app.use((req, res) => {
   res.status(404).render('404');
 });
-
 
 // 🚀 Iniciar el servidor
 app.listen(PORT, () => {

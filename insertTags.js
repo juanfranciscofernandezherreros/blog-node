@@ -3,12 +3,19 @@ const mongoose = require('mongoose');
 const Tags = require('./server/models/Tags'); // Importamos el modelo de Tag
 
 const MONGO_URI = process.env.MONGODB_URI; // 🔹 Obtener la URI de MongoDB desde .env
+const TAGS_JSON = process.env.TAGS_JSON; // 🔹 Obtener los tags desde .env
 
 async function insertTagData() {
   try {
     if (!MONGO_URI) {
-      throw new Error("⚠️ No se ha encontrado la variable MONGOD_URI en el archivo .env");
+      throw new Error("⚠️ No se ha encontrado la variable MONGODB_URI en el archivo .env");
     }
+
+    if (!TAGS_JSON) {
+      throw new Error("⚠️ No se han encontrado tags en el archivo .env");
+    }
+
+    const tags = JSON.parse(TAGS_JSON); // 🔹 Parsear el JSON de tags
 
     // 🔹 Conectar a la base de datos antes de ejecutar consultas
     await mongoose.connect(MONGO_URI, {
@@ -25,15 +32,8 @@ async function insertTagData() {
       return;
     }
 
-    // Insertar Tags si no existen
-    await Tags.insertMany([
-      { name: "Travel", description: "Artículos sobre viajes" },
-      { name: "Adventure", description: "Exploraciones y aventuras" },
-      { name: "Food", description: "Comida y recetas" },
-      { name: "Lifestyle", description: "Consejos de vida" },
-      { name: "Business", description: "Noticias de negocios" },
-      { name: "Freelancing", description: "Trabajo autónomo y remoto" }
-    ]);
+    // Insertar tags si no existen
+    await Tags.insertMany(tags);
 
     console.log("✅ Tags insertados correctamente.");
   } catch (error) {
