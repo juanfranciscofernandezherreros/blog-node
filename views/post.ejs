@@ -1,88 +1,97 @@
-<!-- 📌 Contenedor del artículo -->
 <div class="container mt-4">
-  <h1 class="fw-bold"><%= data.title %></h1>
-  <p class="text-muted">
-    Publicado el 
-    <a href="/articles?date=<%= new Date(data.createdAt).toLocaleDateString('es-ES') %>">
-      <%= new Date(data.createdAt).toLocaleDateString('es-ES') %>
-    </a> 
-    por el usuario
-    <a href="/users/<%= data.userId %>">
-      <%= data.author ? data.author.username : 'Anónimo' %>
-    </a>
-  </p>
+  <div class="row">
+    
+    <!-- 🔹 Contenedor principal del artículo (8 columnas en pantallas grandes) -->
+    <div class="col-lg-8">
+      <h1 class="fw-bold"><%= data.title %></h1>
+      <p class="text-muted">
+        Publicado el 
+        <a href="/articles?date=<%= new Date(data.createdAt).toLocaleDateString('es-ES') %>">
+          <%= new Date(data.createdAt).toLocaleDateString('es-ES') %>
+        </a> 
+        por el usuario
+        <a href="/users/<%= data.userId %>">
+          <%= data.author ? data.author.username : 'Anónimo' %>
+        </a>
+      </p>
 
-  <img src="<%= data.image ? 'data:' + data.image_mime + ';base64,' + data.image.toString('base64') : '/images/hero_1.jpg' %>" 
-       style="width: 100%; height: 400px;">
+      <img src="<%= data.image ? 'data:' + data.image_mime + ';base64,' + data.image.toString('base64') : '/images/hero_1.jpg' %>" 
+           style="width: 100%; height: 400px; object-fit: cover;">
 
-  <!-- 🔹 Contenedor oculto con el contenido Markdown -->
-  <div id="article-body" data-body="<%= encodeURIComponent(data.body) %>"></div>
+      <!-- 🔹 Contenedor oculto con el contenido Markdown -->
+      <div id="article-body" data-body="<%= encodeURIComponent(data.body) %>"></div>
 
-  <!-- 🔹 Renderización del contenido en HTML -->
-  <div class="article-body border rounded p-4" id="rendered-article-body"></div>
+      <!-- 🔹 Renderización del contenido en HTML -->
+      <div class="article-body border rounded p-4" id="rendered-article-body"></div>
 
-  <hr>
+      <hr>
 
-  <a href="/" class="btn btn-primary mt-3">Volver al inicio</a>
+      <a href="/" class="btn btn-primary mt-3">Volver al inicio</a>
 
-  <hr>
-  <hr>
-  <h3>Comentarios</h3>
+      <hr>
+      <h3>Comentarios</h3>
 
-  <% if (comments.length > 0) { %>
-    <ul class="list-group mb-4">
-      <% comments.forEach(comment => { %>
-        <li class="list-group-item">
-          <strong><%= comment.author %></strong>
-          <span class="text-muted small"> - <%= new Date(comment.createdAt).toLocaleDateString('es-ES') %></span>
-          <p class="mt-1"><%= comment.body %></p>
+      <% if (comments.length > 0) { %>
+        <ul class="list-group mb-4">
+          <% comments.forEach(comment => { %>
+            <li class="list-group-item">
+              <strong><%= comment.author %></strong>
+              <span class="text-muted small"> - <%= new Date(comment.createdAt).toLocaleDateString('es-ES') %></span>
+              <p class="mt-1"><%= comment.body %></p>
 
-          <button class="btn btn-sm btn-link text-primary" onclick="toggleReplyForm('<%= comment._id %>')">Responder</button>
+              <button class="btn btn-sm btn-link text-primary" onclick="toggleReplyForm('<%= comment._id %>')">Responder</button>
 
-          <form id="reply-form-<%= comment._id %>" action="/post/<%= data._id %>/comment" method="POST" class="mt-2 d-none">
-            <input type="hidden" name="parentId" value="<%= comment._id %>">
-            <div class="mb-2">
-              <input type="text" class="form-control" name="author" placeholder="Tu nombre" required>
-            </div>
-            <div class="mb-2">
-              <textarea class="form-control" name="body" placeholder="Escribe tu respuesta..." rows="2" required></textarea>
-            </div>
-            <button type="submit" class="btn btn-sm btn-primary">Enviar Respuesta</button>
-          </form>
+              <form id="reply-form-<%= comment._id %>" action="/post/<%= data._id %>/comment" method="POST" class="mt-2 d-none">
+                <input type="hidden" name="parentId" value="<%= comment._id %>">
+                <div class="mb-2">
+                  <input type="text" class="form-control" name="author" placeholder="Tu nombre" required>
+                </div>
+                <div class="mb-2">
+                  <textarea class="form-control" name="body" placeholder="Escribe tu respuesta..." rows="2" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-sm btn-primary">Enviar Respuesta</button>
+              </form>
 
-          <% if (comment.replies && comment.replies.length > 0) { %>
-            <ul class="list-group mt-2">
-              <% comment.replies.forEach(reply => { %>
-                <li class="list-group-item" style="margin-left: 30px;">
-                  <strong><%= reply.author %></strong>
-                  <span class="text-muted small"> - <%= new Date(reply.createdAt).toLocaleDateString('es-ES') %></span>
-                  <p class="mt-1"><%= reply.body %></p>
-                </li>
-              <% }) %>
-            </ul>
-        <% } %>
-        
+              <% if (comment.replies && comment.replies.length > 0) { %>
+                <ul class="list-group mt-2">
+                  <% comment.replies.forEach(reply => { %>
+                    <li class="list-group-item" style="margin-left: 30px;">
+                      <strong><%= reply.author %></strong>
+                      <span class="text-muted small"> - <%= new Date(reply.createdAt).toLocaleDateString('es-ES') %></span>
+                      <p class="mt-1"><%= reply.body %></p>
+                    </li>
+                  <% }) %>
+                </ul>
+              <% } %>
+            </li>
+          <% }) %>
+        </ul>
+      <% } else { %>
+        <p class="text-muted">No hay comentarios aún.</p>
+      <% } %>
 
-        </li>
-      <% }) %>
-    </ul>
-  <% } else { %>
-    <p class="text-muted">No hay comentarios aún.</p>
-  <% } %>
-
-  <!-- Formulario para agregar un nuevo comentario -->
-  <form action="/post/<%= data._id %>/comment" method="POST" class="mb-4">
-    <div class="mb-3">
-      <label for="author" class="form-label">Nombre</label>
-      <input type="text" class="form-control" id="author" name="author" required>
+      <!-- Formulario para agregar un nuevo comentario -->
+      <form action="/post/<%= data._id %>/comment" method="POST" class="mb-4">
+        <div class="mb-3">
+          <label for="author" class="form-label">Nombre</label>
+          <input type="text" class="form-control" id="author" name="author" required>
+        </div>
+        <div class="mb-3">
+          <label for="body" class="form-label">Comentario</label>
+          <textarea class="form-control" id="body" name="body" rows="3" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Enviar Comentario</button>
+      </form>
     </div>
-    <div class="mb-3">
-      <label for="body" class="form-label">Comentario</label>
-      <textarea class="form-control" id="body" name="body" rows="3" required></textarea>
+
+    <!-- 🔹 Sidebar en el lateral derecho -->
+    <div class="col-lg-4 sidebar">
+      <%- include('partials/sidebar') %>
     </div>
-    <button type="submit" class="btn btn-primary">Enviar Comentario</button>
-  </form>
+
+  </div>
 </div>
+
 <!-- 🔹 Librerías necesarias -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.3/purify.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.0.0/marked.min.js"></script>
@@ -96,7 +105,6 @@
   document.addEventListener("DOMContentLoaded", function () {
     const articleBodyDiv = document.getElementById("article-body");
     const renderedArticleBodyDiv = document.getElementById("rendered-article-body");
-    const htmlCodeTextarea = document.getElementById("html-code");
 
     if (articleBodyDiv && renderedArticleBodyDiv) {
       // 🔹 Obtener el Markdown almacenado en MongoDB
@@ -110,9 +118,6 @@
 
       // 🔹 Renderizar el HTML en la página
       renderedArticleBodyDiv.innerHTML = sanitizedHtml;
-
-      // 🔹 Mostrar el código HTML generado dentro del <textarea>
-      htmlCodeTextarea.innerText = sanitizedHtml;
     }
   });
 </script>
