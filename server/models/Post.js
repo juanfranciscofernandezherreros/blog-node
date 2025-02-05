@@ -6,7 +6,7 @@ const PostSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
-  summary: {  // 🔹 Nuevo campo para la mini descripción
+  summary: {  
     type: String,
     required: true
   },
@@ -27,6 +27,17 @@ const PostSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'User', 
     required: true 
+  },
+  image: {  
+    type: Buffer, // 🔹 Almacena la imagen en formato binario
+  },
+  image_mime: {  
+    type: String, // 🔹 Almacena el tipo MIME de la imagen (ej. 'image/png', 'image/jpeg')
+    required: false
+  },
+  isVisible: {  
+    type: Boolean,
+    default: true
   },
   createdAt: {
     type: Date,

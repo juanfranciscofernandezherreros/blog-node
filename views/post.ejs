@@ -1,3 +1,4 @@
+<!-- 📌 Contenedor del artículo -->
 <div class="container mt-4">
   <h1 class="fw-bold"><%= data.title %></h1>
   <p class="text-muted">
@@ -6,22 +7,25 @@
       <%= new Date(data.createdAt).toLocaleDateString('es-ES') %>
     </a> 
     por el usuario
-    
     <a href="/users/<%= data.userId %>">
       <%= data.author ? data.author.username : 'Anónimo' %>
     </a>
   </p>
 
-  <img src="<%= data.image || '/images/hero_1.jpg' %>" alt="<%= data.title %>" class="img-fluid my-3">
+  <img src="<%= data.image ? 'data:' + data.image_mime + ';base64,' + data.image.toString('base64') : '/images/hero_1.jpg' %>" 
+       style="width: 100%; height: 400px;">
 
-  <!-- 🔹 Contenedor donde se almacena el contenido sin escapado -->
+  <!-- 🔹 Contenedor oculto con el contenido Markdown -->
   <div id="article-body" data-body="<%= encodeURIComponent(data.body) %>"></div>
 
-  <!-- 🔹 Contenedor donde se renderizará el contenido en el frontend -->
+  <!-- 🔹 Renderización del contenido en HTML -->
   <div class="article-body border rounded p-4" id="rendered-article-body"></div>
+
+  <hr>
 
   <a href="/" class="btn btn-primary mt-3">Volver al inicio</a>
 
+  <hr>
   <hr>
   <h3>Comentarios</h3>
 
@@ -57,6 +61,8 @@
               <% }) %>
             </ul>
         <% } %>
+        
+
         </li>
       <% }) %>
     </ul>
@@ -77,22 +83,36 @@
     <button type="submit" class="btn btn-primary">Enviar Comentario</button>
   </form>
 </div>
-
+<!-- 🔹 Librerías necesarias -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.3/purify.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.0.0/marked.min.js"></script>
 <script>
-  // Función para alternar el formulario de respuesta en los comentarios
   function toggleReplyForm(commentId) {
     const form = document.getElementById(`reply-form-${commentId}`);
     form.classList.toggle('d-none');
   }
-
-  // 🔹 Renderizar el contenido HTML en el frontend sin escapar
+</script>
+<script>
   document.addEventListener("DOMContentLoaded", function () {
     const articleBodyDiv = document.getElementById("article-body");
     const renderedArticleBodyDiv = document.getElementById("rendered-article-body");
+    const htmlCodeTextarea = document.getElementById("html-code");
 
     if (articleBodyDiv && renderedArticleBodyDiv) {
-      // Decodificar y renderizar el HTML sin escapado
-      renderedArticleBodyDiv.innerHTML = decodeURIComponent(articleBodyDiv.dataset.body);
+      // 🔹 Obtener el Markdown almacenado en MongoDB
+      const markdownContent = decodeURIComponent(articleBodyDiv.dataset.body);
+
+      // 🔹 Convertir Markdown a HTML
+      const htmlContent = marked.parse(markdownContent);
+
+      // 🔹 Sanitizar HTML para prevenir ataques XSS
+      const sanitizedHtml = DOMPurify.sanitize(htmlContent);
+
+      // 🔹 Renderizar el HTML en la página
+      renderedArticleBodyDiv.innerHTML = sanitizedHtml;
+
+      // 🔹 Mostrar el código HTML generado dentro del <textarea>
+      htmlCodeTextarea.innerText = sanitizedHtml;
     }
   });
 </script>
