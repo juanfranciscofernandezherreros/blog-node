@@ -44,6 +44,7 @@ app.use(express.static('public'));
 app.use((req, res, next) => {
   res.locals.siteTitle = process.env.TITLE || 'Blog';
   res.locals.nameEngineer = process.env.NAME_ENGINEER || 'Admin';
+  res.locals.description = process.env.DESCRIPTION || ''; // Agregamos la descripción
   next();
 });
 
