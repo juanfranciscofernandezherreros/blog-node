@@ -44,9 +44,17 @@ app.use(express.static('public'));
 app.use((req, res, next) => {
   res.locals.siteTitle = process.env.TITLE || 'Blog';
   res.locals.nameEngineer = process.env.NAME_ENGINEER || 'Admin';
-  res.locals.description = process.env.DESCRIPTION || ''; // Agregamos la descripción
+  res.locals.description = process.env.DESCRIPTION || '';
+  res.locals.searchByTitleOrContent = process.env.SEARCHBYTITLEORCONTENT || 'Search By Title Or Content';
+  res.locals.popularposts = process.env.POPULARPOSTS || 'Popular Posts';
+  res.locals.categoriesList = process.env.CATEGORIES || 'Categories';
+  res.locals.tagslist = process.env.TAGSLIST || 'Tags';
+  res.locals.random = process.env.RANDOM || 'Random';
+  res.locals.about = process.env.ABOUT || 'About';
+  res.locals.social = process.env.SOCIAL || 'Social Network';
   next();
 });
+
 
 // ✅ Middleware para cargar Tags y Categorías en todas las vistas
 app.use(async (req, res, next) => {

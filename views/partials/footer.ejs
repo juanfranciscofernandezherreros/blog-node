@@ -1,16 +1,16 @@
 <div class="col-lg-8">
   <div class="widget">
-    <h3 class="mb-4">About</h3>
+    <h3 class="mb-4"><%= about %></h3>
     <p><%= description %></p>
   </div> <!-- /.widget -->
   <div class="widget">
-    <h3>Social</h3>
+    <h3><%= social %></h3>
     <%- include('../partials/social_networks.ejs') %>
   </div> <!-- /.widget -->
 </div> <!-- /.col-lg-4 -->
 <div class="col-lg-4">
   <div class="widget">
-    <h3 class="mb-4">Random Post</h3>
+    <h3 class="mb-4"><%= random %></h3>
     <div class="post-entry-footer">
       <%- include('../partials/random.ejs') %>
     </div>
