@@ -68,10 +68,6 @@ router.post('/contact', async (req, res) => {
 });
 
 
-/**
- * GET /
- * HOME
- */
 router.get('', async (req, res) => {
   try {
     const locals = {
@@ -82,17 +78,17 @@ router.get('', async (req, res) => {
     let perPage = 10; // Cantidad de posts por página
     let page = parseInt(req.query.page) || 1;
 
-    // 🔹 Obtener solo los posts que tienen isVisible en true
-    const data = await Post.find({ isVisible: true }) // Filtra los posts visibles
-      .populate('author', 'username') // Solo traer el nombre del usuario
-      .populate('category', 'name') // Solo traer el nombre de la categoría
-      .sort({ createdAt: -1 }) // Ordenar por fecha de creación
-      .skip(perPage * (page - 1))
-      .limit(perPage)
-      .exec();
+    // 🔹 Obtener solo los posts visibles con paginación y allowDiskUse:true
+    const data = await Post.aggregate([
+      { $match: { isVisible: true } }, // Filtrar solo los posts visibles
+      { $sort: { createdAt: -1 } }, // Ordenar por fecha de creación descendente
+      { $skip: perPage * (page - 1) }, // Saltar documentos según la paginación
+      { $limit: perPage } // Limitar la cantidad de documentos a la página
+    ]).allowDiskUse(true); // ✅ Permitir que MongoDB use disco si es necesario
 
-    // Obtener el total de posts visibles
+    // 🔹 Obtener el total de posts visibles
     const count = await Post.countDocuments({ isVisible: true });
+
     const totalPages = Math.ceil(count / perPage);
     const hasNextPage = page < totalPages;
     const hasPrevPage = page > 1;
@@ -107,10 +103,11 @@ router.get('', async (req, res) => {
       currentRoute: '/'
     });
   } catch (error) {
-    console.log(error);
+    console.error("❌ Error en la paginación:", error);
     res.status(500).send("Error interno del servidor");
   }
 });
+
 
 
 router.get('/articles', async (req, res) => {

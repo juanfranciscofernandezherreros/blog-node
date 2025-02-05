@@ -4,7 +4,6 @@
       <% popularPosts.forEach(post => { %>
         <li>
           <a href="/post/<%= post._id %>">
-            <img src="<%= post.image || '/images/img_5_sq.jpg' %>" alt="<%= post.title %>" class="me-4 rounded">
             <div class="text">
               <h4><%= post.title %></h4>
               <div class="post-meta">
