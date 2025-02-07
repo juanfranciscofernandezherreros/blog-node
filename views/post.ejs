@@ -3,7 +3,6 @@
     
     <!-- 🔹 Contenedor principal del artículo (8 columnas en pantallas grandes) -->
     <div class="col-lg-8">
-      <h1 class="fw-bold"><%= data.title %></h1>
       <p class="text-muted">
         Publicado el 
         <a href="/articles?date=<%= new Date(data.createdAt).toLocaleDateString('es-ES') %>">
@@ -13,10 +12,7 @@
         <a href="/users/<%= data.userId %>">
           <%= data.author ? data.author.username : 'Anónimo' %>
         </a>
-      </p>
-
-      <img src="<%= data.image ? 'data:' + data.image_mime + ';base64,' + data.image.toString('base64') : '/images/hero_1.jpg' %>" 
-           style="width: 100%; height: 400px; object-fit: cover;">
+      </p>     
 
       <!-- 🔹 Contenedor oculto con el contenido Markdown -->
       <div id="article-body" data-body="<%= encodeURIComponent(data.body) %>"></div>

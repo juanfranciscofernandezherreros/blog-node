@@ -78,10 +78,33 @@ router.get('', async (req, res) => {
     let perPage = 10; // Cantidad de posts por página
     let page = parseInt(req.query.page) || 1;
 
-    // 🔹 Obtener solo los posts visibles con paginación y allowDiskUse:true
+    // 🔹 Obtener posts visibles con la categoría y el autor incluidos
     const data = await Post.aggregate([
       { $match: { isVisible: true } }, // Filtrar solo los posts visibles
-      { $sort: { createdAt: -1 } }, // Ordenar por fecha de creación descendente
+      { $sort: { createdAt: -1 } }, // Ordenar por fecha descendente
+
+      // 🔹 Unir con la colección de categorías para obtener `category.name`
+      {
+        $lookup: {
+          from: "categories", // Nombre de la colección de categorías en MongoDB
+          localField: "category",
+          foreignField: "_id",
+          as: "category"
+        }
+      },
+      { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } }, // Asegurar que siempre haya un campo category
+
+      // 🔹 Unir con la colección de usuarios para obtener `author.username`
+      {
+        $lookup: {
+          from: "users", // Nombre de la colección de usuarios en MongoDB
+          localField: "author",
+          foreignField: "_id",
+          as: "author"
+        }
+      },
+      { $unwind: { path: "$author", preserveNullAndEmptyArrays: true } }, // Asegurar que siempre haya un campo author
+
       { $skip: perPage * (page - 1) }, // Saltar documentos según la paginación
       { $limit: perPage } // Limitar la cantidad de documentos a la página
     ]).allowDiskUse(true); // ✅ Permitir que MongoDB use disco si es necesario
@@ -102,11 +125,13 @@ router.get('', async (req, res) => {
       hasPrevPage,
       currentRoute: '/'
     });
+
   } catch (error) {
     console.error("❌ Error en la paginación:", error);
     res.status(500).send("Error interno del servidor");
   }
 });
+
 
 
 
