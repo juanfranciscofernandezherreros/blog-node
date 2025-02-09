@@ -75,10 +75,10 @@ router.get('', async (req, res) => {
       learning: "Aprende con @kiferhe"
     };
 
-    let perPage = 10; // Cantidad de posts por página
+    let perPage = 4; // Cantidad de posts por página
     let page = parseInt(req.query.page) || 1;
 
-    // 🔹 Obtener posts visibles con la categoría y el autor incluidos
+    // 🔹 Obtener posts visibles con la categoría, autor y publishDate formateado
     const data = await Post.aggregate([
       { $match: { isVisible: true } }, // Filtrar solo los posts visibles
       { $sort: { createdAt: -1 } }, // Ordenar por fecha descendente
@@ -86,28 +86,42 @@ router.get('', async (req, res) => {
       // 🔹 Unir con la colección de categorías para obtener `category.name`
       {
         $lookup: {
-          from: "categories", // Nombre de la colección de categorías en MongoDB
+          from: "categories",
           localField: "category",
           foreignField: "_id",
           as: "category"
         }
       },
-      { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } }, // Asegurar que siempre haya un campo category
+      { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
 
       // 🔹 Unir con la colección de usuarios para obtener `author.username`
       {
         $lookup: {
-          from: "users", // Nombre de la colección de usuarios en MongoDB
+          from: "users",
           localField: "author",
           foreignField: "_id",
           as: "author"
         }
       },
-      { $unwind: { path: "$author", preserveNullAndEmptyArrays: true } }, // Asegurar que siempre haya un campo author
+      { $unwind: { path: "$author", preserveNullAndEmptyArrays: true } },
 
-      { $skip: perPage * (page - 1) }, // Saltar documentos según la paginación
-      { $limit: perPage } // Limitar la cantidad de documentos a la página
-    ]).allowDiskUse(true); // ✅ Permitir que MongoDB use disco si es necesario
+      // 🔹 Proyectar solo los campos necesarios y formatear publishDate
+      {
+        $project: {
+          title: 1,
+          isVisible: 1,
+          publishDate: 1,
+          "category.name": 1,
+          "author.username": 1,
+          formattedPublishDate: {
+            $dateToString: { format: "%Y-%m-%d", date: "$publishDate" } // Formato ISO YYYY-MM-DD
+          }
+        }
+      },
+
+      { $skip: perPage * (page - 1) },
+      { $limit: perPage }
+    ]).allowDiskUse(true);
 
     // 🔹 Obtener el total de posts visibles
     const count = await Post.countDocuments({ isVisible: true });
@@ -131,6 +145,7 @@ router.get('', async (req, res) => {
     res.status(500).send("Error interno del servidor");
   }
 });
+
 
 
 
@@ -162,7 +177,7 @@ router.get('/articles', async (req, res) => {
       return res.status(400).json({ error: "❌ Fecha inválida. Verifica el formato." });
     }
 
-    let perPage = 10;
+    let perPage = 4;
     let page = parseInt(req.query.page) || 1;
 
     // 🔹 Buscar los artículos creados en la fecha especificada
@@ -215,7 +230,7 @@ router.get('/articles/tags/:tagId', async (req, res) => {
       return res.status(400).json({ error: "❌ Tag ID inválido." });
     }
 
-    let perPage = 10; 
+    let perPage = 4; 
     let page = parseInt(req.query.page) || 1;
 
     // 🔹 Buscar los artículos que contienen el tag
@@ -272,7 +287,7 @@ router.get('/users/:username', async (req, res) => {
     };
 
 
-    let perPage = 10; // Cantidad de posts por página
+    let perPage = 4; // Cantidad de posts por página
     let page = parseInt(req.query.page) || 1;
 
     // 🔹 Buscar el usuario por username
@@ -330,7 +345,7 @@ router.get('/category/:name', async (req, res) => {
       description: "Encuentra artículos relacionados en nuestro blog."
     };
 
-    let perPage = 10; // 🔹 Cantidad de posts por página
+    let perPage = 4; // 🔹 Cantidad de posts por página
     let page = parseInt(req.query.page) || 1;
 
     // 🔹 Buscar la categoría por slug (NO por name)
@@ -656,7 +671,7 @@ router.post('/register', async (req, res) => {
 router.post('/keyword/search', async (req, res) => {
   try {
     const { keyword } = req.body;
-    let perPage = 10; // 🔹 Cantidad de resultados por página
+    let perPage = 4; // 🔹 Cantidad de resultados por página
     let page = parseInt(req.query.page) || 1; // 🔹 Página actual (por defecto es 1)
 
     if (!keyword || !keyword.trim()) {

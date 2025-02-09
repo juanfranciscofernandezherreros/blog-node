@@ -10,9 +10,9 @@
               <div class="blog-entry d-flex blog-entry-search-item align-items-center">                  
                 <div>
                   <span class="date text-muted">
-                    <a href="/articles?date=<%= new Date(post.createdAt).toLocaleDateString('es-ES') %>" class="text-primary">
-                      <%= new Date(post.createdAt).toLocaleDateString('es-ES') %>
-                    </a> &bullet;
+                    <a href="/articles?date=<%= encodeURIComponent(data.formattedPublishDate) %>">
+                      <%= data.formattedPublishDate %>
+                    </a> 
                     
                     <% if (post.category && post.category.name) { %>
                       <a href="/category/<%= post.category.name %>" class="text-primary">
