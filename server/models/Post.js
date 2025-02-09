@@ -28,13 +28,6 @@ const PostSchema = new mongoose.Schema({
     ref: 'User', 
     required: true 
   },
-  image: {  
-    type: Buffer, 
-  },
-  image_mime: {  
-    type: String,
-    required: false
-  },
   isVisible: {  
     type: Boolean,
     default: true
