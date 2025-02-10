@@ -97,6 +97,9 @@ app.use(async (req, res, next) => {
   next();
 });
 
+// Definir una variable global para perPage
+app.locals.perPage = 6; // Puedes cambiar este valor según sea necesario
+
 // ✅ Middleware para contar artículos visibles por categoría
 app.use(async (req, res, next) => {
   try {
