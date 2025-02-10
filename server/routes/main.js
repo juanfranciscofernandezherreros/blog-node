@@ -74,8 +74,7 @@ router.get('', async (req, res) => {
       title: "Juan Francisco Fernandez Herreros | Senior Software Engineer",
       learning: "Aprende con @kiferhe"
     };
-
-    let perPage = 4; // Cantidad de posts por página
+    const perPage = req.app.locals.perPage;
     let page = parseInt(req.query.page) || 1;
 
     // 🔹 Obtener posts visibles con la categoría, autor y publishDate formateado
@@ -177,7 +176,7 @@ router.get('/articles', async (req, res) => {
       return res.status(400).json({ error: "❌ Fecha inválida. Verifica el formato." });
     }
 
-    let perPage = 4;
+    const perPage = req.app.locals.perPage;
     let page = parseInt(req.query.page) || 1;
 
     // 🔹 Buscar los artículos creados en la fecha especificada
@@ -230,7 +229,7 @@ router.get('/articles/tags/:tagId', async (req, res) => {
       return res.status(400).json({ error: "❌ Tag ID inválido." });
     }
 
-    let perPage = 4; 
+    const perPage = req.app.locals.perPage;
     let page = parseInt(req.query.page) || 1;
 
     // 🔹 Buscar los artículos que contienen el tag
@@ -287,7 +286,7 @@ router.get('/users/:username', async (req, res) => {
     };
 
 
-    let perPage = 4; // Cantidad de posts por página
+    const perPage = req.app.locals.perPage;
     let page = parseInt(req.query.page) || 1;
 
     // 🔹 Buscar el usuario por username
@@ -345,7 +344,7 @@ router.get('/category/:name', async (req, res) => {
       description: "Encuentra artículos relacionados en nuestro blog."
     };
 
-    let perPage = 4; // 🔹 Cantidad de posts por página
+    const perPage = req.app.locals.perPage;
     let page = parseInt(req.query.page) || 1;
 
     // 🔹 Buscar la categoría por slug (NO por name)
@@ -671,7 +670,7 @@ router.post('/register', async (req, res) => {
 router.post('/keyword/search', async (req, res) => {
   try {
     const { keyword } = req.body;
-    let perPage = 4; // 🔹 Cantidad de resultados por página
+    const perPage = req.app.locals.perPage;
     let page = parseInt(req.query.page) || 1; // 🔹 Página actual (por defecto es 1)
 
     if (!keyword || !keyword.trim()) {
