@@ -1,0 +1,49 @@
+<div class="container mt-5">
+    <div class="row">
+      <% users.forEach((user) => { %>
+        <div class="col-md-4 mb-4">
+          <div class="card shadow-sm">
+            <div class="card-body text-center">
+              <i class="fas fa-user-circle fa-4x text-primary mb-3"></i>
+              <h5 class="card-title"><%= user.username %></h5>
+              <p class="small text-muted">
+                Registrado desde: <%= new Date(user.createdAt).toLocaleDateString() %>
+              </p>
+              <a href="/users/<%= user.username %>" class="btn btn-primary btn-sm">
+                <i class="fas fa-user"></i> Ver perfil
+              </a>              
+            </div>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  
+    <% if (totalPages > 1) { %>
+      <div class="row text-center pt-5 border-top">
+        <div class="col-md-12">
+          <nav aria-label="Page navigation">
+            <div class="d-flex justify-content-center">
+              
+              <% if (currentPage > 1) { %>
+                <a href="?page=<%= currentPage - 1 %>" class="btn btn-outline-primary me-2">Anterior</a>
+              <% } %>
+  
+              <ul class="pagination mb-0">
+                <% for (let i = 1; i <= totalPages; i++) { %>
+                  <li class="page-item <%= i === currentPage ? 'active' : '' %>">
+                    <a class="page-link" href="?page=<%= i %>"><%= i %></a>
+                  </li>
+                <% } %>
+              </ul>
+  
+              <% if (currentPage < totalPages) { %>
+                <a href="?page=<%= currentPage + 1 %>" class="btn btn-outline-primary ms-2">Siguiente</a>
+              <% } %>
+  
+            </div>
+          </nav>
+        </div>
+      </div>
+    <% } %>
+  </div>
+  

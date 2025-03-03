@@ -277,7 +277,7 @@ router.get('/articles/tags/:tagId', async (req, res) => {
 
 
 
-router.get('/users/:username', async (req, res) => {
+router.get('/users_articles/:username', async (req, res) => {
   try {
     const { username } = req.params;
 
