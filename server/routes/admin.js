@@ -103,6 +103,56 @@ router.get('/dashboard', authMiddleware, async (req, res) => {
 
 });
 
+/**
+ * GET /dashboard/tags
+ * Tags Dashboard
+ */
+router.get('/dashboard/tags', authMiddleware, async (req, res) => {
+  try {
+    const locals = {
+      title: 'Dashboard - Tags',
+      description: 'Manage your blog tags.'
+    }
+
+    // Obtener todas las etiquetas de la base de datos
+    const data = await Tag.find();
+
+    res.render('admin/dashboard-tags', {
+      locals,
+      data,
+      layout: adminLayout
+    });
+
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+
+/**
+ * GET /dashboard/categories
+ * Categories Dashboard
+ */
+router.get('/dashboard/categories', authMiddleware, async (req, res) => {
+  try {
+    const locals = {
+      title: 'Dashboard - Categories',
+      description: 'Manage your blog categories.'
+    }
+
+    // Obtener todas las categorías de la base de datos
+    const data = await Category.find();
+
+    res.render('admin/dashboard-categories', {
+      locals,
+      data,
+      layout: adminLayout
+    });
+
+  } catch (error) {
+    console.log(error);
+  }
+});
 
 /**
  * GET /add-post
@@ -294,13 +344,22 @@ router.delete('/delete-post/:id', authMiddleware, async (req, res) => {
 
 
 /**
- * GET /
- * Admin Logout
-*/
-router.get('/logout', (req, res) => {
-  res.clearCookie('token');
-  //res.json({ message: 'Logout successful.'});
-  res.redirect('/');
+ * GET /logout
+ * Cierra la sesión del usuario
+ */
+router.get('/dashboard/logout', (req, res) => {
+  res.clearCookie('token'); // Elimina la cookie del token
+  res.redirect('/admin'); // Redirige al login
+});
+
+
+/**
+ * GET /logout
+ * Cierra la sesión del usuario
+ */
+router.get('dashboard/logout', (req, res) => {
+  res.cookie('token', '', { expires: new Date(0) }); // Expira la cookie del token
+  res.redirect('/login');
 });
 
 
