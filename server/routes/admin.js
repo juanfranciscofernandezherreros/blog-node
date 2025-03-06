@@ -128,6 +128,20 @@ router.get('/dashboard/tags', authMiddleware, async (req, res) => {
   }
 });
 
+/**
+ * DELETE /delete-tag/:id
+ * Eliminar etiqueta
+ */
+router.delete('/delete-tag/:id', authMiddleware, async (req, res) => {
+  try {
+    await Tag.findByIdAndDelete(req.params.id);
+    res.redirect('/dashboard/tags');
+  } catch (error) {
+    console.error('Error eliminando la etiqueta:', error);
+    res.status(500).send('Error interno del servidor');
+  }
+});
+
 
 /**
  * GET /dashboard/categories
@@ -151,6 +165,43 @@ router.get('/dashboard/categories', authMiddleware, async (req, res) => {
 
   } catch (error) {
     console.log(error);
+  }
+});
+
+/**
+ * GET /add-tag
+ * Admin - Formulario para añadir una nueva etiqueta
+ */
+router.get('/add-tag', authMiddleware, async (req, res) => {
+  try {
+    res.render('admin/add-tags', { title: 'Añadir Etiqueta', layout: adminLayout });
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+
+router.post('/add-tag', authMiddleware, async (req, res) => {
+  try {
+    const { name, description } = req.body;
+    if (!name) {
+      return res.status(400).send('El nombre de la etiqueta es obligatorio');
+    }
+
+    const existingTag = await Tag.findOne({ name: name.trim() });
+    if (existingTag) {
+      return res.status(400).send('El tag ya existe');
+    }
+
+    await Tag.create({ name: name.trim(), description: description?.trim() });
+
+    res.redirect('/dashboard/tags');
+  } catch (error) {
+    console.error('Error creando la etiqueta:', error);
+    if (error.code === 11000) {
+      return res.status(400).send('El tag ya existe');
+    }
+    res.status(500).send('Error interno del servidor');
   }
 });
 
@@ -181,6 +232,146 @@ router.get('/add-post', authMiddleware, async (req, res) => {
     res.status(500).send("Error retrieving data");
   }
 });
+
+/**
+ * GET /add-post
+ * Admin - Formulario para crear una nueva categoria
+ */
+router.get('/add-category', authMiddleware, async (req, res) => {
+  try {
+    const locals = {
+      title: 'Add Category',
+      description: 'Simple Blog created with NodeJs, Express & MongoDb.'
+    };
+
+    // Obtener todas las categorías y tags de la base de datos
+    const categories = await Category.find(); // Busca todas las categorías
+    const tags = await Tag.find(); // Busca todos los tags
+
+    res.render('admin/add-category', {
+      locals,
+      layout: adminLayout,
+      categories,  // Pasamos las categorías a la vista
+      tags         // Pasamos los tags a la vista
+    });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).send("Error retrieving data");
+  }
+});
+
+/**
+ * GET /edit-category/:id
+ * Admin - Formulario para editar una categoría
+ */
+router.get('/edit-category/:id', authMiddleware, async (req, res) => {
+  try {
+    const category = await Category.findById(req.params.id);
+    if (!category) {
+      return res.status(404).send('Categoría no encontrada');
+    }
+
+    res.render('admin/edit-category', {
+      title: 'Editar Categoría',
+      category,
+      layout: adminLayout
+    });
+
+  } catch (error) {
+    console.error('Error obteniendo la categoría:', error);
+    res.status(500).send('Error interno del servidor');
+  }
+});
+
+/**
+ * GET /edit-tag/:id
+ * Admin - Formulario para editar una etiqueta
+ */
+router.get('/edit-tag/:id', authMiddleware, async (req, res) => {
+  try {
+    const tag = await Tag.findById(req.params.id);
+    if (!tag) {
+      return res.status(404).send('Etiqueta no encontrada');
+    }
+
+    res.render('admin/edit-tag', { title: 'Editar Etiqueta', tag, layout: adminLayout });
+
+  } catch (error) {
+    console.error('Error obteniendo la etiqueta:', error);
+    res.status(500).send('Error interno del servidor');
+  }
+});
+
+/**
+ * PUT /edit-tag/:id
+ * Admin - Actualizar etiqueta
+ */
+router.put('/edit-tag/:id', authMiddleware, async (req, res) => {
+  try {
+    const { name } = req.body;
+
+    if (!name) {
+      return res.status(400).send('El nombre de la etiqueta es obligatorio');
+    }
+
+    await Tag.findByIdAndUpdate(req.params.id, { name: name.trim() });
+
+    res.redirect('/dashboard/tags');
+  } catch (error) {
+    console.error('Error actualizando la etiqueta:', error);
+    res.status(500).send('Error interno del servidor');
+  }
+});
+
+/**
+ * GET /edit-tag/:id
+ * Admin - Formulario para editar una etiqueta
+ */
+router.get('/edit-tag/:id', authMiddleware, async (req, res) => {
+  try {
+    const tag = await Tag.findById(req.params.id);
+    if (!tag) {
+      return res.status(404).send('Etiqueta no encontrada');
+    }
+
+    res.render('admin/edit-tag', { 
+      title: 'Editar Etiqueta', 
+      tag, 
+      layout: adminLayout 
+    });
+
+  } catch (error) {
+    console.error('Error obteniendo la etiqueta:', error);
+    res.status(500).send('Error interno del servidor');
+  }
+});
+
+
+/**
+ * PUT /edit-category/:id
+ * Admin - Actualizar Categoría
+ */
+router.put('/edit-category/:id', authMiddleware, async (req, res) => {
+  try {
+    const { name, description } = req.body;
+
+    if (!name) {
+      return res.status(400).send('El nombre de la categoría es obligatorio');
+    }
+
+    await Category.findByIdAndUpdate(req.params.id, {
+      name: name.trim(),
+      description: description ? description.trim() : '',
+    });
+
+    res.redirect('/dashboard/categories');
+  } catch (error) {
+    console.error('Error actualizando la categoría:', error);
+    res.status(500).send('Error interno del servidor');
+  }
+});
+
 
 /**
  * POST /add-post
@@ -219,6 +410,62 @@ router.post('/add-post', authMiddleware, async (req, res) => {
     res.status(500).send('Internal Server Error');
   }
 });
+
+/**
+ * POST /add-category
+ * Admin - Crear Nueva Categoría
+ */
+router.post('/add-category', authMiddleware, async (req, res) => {
+  try {
+    const { name, description } = req.body;
+
+    // Validar que el campo nombre no esté vacío
+    if (!name) {
+      return res.status(400).send('El nombre de la categoría es obligatorio');
+    }
+
+    // Verificar si la categoría ya existe
+    const existingCategory = await Category.findOne({ name: name.trim() });
+    if (existingCategory) {
+      return res.status(400).send('Esta categoría ya existe');
+    }
+
+    // Crear nueva categoría
+    const newCategory = new Category({
+      name: name.trim(),
+      description: description ? description.trim() : '',
+    });
+
+    await newCategory.save();
+    res.redirect('/dashboard/categories'); // Redirigir a la lista de categorías
+
+  } catch (error) {
+    console.error('Error al crear la categoría:', error);
+    res.status(500).send('Error interno del servidor');
+  }
+});
+
+/**
+ * DELETE /delete-category/:id
+ * Eliminar Categoría
+ */
+router.delete('/delete-category/:id', authMiddleware, async (req, res) => {
+  try {
+    const category = await Category.findById(req.params.id);
+    if (!category) {
+      return res.status(404).send('Categoría no encontrada');
+    }
+
+    await Category.findByIdAndDelete(req.params.id);
+    res.redirect('/dashboard/categories');
+
+  } catch (error) {
+    console.error('Error eliminando la categoría:', error);
+    res.status(500).send('Error interno del servidor');
+  }
+});
+
+
 
 /**
  * GET /edit-post/:id

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -152,40 +152,39 @@
 </head>
 <body>
 
-    <!-- Menú de navegación -->
-    <nav>
-        <div class="logo"><a href="/dashboard" style="color:white;">Admin Panel</a></div>
-        <div class="menu">
-            <a href="/dashboard">Inicio</a>
-            <a href="/dashboard/categories">Categorías</a>
-            <a href="/dashboard/tags">Tags</a>
-            <a href="/dashboard/logout">Logout</a>
-        </div>
-    </nav>
+<!-- Menú de navegación -->
+<nav>
+    <div class="logo"><a href="/dashboard" style="color:white;">Admin Panel</a></div>
+    <div class="menu">
+        <a href="/dashboard">Inicio</a>
+        <a href="/dashboard/categories">Categorías</a>
+        <a href="/dashboard/tags">Tags</a>
+        <a href="/dashboard/logout">Logout</a>
+    </div>
+</nav>
 
-    <!-- Contenido principal -->
     <div class="container">
         <div class="admin-title">
-            <h2>Tags</h2>
-            <a href="/add-tag" class="button">+ Añadir Nuevo</a>
+            <h2>Etiquetas</h2>
+            <a href="/add-tag" class="button">+ Añadir Nueva</a>
         </div>
 
         <ul class="admin-posts">
-            <% data.forEach(tag => { %>
+            <% tags.forEach(tag => { %>
                 <li>
-                    <a href="/tags/<%= tag._id %>">
-                        <%= tag.name %> &nearr;
-                    </a>
+                    <%= tag.name %>
                     <div class="admin-post-controls">
-                        <a href="/edit-tag/<%= tag._id %>" class="btn-edit btn" style="color:white;">Editar</a>
-                        
+                        <a href="/edit-tag/<%= tag._id %>" class="btn-edit btn">Editar</a>
+
                         <form action="/delete-tag/<%= tag._id %>?_method=DELETE" method="POST">
-                            <input type="submit" value="Eliminar" class="btn-delete btn">
+                            <button type="submit" class="btn-delete btn" onclick="return confirm('¿Seguro que deseas eliminar esta etiqueta?');">
+                                Eliminar
+                            </button>
                         </form>
                     </div>
                 </li>
             <% }) %>
-        </ul>  
+        </ul>
     </div>
 
 </body>
