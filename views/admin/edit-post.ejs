@@ -17,6 +17,36 @@
             flex-direction: column;
         }
 
+        /* Estilos para el menú */
+        nav {
+            width: 100%;
+            background: #1e3c72;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .menu {
+            display: flex;
+            gap: 20px;
+        }
+
+        .menu a {
+            color: white;
+            text-decoration: none;
+            font-size: 16px;
+            transition: color 0.3s ease;
+        }
+
+        .menu a:hover {
+            color: #f1c40f;
+        }
+
         .container {
             background: #ffffff;
             padding: 30px;
@@ -96,6 +126,8 @@
     </style>
 </head>
 <body>
+    <%- include('menu_top_admin') %>
+
 
     <div class="container">
         <h2>Editar Post</h2>
