@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Post = require('../models/Post');
 const User = require('../models/User');
+const Comment = require('../models/Comment');
 const Newsletter = require('../models/Newsletter');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -849,6 +850,144 @@ router.put('/edit-post/:id', authMiddleware, async (req, res) => {
 });
 
 
+// Obtener todos los comentarios y mostrar en la vista del dashboard
+router.get('/dashboard/comments', authMiddleware, async (req, res) => {
+  try {
+    const locals = {
+      title: 'Dashboard - Comments',
+      description: 'Manage your blog comments.'
+    };
+
+    // Obtener todos los comentarios con datos completos (post y comentario padre)
+    const data = await Comment.find()
+      .populate('postId', 'title') // Trae el título del post asociado
+      .populate('parentId', 'body author') // Trae información del comentario padre
+      .sort({ createdAt: -1 }); // Ordena por fecha descendente
+
+    res.render('admin/dashboard-comments', {
+      locals,
+      data,
+      layout: adminLayout
+    });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).send('Error al obtener los comentarios');
+  }
+});
+
+// Eliminar un comentario
+router.delete('/comments/:id', authMiddleware, async (req, res) => {
+  try {
+      await Comment.findByIdAndDelete(req.params.id);
+      res.redirect('/dashboard/comments'); // Redirige al dashboard después de borrar
+  } catch (error) {
+      console.error(error);
+      res.status(500).send('Error al eliminar el comentario');
+  }
+});
+
+// Mostrar la vista para añadir un nuevo comentario
+router.get('/add-comment', authMiddleware, async (req, res) => {
+  try {
+      const locals = {
+          title: 'Añadir Comentario',
+          description: 'Escribe un nuevo comentario'
+      };
+
+      // Obtener la lista de posts para asociar el comentario (opcional)
+      const posts = await Post.find({}, 'title'); // Solo obtener títulos y IDs
+
+      res.render('admin/add-comment', {
+          locals,
+          posts,  // Pasamos la lista de posts a la vista
+          layout: adminLayout
+      });
+
+  } catch (error) {
+      console.log(error);
+      res.status(500).send('Error al cargar la página de agregar comentario');
+  }
+});
+
+// Guardar un nuevo comentario
+router.post('/comments', authMiddleware, async (req, res) => {
+  try {
+      const { author, body, postId } = req.body;
+
+      // Crear el nuevo comentario
+      const newComment = new Comment({
+          author,
+          body,
+          postId: postId || null, // Si el usuario no selecciona un post, será null
+      });
+
+      await newComment.save();
+      res.redirect('/dashboard/comments'); // Redirigir al listado de comentarios
+
+  } catch (error) {
+      console.log(error);
+      res.status(500).send('Error al guardar el comentario');
+  }
+});
+
+// Editar un comentario
+router.put('/comments/edit/:id', authMiddleware, async (req, res) => {
+    try {
+        const { author, body, postId } = req.body;
+
+        const updatedComment = await Comment.findByIdAndUpdate(req.params.id, {
+            author,
+            body,
+            postId: postId || null, // Si el usuario no selecciona un post, lo deja en null
+        }, { new: true });
+
+        if (!updatedComment) {
+            return res.status(404).send('Comentario no encontrado');
+        }
+
+        res.redirect('/dashboard/comments'); // Redirigir al listado de comentarios después de editar
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Error al actualizar el comentario');
+    }
+});
+
+// Obtener un comentario por ID y cargar la vista de edición
+router.get('/dashboard/comments/edit/:id', authMiddleware, async (req, res) => {
+  try {
+      const { id } = req.params;
+
+      // Validar si el ID tiene el formato correcto de MongoDB
+      if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+          return res.status(400).send('ID de comentario no válido');
+      }
+
+      // Buscar el comentario con el ID proporcionado y popular el post asociado
+      const comment = await Comment.findById(id).populate('postId');
+      const posts = await Post.find({}, 'title'); // Obtener la lista de posts disponibles (opcional)
+
+      if (!comment) {
+          return res.status(404).send('Comentario no encontrado');
+      }
+
+      const locals = {
+          title: 'Editar Comentario',
+          description: 'Modifica el contenido del comentario'
+      };
+
+      res.render('admin/edit-comment', {
+          locals,
+          comment,
+          posts, // Lista de posts para asociar
+      });
+
+  } catch (error) {
+      console.error('❌ Error al cargar el comentario:', error);
+      res.status(500).send('Error al cargar la página de edición');
+  }
+});
 
 // router.post('/admin', async (req, res) => {
 //   try {

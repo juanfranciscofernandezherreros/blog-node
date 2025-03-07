@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Comentario</title>
+    <style>
+        /* Estilos globales */
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to right, #1e3c72, #2a5298);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            flex-direction: column;
+        }
+
+        .container {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+            margin-top: 80px;
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        label {
+            font-weight: bold;
+            width: 100%;
+            text-align: left;
+            margin-bottom: 5px;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            border-color: #1e3c72;
+            outline: none;
+            box-shadow: 0px 0px 5px rgba(30, 60, 114, 0.5);
+        }
+
+        .btn {
+            background: #1e3c72;
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background: #163c5a;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 15px;
+            color: #1e3c72;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Editar Comentario</h2>
+
+        <form action="/comments/edit/<%= comment._id %>?_method=PUT" method="POST">
+            
+            <label for="commentId">ID del Comentario:</label>
+            <input type="text" id="commentId" name="commentId" value="<%= comment._id %>" readonly>
+
+            <label for="createdAt">Fecha de Creación:</label>
+            <input type="text" id="createdAt" name="createdAt" value="<%= new Date(comment.createdAt).toLocaleString() %>" readonly>
+
+            <label for="author">Autor:</label>
+            <input type="text" id="author" name="author" value="<%= comment.author %>" required>
+
+            <label for="body">Comentario:</label>
+            <textarea id="body" name="body" rows="4" required><%= comment.body %></textarea>
+
+            <label for="postId">Asociar a un Post:</label>
+            <select id="postId" name="postId">
+                <option value="">-- Seleccionar Post --</option>
+                <% posts.forEach(post => { %>
+                    <option value="<%= post._id %>" <%= post._id.toString() === comment.postId?.toString() ? 'selected' : '' %>>
+                        <%= post.title %>
+                    </option>
+                <% }) %>
+            </select>
+
+            <label for="parentId">Comentario Padre (Opcional):</label>
+            <input type="text" id="parentId" name="parentId" value="<%= comment.parentId || '' %>">
+
+            <button type="submit" class="btn">Guardar Cambios</button>
+        </form>
+
+        <a href="/dashboard/comments" class="back-link">← Volver a Comentarios</a>
+    </div>
+
+</body>
+</html>

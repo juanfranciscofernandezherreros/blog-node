@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add New Post</title>
+    <title>Añadir Comentario</title>
     <style>
         /* Estilos globales */
         body {
@@ -124,26 +124,31 @@
             text-decoration: underline;
         }
     </style>
+    </style>
 </head>
-<body>
-
-    <%- include('menu_top_admin') %>
+<body>    <%- include('menu_top_admin') %>
 
 
     <div class="container">
-        <h2>Crear Nuevo Tag</h2>
-        <form action="/add-tag" method="POST">
-            <label for="name">Nombre de la Categoría:</label>
-            <input type="text" name="name" id="name" required>
+        <h2>Añadir Comentario</h2>
         
-            <label for="description">Descripción:</label>
-            <textarea name="description" id="description"></textarea>
-        
-            <button type="submit" class="btn">Crear TAG</button>
-        </form>
-        
+        <form action="/comments" method="POST">
+            <label for="author">Autor:</label>
+            <input type="text" id="author" name="author" required>
 
-        <a href="/dashboard/tags" class="back-link">← Volver al Dashboard</a>
+            <label for="body">Comentario:</label>
+            <textarea id="body" name="body" rows="4" required></textarea>
+
+            <label for="postId">Asociar a un Post:</label>
+            <select id="postId" name="postId">
+                <option value="">-- Seleccionar Post --</option>
+                <% posts.forEach(post => { %>
+                    <option value="<%= post._id %>"><%= post.title %></option>
+                <% }) %>
+            </select>
+
+            <button type="submit" class="button">Guardar Comentario</button>
+        </form>
     </div>
 
 </body>
