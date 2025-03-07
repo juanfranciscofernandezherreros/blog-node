@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Categories Dashboard</title>
+    <title>Users Dashboard</title>
     <style>
         /* Estilos globales */
         body {
@@ -17,7 +17,6 @@
             flex-direction: column;
         }
 
-        /* Estilos para el menú */
         nav {
             width: 100%;
             background: #1e3c72;
@@ -47,12 +46,6 @@
             color: #f1c40f;
         }
 
-        .logo {
-            font-size: 20px;
-            font-weight: bold;
-            color: white;
-        }
-
         .container {
             background: #ffffff;
             padding: 30px;
@@ -61,7 +54,7 @@
             width: 100%;
             max-width: 80%;
             text-align: center;
-            margin-top: 80px; /* Ajuste para que no quede oculto bajo el menú */
+            margin-top: 80px;
         }
 
         .admin-title {
@@ -110,12 +103,6 @@
             transform: translateX(5px);
         }
 
-        .admin-posts a {
-            text-decoration: none;
-            color: #1e3c72;
-            font-weight: bold;
-        }
-
         .admin-post-controls {
             display: flex;
             gap: 10px;
@@ -154,32 +141,29 @@
 
     <%- include('menu_top_admin') %>
 
-
-    <!-- Contenido principal -->
     <div class="container">
         <div class="admin-title">
-            <h2>Newsletters</h2>
-            <a href="/add-newsletter" class="button">+ Añadir Nueva</a>
+            <h2>Usuarios</h2>
+            <a href="/add-user" class="button">+ Añadir Nuevo Usuario</a>
         </div>
 
         <ul class="admin-posts">
-            <% data.forEach(newsletter => { %>
+            <% data.forEach(user => { %>
                 <li>
-                    <%= newsletter.email %>
+                    <span><strong>Nombre:</strong> <%= user.username %> | <strong>Email:</strong> <%= user.email %></span>
                     <div class="admin-post-controls">
+                        <a href="/dashboard/users/edit/<%= user._id %>" class="btn-edit btn">Editar</a>
 
-                        <a href="/dashboard/newsletter/edit/<%= newsletter._id %>" class="btn-edit btn" style="color:white;">Editar</a>
-
-                        <form action="/delete-newsletter/<%= newsletter.email %>?_method=DELETE" method="POST">
-                            <input type="submit" value="Eliminar" class="btn-delete btn">
+                        <form action="/dashboard/users/delete/<%= user._id %>?_method=DELETE" method="POST">
+                            <button type="submit" class="btn-delete btn" onclick="return confirm('¿Seguro que deseas eliminar este usuario?');">
+                                Eliminar
+                            </button>
                         </form>
                     </div>
                 </li>
             <% }) %>
         </ul>
-        
-        
-    </div>  
+    </div>
 
 </body>
 </html>

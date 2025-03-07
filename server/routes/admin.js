@@ -103,6 +103,98 @@ router.post('/dashboard/newsletter/add', async (req, res) => {
 });
 
 /**
+ * GET /dashboard/newsletter
+ * Mostrar todos los suscriptores
+ */
+router.get('/dashboard/newsletter', authMiddleware, async (req, res) => {
+  try {
+    const data = await Newsletter.find();
+    res.render('admin/dashboard-newsletter', { title: 'Users dashboard', data, layout: adminLayout });
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+/**
+ * GET /dashboard/users
+ * Mostrar todos los suscriptores
+ */
+router.get('/dashboard/users', authMiddleware, async (req, res) => {
+  try {
+    const data = await User.find();
+    res.render('admin/dashboard-users', { title: 'Users', data, layout: adminLayout });
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+/**
+ * POST /dashboard/newsletter/add
+ * Añadir un nuevo suscriptor
+ */
+router.post('/dashboard/newsletter/add', authMiddleware, async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).send('El email es obligatorio');
+    if (await Newsletter.findOne({ email })) return res.status(400).send('Este email ya está suscrito');
+    await Newsletter.create({ email });
+    res.redirect('/dashboard/newsletter');
+  } catch (error) {
+    console.error('Error al agregar suscriptor:', error);
+    res.status(500).send('Error interno del servidor');
+  }
+});
+
+/**
+ * GET /dashboard/newsletter/edit/:id
+ * Obtener un suscriptor para editar
+ */
+router.get('/dashboard/newsletter/edit/:id', authMiddleware, async (req, res) => {
+  try {
+    const subscriber = await Newsletter.findById(req.params.id);
+    if (!subscriber) return res.status(404).send('Suscriptor no encontrado');
+    res.render('admin/edit-newsletter', { subscriber, layout: adminLayout });
+  } catch (error) {
+    console.error('Error al obtener suscriptor:', error);
+    res.status(500).send('Error interno del servidor');
+  }
+});
+
+/**
+ * PUT /dashboard/newsletter/update/:id
+ * Actualizar un suscriptor
+ */
+router.put('/dashboard/newsletter/update/:id', authMiddleware, async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).send('El email es obligatorio');
+    await Newsletter.findByIdAndUpdate(req.params.id, { email });
+    res.redirect('/dashboard/newsletter');
+  } catch (error) {
+    console.error('Error al actualizar suscriptor:', error);
+    res.status(500).send('Error interno del servidor');
+  }
+});
+
+/**
+ * DELETE /delete-newsletter/:email
+ * Eliminar suscriptor
+ */
+router.delete('/delete-newsletter/:email', authMiddleware, async (req, res) => {
+  try {
+    const email = req.params.email.trim().toLowerCase();
+    if (!email) return res.status(400).json({ success: false, message: 'El email es obligatorio' });
+    const deletedSubscriber = await Newsletter.findOneAndDelete({ email });
+    if (!deletedSubscriber) return res.status(404).json({ success: false, message: 'Suscriptor no encontrado' });
+    res.redirect('/dashboard/newsletter');
+  } catch (error) {
+    console.error('Error al eliminar suscriptor:', error);
+    res.status(500).json({ success: false, message: 'Error interno del servidor' });
+  }
+});
+
+
+/**
  * GET /dashboard/newsletter/edit/:id
  * Obtener un suscriptor para editar
  */
@@ -300,6 +392,29 @@ router.get('/dashboard/categories', authMiddleware, async (req, res) => {
   }
 });
 
+router.post('/dashboard/users/add', authMiddleware, async (req, res) => {
+  try {
+    const { username, email, password } = req.body;
+
+    // Verifica si el usuario ya existe
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).send('El correo electrónico ya está registrado');
+    }
+
+    // Encripta la contraseña antes de guardarla
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    await User.create({ username, email, password: hashedPassword });
+
+    res.redirect('/dashboard/users');
+  } catch (error) {
+    console.error('Error creando usuario:', error);
+    res.status(500).send('Error interno del servidor');
+  }
+});
+
+
 /**
  * GET /add-tag
  * Admin - Formulario para añadir una nueva etiqueta
@@ -307,6 +422,18 @@ router.get('/dashboard/categories', authMiddleware, async (req, res) => {
 router.get('/add-tag', authMiddleware, async (req, res) => {
   try {
     res.render('admin/add-tags', { title: 'Añadir Etiqueta', layout: adminLayout });
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+/**
+ * GET /add-tag
+ * Admin - Formulario para añadir una nueva etiqueta
+ */
+router.get('/add-user', authMiddleware, async (req, res) => {
+  try {
+    res.render('admin/add-user', { title: 'Añadir Usuario', layout: adminLayout });
   } catch (error) {
     console.log(error);
   }
@@ -787,6 +914,49 @@ router.delete('/delete-post/:id', authMiddleware, async (req, res) => {
 router.get('/dashboard/logout', (req, res) => {
   res.clearCookie('token'); // Elimina la cookie del token
   res.redirect('/admin'); // Redirige al login
+});
+
+router.delete('/dashboard/users/delete/:id', authMiddleware, async (req, res) => {
+  try {
+    await User.findByIdAndDelete(req.params.id);
+    res.redirect('/dashboard/users');
+  } catch (error) {
+    console.error('Error eliminando usuario:', error);
+    res.status(500).send('Error interno del servidor');
+  }
+});
+
+
+router.get('/dashboard/users/edit/:id', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).send('Usuario no encontrado');
+
+    res.render('admin/edit-users', { user, layout: adminLayout });
+  } catch (error) {
+    console.error('Error obteniendo usuario:', error);
+    res.status(500).send('Error interno del servidor');
+  }
+});
+
+
+router.put('/dashboard/users/update/:id', authMiddleware, async (req, res) => {
+  try {
+    const { username, email, password } = req.body;
+
+    const updateData = { username, email };
+    if (password) {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      updateData.password = hashedPassword;
+    }
+
+    await User.findByIdAndUpdate(req.params.id, updateData);
+
+    res.redirect('/dashboard/users');
+  } catch (error) {
+    console.error('Error actualizando usuario:', error);
+    res.status(500).send('Error interno del servidor');
+  }
 });
 
 
