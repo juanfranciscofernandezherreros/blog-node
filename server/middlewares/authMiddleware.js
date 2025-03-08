@@ -1,38 +1,48 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const Role = require('../models/Role');
 const jwtSecret = process.env.JWT_SECRET;
 
 /**
- * ✅ Middleware para verificar si el usuario está autenticado
+ * Middleware para verificar si el usuario está autenticado.
  */
 const authenticateToken = async (req, res, next) => {
-  const token = req.cookies.token; // Obtener token desde cookies
+  const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
 
   if (!token) {
-    return res.status(401).json({ message: 'No autorizado. Inicia sesión.' });
+    return res.status(401).json({ message: "Token requerido" });
   }
 
   try {
     const decoded = jwt.verify(token, jwtSecret);
-    req.user = await User.findById(decoded.userId).select('-password'); // Obtener usuario sin la contraseña
-    if (!req.user) {
-      return res.status(404).json({ message: 'Usuario no encontrado' });
+    const user = await User.findById(decoded.userId).populate('roles');
+
+    if (!user) {
+      return res.status(401).json({ message: "Usuario no encontrado" });
     }
+
+    req.user = user;
     next();
   } catch (error) {
-    return res.status(401).json({ message: 'Token inválido o expirado' });
+    console.error("❌ Error en la autenticación:", error);
+    res.status(401).json({ message: "Token inválido o expirado" });
   }
 };
 
 /**
- * ✅ Middleware para verificar roles específicos
- * @param {Array} allowedRoles - Ej: ['admin', 'editor']
+ * Middleware para verificar si el usuario tiene al menos uno de los roles requeridos.
  */
-const authorizeRoles = (allowedRoles) => {
+const authorizeRoles = (roles) => {
   return (req, res, next) => {
-    if (!req.user || !allowedRoles.includes(req.user.role)) {
-      return res.status(403).json({ message: 'Acceso denegado. No tienes permisos.' });
+    if (!req.user) {
+      return res.status(401).json({ message: "Usuario no autenticado" });
     }
+
+    const userRoles = req.user.roles.map(role => role.name);
+    if (!roles.some(role => userRoles.includes(role))) {
+      return res.status(403).json({ message: "Acceso denegado" });
+    }
+
     next();
   };
 };

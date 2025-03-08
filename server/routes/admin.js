@@ -33,7 +33,7 @@ router.get('/admin', async (req, res) => {
  * GET /
  * Admin Dashboard
 */
-router.get('/dashboard', authenticateToken, authorizeRoles('admin'), async (req, res) => {
+router.get('/dashboard', authenticateToken, authorizeRoles(['admin']), async (req, res) => {
   try {
     const locals = {
       title: 'Dashboard',

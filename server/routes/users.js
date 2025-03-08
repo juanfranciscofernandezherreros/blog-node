@@ -1,8 +1,7 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const User = require('../models/User'); 
 const router = express.Router();
-const { authenticateToken } = require('../middlewares/authMiddleware');
+const { authenticateToken, authorizeRoles } = require('../middlewares/authMiddleware');
 
 /**
  * ✅ GET /users
@@ -10,6 +9,8 @@ const { authenticateToken } = require('../middlewares/authMiddleware');
  */
 router.get('/users', async (req, res) => {
   try {
+    console.log("📌 Se ha solicitado la lista de usuarios.");
+
     const perPage = req.app.locals.perPage || 10;
     let page = parseInt(req.query.page) || 1;
 
@@ -22,19 +23,20 @@ router.get('/users', async (req, res) => {
     const count = await User.countDocuments();
     const totalPages = Math.ceil(count / perPage);
     
-    res.render('users', {
-      title: "Lista de Usuarios",
+    console.log(`✅ Usuarios obtenidos: ${users.length} (Página ${page}/${totalPages})`);
+    
+    res.json({
+      message: "Lista de usuarios obtenida correctamente",
       users,
       currentPage: page,
       totalPages,
       hasNextPage: page < totalPages,
       hasPrevPage: page > 1,
-      currentRoute: '/users'
     });
 
   } catch (error) {
     console.error("❌ Error al obtener la lista de usuarios:", error);
-    res.status(500).render('500', { title: "Error del servidor" });
+    res.status(500).json({ message: "Error interno del servidor" });
   }
 });
 
@@ -45,21 +47,24 @@ router.get('/users', async (req, res) => {
 router.get('/users/:username', async (req, res) => {
   try {
     const { username } = req.params;
+    console.log(`📌 Se ha solicitado el perfil del usuario: ${username}`);
+
     const user = await User.findOne({ username: new RegExp(`^${username}$`, 'i') }).select('-password');
 
     if (!user) {
-      return res.status(404).render('404', { title: "Usuario no encontrado" });
+      console.log(`❌ Usuario no encontrado: ${username}`);
+      return res.status(404).json({ message: "Usuario no encontrado" });
     }
 
-    res.render('user_detail', {
-      title: `Perfil de ${user.username}`,
+    console.log(`✅ Usuario encontrado: ${user.username}`);
+    res.json({
+      message: `Perfil del usuario ${user.username}`,
       user,
-      currentRoute: `/users/${user.username}`
     });
 
   } catch (error) {
     console.error("❌ Error al obtener los detalles del usuario:", error);
-    res.status(500).render('500', { title: "Error del servidor" });
+    res.status(500).json({ message: "Error interno del servidor" });
   }
 });
 
@@ -69,10 +74,85 @@ router.get('/users/:username', async (req, res) => {
  */
 router.get('/profile', authenticateToken, async (req, res) => {
   try {
-    const user = req.user; // El usuario ya está en req.user gracias a authenticateToken
-    res.render('profile', { title: 'Mi Perfil', user });
+    console.log(`📌 Perfil solicitado por el usuario autenticado: ${req.user.username}`);
+    
+    res.json({
+      message: "Perfil del usuario autenticado",
+      user: req.user
+    });
+
   } catch (error) {
-    console.log('Error obteniendo perfil:', error);
+    console.error("❌ Error obteniendo perfil:", error);
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
+});
+
+/**
+ * ✅ GET /administrator
+ * Solo los administradores pueden acceder.
+ */
+router.get('/administrator', authenticateToken, authorizeRoles(['admin']), async (req, res) => {
+  try {
+    console.log("📌 Acceso al panel de administrador:", req.user);
+    res.json({ message: "Bienvenido al panel de administrador", user: req.user });
+  } catch (error) {
+    console.error("❌ Error en el acceso de administrador:", error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+/**
+ * ✅ GET /editor
+ * Solo los editores pueden acceder.
+ */
+router.get('/editor', authenticateToken, authorizeRoles(['editor','admin']), async (req, res) => {
+  try {
+    console.log("📌 Acceso al panel de editores:", req.user);
+    res.json({ message: "Bienvenido al panel de editores", user: req.user });
+  } catch (error) {
+    console.error("❌ Error en el acceso de editor:", error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+/**
+ * ✅ GET /instructor
+ * Solo los instructores pueden acceder.
+ */
+router.get('/instructor', authenticateToken, authorizeRoles(['instructor','admin']), async (req, res) => {
+  try {
+    console.log("📌 Acceso al panel de instructores:", req.user);
+    res.json({ message: "Bienvenido al panel de instructores", user: req.user });
+  } catch (error) {
+    console.error("❌ Error en el acceso de instructor:", error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+/**
+ * ✅ GET /student
+ * Solo los estudiantes pueden acceder.
+ */
+router.get('/student', authenticateToken, authorizeRoles(['student','admin']), async (req, res) => {
+  try {
+    console.log("📌 Acceso al panel de estudiantes:", req.user);
+    res.json({ message: "Bienvenido al panel de estudiantes", user: req.user });
+  } catch (error) {
+    console.error("❌ Error en el acceso de estudiante:", error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+/**
+ * ✅ GET /classroom
+ * Tanto estudiantes como instructores pueden acceder.
+ */
+router.get('/classroom', authenticateToken, authorizeRoles(['student', 'instructor','admin']), async (req, res) => {
+  try {
+    console.log("📌 Acceso al aula virtual (solo estudiantes e instructores):", req.user);
+    res.json({ message: "Bienvenido al aula virtual", user: req.user });
+  } catch (error) {
+    console.error("❌ Error en el acceso al aula virtual:", error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });

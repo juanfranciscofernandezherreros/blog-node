@@ -5,11 +5,7 @@ const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true, trim: true },
   email: { type: String, required: true, unique: true, trim: true },
   password: { type: String, required: true },
-  role: { 
-    type: String, 
-    enum: ['admin', 'editor', 'user'], // Solo permite estos valores
-    default: 'user' // Valor por defecto
-  },
+  roles: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Role' }], // Relación Many-to-Many con roles
   posts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }],
   createdAt: { type: Date, default: Date.now }
 });
