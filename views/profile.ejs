@@ -1,0 +1,25 @@
+
+<div class="container">
+  <h1>Mi Perfil</h1>
+
+  <table class="table">
+    <tr>
+      <th>Usuario:</th>
+      <td><%= user.username %></td>
+    </tr>
+    <tr>
+      <th>Email:</th>
+      <td><%= user.email %></td>
+    </tr>
+    <tr>
+      <th>Rol:</th>
+      <td><%= user.role %></td>
+    </tr>
+    <tr>
+      <th>Fecha de Creación:</th>
+      <td><%= new Date(user.createdAt).toLocaleDateString() %></td>
+    </tr>
+  </table>
+
+</div>
+

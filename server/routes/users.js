@@ -1,44 +1,34 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const User = require('../models/User'); // Asegúrate de tener este modelo
-
+const User = require('../models/User'); 
 const router = express.Router();
+const { authenticateToken } = require('../middlewares/authMiddleware');
 
 /**
- * GET /users
- * Lista todos los usuarios con paginación
+ * ✅ GET /users
+ * Lista todos los usuarios con paginación (Accesible por todos)
  */
-router.get('/', async (req, res) => {
+router.get('/users', async (req, res) => {
   try {
-    const perPage = req.app.locals.perPage || 10; // Usuarios por página
+    const perPage = req.app.locals.perPage || 10;
     let page = parseInt(req.query.page) || 1;
 
-    // Obtener usuarios con paginación
     const users = await User.find()
-      .sort({ createdAt: -1 }) // Ordenar por fecha de creación descendente
+      .sort({ createdAt: -1 })
       .skip(perPage * (page - 1))
       .limit(perPage)
       .exec();
 
-    // Contar total de usuarios
     const count = await User.countDocuments();
-
     const totalPages = Math.ceil(count / perPage);
-    const hasNextPage = page < totalPages;
-    const hasPrevPage = page > 1;
-
-    const locals = {
-      title: "Lista de Usuarios",
-      description: "Lista de todos los usuarios registrados en el sistema."
-    };
-
+    
     res.render('users', {
-      locals,
+      title: "Lista de Usuarios",
       users,
       currentPage: page,
       totalPages,
-      hasNextPage,
-      hasPrevPage,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
       currentRoute: '/users'
     });
 
@@ -49,15 +39,13 @@ router.get('/', async (req, res) => {
 });
 
 /**
- * GET /users/:username
- * Obtiene los detalles de un usuario por su username
+ * ✅ GET /users/:username
+ * Obtiene los detalles de un usuario por su username (Accesible por todos)
  */
-router.get('/:username', async (req, res) => {
+router.get('/users/:username', async (req, res) => {
   try {
     const { username } = req.params;
-
-    // Buscar usuario por username (insensible a mayúsculas y minúsculas)
-    const user = await User.findOne({ username: new RegExp(`^${username}$`, 'i') });
+    const user = await User.findOne({ username: new RegExp(`^${username}$`, 'i') }).select('-password');
 
     if (!user) {
       return res.status(404).render('404', { title: "Usuario no encontrado" });
@@ -72,6 +60,20 @@ router.get('/:username', async (req, res) => {
   } catch (error) {
     console.error("❌ Error al obtener los detalles del usuario:", error);
     res.status(500).render('500', { title: "Error del servidor" });
+  }
+});
+
+/**
+ * ✅ GET /profile
+ * Muestra el perfil del usuario autenticado (Solo autenticados pueden acceder)
+ */
+router.get('/profile', authenticateToken, async (req, res) => {
+  try {
+    const user = req.user; // El usuario ya está en req.user gracias a authenticateToken
+    res.render('profile', { title: 'Mi Perfil', user });
+  } catch (error) {
+    console.log('Error obteniendo perfil:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
   }
 });
 

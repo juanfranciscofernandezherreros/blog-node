@@ -10,28 +10,7 @@ const Category = require('../models/Category'); // Importa el modelo
 const Tag = require('../models/Tags'); // Importa el modelo
 const adminLayout = '../views/layouts/admin';
 const jwtSecret = process.env.JWT_SECRET;
-
-
-/**
- * 
- * Check Login
-*/
-const authMiddleware = (req, res, next ) => {
-  const token = req.cookies.token;
-
-  if(!token) {
-    return res.status(401).json( { message: 'Unauthorized'} );
-  }
-
-  try {
-    const decoded = jwt.verify(token, jwtSecret);
-    req.userId = decoded.userId;
-    next();
-  } catch(error) {
-    res.status(401).json( { message: 'Unauthorized'} );
-  }
-}
-
+const { authenticateToken, authorizeRoles } = require('../middlewares/authMiddleware');
 
 /**
  * GET /
@@ -51,10 +30,34 @@ router.get('/admin', async (req, res) => {
 });
 
 /**
+ * GET /
+ * Admin Dashboard
+*/
+router.get('/dashboard', authenticateToken, authorizeRoles('admin'), async (req, res) => {
+  try {
+    const locals = {
+      title: 'Dashboard',
+      description: 'Simple Blog created with NodeJs, Express & MongoDb.'
+    }
+
+    const data = await Post.find();
+    res.render('admin/dashboard', {
+      locals,
+      data,
+      layout: adminLayout
+    });
+
+  } catch (error) {
+    console.log(error);
+  }
+
+});
+
+/**
  * GET /dashboard/newsletter
  * Mostrar todos los suscriptores
  */
-router.get('/dashboard/newsletter', authMiddleware, async (req, res) => {
+router.get('/dashboard/newsletter', authenticateToken, async (req, res) => {
   try {
     const locals = {
       title: 'Dashboard - Newsletter',
@@ -107,7 +110,7 @@ router.post('/dashboard/newsletter/add', async (req, res) => {
  * GET /dashboard/newsletter
  * Mostrar todos los suscriptores
  */
-router.get('/dashboard/newsletter', authMiddleware, async (req, res) => {
+router.get('/dashboard/newsletter', authenticateToken, async (req, res) => {
   try {
     const data = await Newsletter.find();
     res.render('admin/dashboard-newsletter', { title: 'Users dashboard', data, layout: adminLayout });
@@ -120,7 +123,7 @@ router.get('/dashboard/newsletter', authMiddleware, async (req, res) => {
  * GET /dashboard/users
  * Mostrar todos los suscriptores
  */
-router.get('/dashboard/users', authMiddleware, async (req, res) => {
+router.get('/dashboard/users', authenticateToken, async (req, res) => {
   try {
     const data = await User.find();
     res.render('admin/dashboard-users', { title: 'Users', data, layout: adminLayout });
@@ -133,7 +136,7 @@ router.get('/dashboard/users', authMiddleware, async (req, res) => {
  * POST /dashboard/newsletter/add
  * Añadir un nuevo suscriptor
  */
-router.post('/dashboard/newsletter/add', authMiddleware, async (req, res) => {
+router.post('/dashboard/newsletter/add', authenticateToken, async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) return res.status(400).send('El email es obligatorio');
@@ -150,7 +153,7 @@ router.post('/dashboard/newsletter/add', authMiddleware, async (req, res) => {
  * GET /dashboard/newsletter/edit/:id
  * Obtener un suscriptor para editar
  */
-router.get('/dashboard/newsletter/edit/:id', authMiddleware, async (req, res) => {
+router.get('/dashboard/newsletter/edit/:id', authenticateToken, async (req, res) => {
   try {
     const subscriber = await Newsletter.findById(req.params.id);
     if (!subscriber) return res.status(404).send('Suscriptor no encontrado');
@@ -165,7 +168,7 @@ router.get('/dashboard/newsletter/edit/:id', authMiddleware, async (req, res) =>
  * PUT /dashboard/newsletter/update/:id
  * Actualizar un suscriptor
  */
-router.put('/dashboard/newsletter/update/:id', authMiddleware, async (req, res) => {
+router.put('/dashboard/newsletter/update/:id', authenticateToken, async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) return res.status(400).send('El email es obligatorio');
@@ -181,7 +184,7 @@ router.put('/dashboard/newsletter/update/:id', authMiddleware, async (req, res) 
  * DELETE /delete-newsletter/:email
  * Eliminar suscriptor
  */
-router.delete('/delete-newsletter/:email', authMiddleware, async (req, res) => {
+router.delete('/delete-newsletter/:email', authenticateToken, async (req, res) => {
   try {
     const email = req.params.email.trim().toLowerCase();
     if (!email) return res.status(400).json({ success: false, message: 'El email es obligatorio' });
@@ -278,23 +281,19 @@ router.delete('/dashboard/newsletter/:id', async (req, res) => {
  * POST /
  * Admin - Check Login
 */
+/**
+ * ✅ Ruta de Login
+ */
 router.post('/admin', async (req, res) => {
   try {
     const { username, password } = req.body;
-    
-    const user = await User.findOne( { username } );
+    const user = await User.findOne({ username });
 
-    if(!user) {
-      return res.status(401).json( { message: 'Invalid credentials' } );
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return res.status(401).json({ message: 'Credenciales inválidas' });
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-
-    if(!isPasswordValid) {
-      return res.status(401).json( { message: 'Invalid credentials' } );
-    }
-
-    const token = jwt.sign({ userId: user._id}, jwtSecret );
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
     res.cookie('token', token, { httpOnly: true });
     res.redirect('/dashboard');
 
@@ -305,34 +304,10 @@ router.post('/admin', async (req, res) => {
 
 
 /**
- * GET /
- * Admin Dashboard
-*/
-router.get('/dashboard', authMiddleware, async (req, res) => {
-  try {
-    const locals = {
-      title: 'Dashboard',
-      description: 'Simple Blog created with NodeJs, Express & MongoDb.'
-    }
-
-    const data = await Post.find();
-    res.render('admin/dashboard', {
-      locals,
-      data,
-      layout: adminLayout
-    });
-
-  } catch (error) {
-    console.log(error);
-  }
-
-});
-
-/**
  * GET /dashboard/tags
  * Tags Dashboard
  */
-router.get('/dashboard/tags', authMiddleware, async (req, res) => {
+router.get('/dashboard/tags', authenticateToken, async (req, res) => {
   try {
     const locals = {
       title: 'Dashboard - Tags',
@@ -357,7 +332,7 @@ router.get('/dashboard/tags', authMiddleware, async (req, res) => {
  * DELETE /delete-tag/:id
  * Eliminar etiqueta
  */
-router.delete('/delete-tag/:id', authMiddleware, async (req, res) => {
+router.delete('/delete-tag/:id', authenticateToken, async (req, res) => {
   try {
     await Tag.findByIdAndDelete(req.params.id);
     res.redirect('/dashboard/tags');
@@ -372,7 +347,7 @@ router.delete('/delete-tag/:id', authMiddleware, async (req, res) => {
  * GET /dashboard/categories
  * Categories Dashboard
  */
-router.get('/dashboard/categories', authMiddleware, async (req, res) => {
+router.get('/dashboard/categories', authenticateToken, async (req, res) => {
   try {
     const locals = {
       title: 'Dashboard - Categories',
@@ -393,7 +368,7 @@ router.get('/dashboard/categories', authMiddleware, async (req, res) => {
   }
 });
 
-router.post('/dashboard/users/add', authMiddleware, async (req, res) => {
+router.post('/dashboard/users/add', authenticateToken, async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
@@ -420,7 +395,7 @@ router.post('/dashboard/users/add', authMiddleware, async (req, res) => {
  * GET /add-tag
  * Admin - Formulario para añadir una nueva etiqueta
  */
-router.get('/add-tag', authMiddleware, async (req, res) => {
+router.get('/add-tag', authenticateToken, async (req, res) => {
   try {
     res.render('admin/add-tags', { title: 'Añadir Etiqueta', layout: adminLayout });
   } catch (error) {
@@ -432,7 +407,7 @@ router.get('/add-tag', authMiddleware, async (req, res) => {
  * GET /add-tag
  * Admin - Formulario para añadir una nueva etiqueta
  */
-router.get('/add-user', authMiddleware, async (req, res) => {
+router.get('/add-user', authenticateToken, async (req, res) => {
   try {
     res.render('admin/add-user', { title: 'Añadir Usuario', layout: adminLayout });
   } catch (error) {
@@ -444,7 +419,7 @@ router.get('/add-user', authMiddleware, async (req, res) => {
  * GET /add-newsletter
  * Admin - Formulario para añadir una nueva etiqueta
  */
-router.get('/add-newsletter', authMiddleware, async (req, res) => {
+router.get('/add-newsletter', authenticateToken, async (req, res) => {
   try {
     res.render('admin/add-newsletter', { title: 'Añadir Newsletter', layout: adminLayout });
   } catch (error) {
@@ -452,7 +427,7 @@ router.get('/add-newsletter', authMiddleware, async (req, res) => {
   }
 });
 
-router.post('/add-newsletter', authMiddleware, async (req, res) => {
+router.post('/add-newsletter', authenticateToken, async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) {
@@ -476,7 +451,7 @@ router.post('/add-newsletter', authMiddleware, async (req, res) => {
   }
 });
 
-router.delete('/delete-newsletter/:email', authMiddleware, async (req, res) => {
+router.delete('/delete-newsletter/:email', authenticateToken, async (req, res) => {
   try {
     const email = req.params.email.trim().toLowerCase();
 
@@ -499,7 +474,7 @@ router.delete('/delete-newsletter/:email', authMiddleware, async (req, res) => {
 });
 
 
-router.post('/add-tag', authMiddleware, async (req, res) => {
+router.post('/add-tag', authenticateToken, async (req, res) => {
   try {
     const { name, description } = req.body;
     if (!name) {
@@ -527,7 +502,7 @@ router.post('/add-tag', authMiddleware, async (req, res) => {
  * GET /add-post
  * Admin - Formulario para crear un nuevo post
  */
-router.get('/add-post', authMiddleware, async (req, res) => {
+router.get('/add-post', authenticateToken, async (req, res) => {
   try {
     const locals = {
       title: 'Add Post',
@@ -555,7 +530,7 @@ router.get('/add-post', authMiddleware, async (req, res) => {
  * GET /add-post
  * Admin - Formulario para crear una nueva categoria
  */
-router.get('/add-category', authMiddleware, async (req, res) => {
+router.get('/add-category', authenticateToken, async (req, res) => {
   try {
     const locals = {
       title: 'Add Category',
@@ -583,7 +558,7 @@ router.get('/add-category', authMiddleware, async (req, res) => {
  * GET /edit-category/:id
  * Admin - Formulario para editar una categoría
  */
-router.get('/edit-category/:id', authMiddleware, async (req, res) => {
+router.get('/edit-category/:id', authenticateToken, async (req, res) => {
   try {
     const category = await Category.findById(req.params.id);
     if (!category) {
@@ -606,7 +581,7 @@ router.get('/edit-category/:id', authMiddleware, async (req, res) => {
  * GET /edit-tag/:id
  * Admin - Formulario para editar una etiqueta
  */
-router.get('/edit-tag/:id', authMiddleware, async (req, res) => {
+router.get('/edit-tag/:id', authenticateToken, async (req, res) => {
   try {
     const tag = await Tag.findById(req.params.id);
     if (!tag) {
@@ -625,7 +600,7 @@ router.get('/edit-tag/:id', authMiddleware, async (req, res) => {
  * PUT /edit-tag/:id
  * Admin - Actualizar etiqueta
  */
-router.put('/edit-tag/:id', authMiddleware, async (req, res) => {
+router.put('/edit-tag/:id', authenticateToken, async (req, res) => {
   try {
     const { name } = req.body;
 
@@ -646,7 +621,7 @@ router.put('/edit-tag/:id', authMiddleware, async (req, res) => {
  * GET /edit-tag/:id
  * Admin - Formulario para editar una etiqueta
  */
-router.get('/edit-tag/:id', authMiddleware, async (req, res) => {
+router.get('/edit-tag/:id', authenticateToken, async (req, res) => {
   try {
     const tag = await Tag.findById(req.params.id);
     if (!tag) {
@@ -670,7 +645,7 @@ router.get('/edit-tag/:id', authMiddleware, async (req, res) => {
  * PUT /edit-category/:id
  * Admin - Actualizar Categoría
  */
-router.put('/edit-category/:id', authMiddleware, async (req, res) => {
+router.put('/edit-category/:id', authenticateToken, async (req, res) => {
   try {
     const { name, description } = req.body;
 
@@ -695,7 +670,7 @@ router.put('/edit-category/:id', authMiddleware, async (req, res) => {
  * POST /add-post
  * Admin - Crear Nuevo Post
  */
-router.post('/add-post', authMiddleware, async (req, res) => {
+router.post('/add-post', authenticateToken, async (req, res) => {
   try {
     // Validación básica
     if (!req.body.title || !req.body.summary || !req.body.body || !req.body.category || !req.body.publishDate) {
@@ -733,7 +708,7 @@ router.post('/add-post', authMiddleware, async (req, res) => {
  * POST /add-category
  * Admin - Crear Nueva Categoría
  */
-router.post('/add-category', authMiddleware, async (req, res) => {
+router.post('/add-category', authenticateToken, async (req, res) => {
   try {
     const { name, description } = req.body;
 
@@ -767,7 +742,7 @@ router.post('/add-category', authMiddleware, async (req, res) => {
  * DELETE /delete-category/:id
  * Eliminar Categoría
  */
-router.delete('/delete-category/:id', authMiddleware, async (req, res) => {
+router.delete('/delete-category/:id', authenticateToken, async (req, res) => {
   try {
     const category = await Category.findById(req.params.id);
     if (!category) {
@@ -789,7 +764,7 @@ router.delete('/delete-category/:id', authMiddleware, async (req, res) => {
  * GET /edit-post/:id
  * Admin - Editar un post existente
  */
-router.get('/edit-post/:id', authMiddleware, async (req, res) => {
+router.get('/edit-post/:id', authenticateToken, async (req, res) => {
   try {
     const locals = {
       title: "Edit Post",
@@ -823,7 +798,7 @@ router.get('/edit-post/:id', authMiddleware, async (req, res) => {
  * PUT /edit-post/:id
  * Admin - Actualizar un post existente
  */
-router.put('/edit-post/:id', authMiddleware, async (req, res) => {
+router.put('/edit-post/:id', authenticateToken, async (req, res) => {
   try {
     let tagsArray = [];
     if (Array.isArray(req.body.tags)) {
@@ -851,7 +826,7 @@ router.put('/edit-post/:id', authMiddleware, async (req, res) => {
 
 
 // Obtener todos los comentarios y mostrar en la vista del dashboard
-router.get('/dashboard/comments', authMiddleware, async (req, res) => {
+router.get('/dashboard/comments', authenticateToken, async (req, res) => {
   try {
     const locals = {
       title: 'Dashboard - Comments',
@@ -877,7 +852,7 @@ router.get('/dashboard/comments', authMiddleware, async (req, res) => {
 });
 
 // Eliminar un comentario
-router.delete('/comments/:id', authMiddleware, async (req, res) => {
+router.delete('/comments/:id', authenticateToken, async (req, res) => {
   try {
       await Comment.findByIdAndDelete(req.params.id);
       res.redirect('/dashboard/comments'); // Redirige al dashboard después de borrar
@@ -888,7 +863,7 @@ router.delete('/comments/:id', authMiddleware, async (req, res) => {
 });
 
 // Mostrar la vista para añadir un nuevo comentario
-router.get('/add-comment', authMiddleware, async (req, res) => {
+router.get('/add-comment', authenticateToken, async (req, res) => {
   try {
       const locals = {
           title: 'Añadir Comentario',
@@ -911,7 +886,7 @@ router.get('/add-comment', authMiddleware, async (req, res) => {
 });
 
 // Guardar un nuevo comentario
-router.post('/comments', authMiddleware, async (req, res) => {
+router.post('/comments', authenticateToken, async (req, res) => {
   try {
       const { author, body, postId } = req.body;
 
@@ -932,7 +907,7 @@ router.post('/comments', authMiddleware, async (req, res) => {
 });
 
 // Editar un comentario
-router.put('/comments/edit/:id', authMiddleware, async (req, res) => {
+router.put('/comments/edit/:id', authenticateToken, async (req, res) => {
     try {
         const { author, body, postId } = req.body;
 
@@ -955,7 +930,7 @@ router.put('/comments/edit/:id', authMiddleware, async (req, res) => {
 });
 
 // Obtener un comentario por ID y cargar la vista de edición
-router.get('/dashboard/comments/edit/:id', authMiddleware, async (req, res) => {
+router.get('/dashboard/comments/edit/:id', authenticateToken, async (req, res) => {
   try {
       const { id } = req.params;
 
@@ -1034,7 +1009,7 @@ router.post('/register', async (req, res) => {
  * DELETE /
  * Admin - Delete Post
 */
-router.delete('/delete-post/:id', authMiddleware, async (req, res) => {
+router.delete('/delete-post/:id', authenticateToken, async (req, res) => {
 
   try {
     await Post.deleteOne( { _id: req.params.id } );
@@ -1055,7 +1030,7 @@ router.get('/dashboard/logout', (req, res) => {
   res.redirect('/admin'); // Redirige al login
 });
 
-router.delete('/dashboard/users/delete/:id', authMiddleware, async (req, res) => {
+router.delete('/dashboard/users/delete/:id', authenticateToken, async (req, res) => {
   try {
     await User.findByIdAndDelete(req.params.id);
     res.redirect('/dashboard/users');
@@ -1066,7 +1041,7 @@ router.delete('/dashboard/users/delete/:id', authMiddleware, async (req, res) =>
 });
 
 
-router.get('/dashboard/users/edit/:id', authMiddleware, async (req, res) => {
+router.get('/dashboard/users/edit/:id', authenticateToken, async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).send('Usuario no encontrado');
@@ -1079,7 +1054,7 @@ router.get('/dashboard/users/edit/:id', authMiddleware, async (req, res) => {
 });
 
 
-router.put('/dashboard/users/update/:id', authMiddleware, async (req, res) => {
+router.put('/dashboard/users/update/:id', authenticateToken, async (req, res) => {
   try {
     const { username, email, password } = req.body;
 

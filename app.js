@@ -164,7 +164,7 @@ app.locals.isActiveRoute = isActiveRoute;
 // 📌 Rutas
 app.use('/', require('./server/routes/main'));
 app.use('/', require('./server/routes/admin'));
-app.use('/users', require('./server/routes/users'));
+app.use('/', require('./server/routes/users'));
 
 // Middleware para manejar rutas no encontradas (404)
 app.use((req, res) => {
