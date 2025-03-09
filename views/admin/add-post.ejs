@@ -132,7 +132,7 @@
 
     <div class="container">
         <h2>Crear Nuevo Post</h2>
-        <form action="/add-post" method="POST">
+        <form action="/dashboard/add-post" method="POST">
             <label for="title">Título:</label>
             <input type="text" name="title" id="title" required>
 
@@ -159,6 +159,7 @@
 
             <label for="publishDate">Fecha de Publicación:</label>
             <input type="date" name="publishDate" id="publishDate" required>
+            <p>Estás creando un post como: <strong><%= user.username %></strong></p>
 
             <button type="submit" class="btn">Crear Post</button>
         </form>

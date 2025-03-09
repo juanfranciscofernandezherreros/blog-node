@@ -157,14 +157,20 @@ app.use(async (req, res, next) => {
 // 📌 Configurar el motor de plantillas
 app.use(expressLayout);
 app.set('layout', './layouts/main');
-app.set('view engine', 'ejs'); 
+app.set('view engine', 'ejs');
 
 app.locals.isActiveRoute = isActiveRoute;
 
 // 📌 Rutas
 app.use('/', require('./server/routes/main'));
 app.use('/', require('./server/routes/admin'));
-app.use('/', require('./server/routes/users'));
+app.use('/dashboard/', require('./server/routes/posts'));
+app.use('/dashboard/newsletter', require('./server/routes/newsletter'));
+app.use('/dashboard/users', require('./server/routes/users'));
+app.use('/dashboard/tags', require('./server/routes/tags'));
+app.use('/dashboard/categories', require('./server/routes/categories'));
+app.use('/dashboard/comments', require('./server/routes/comments'));
+
 
 // Middleware para manejar rutas no encontradas (404)
 app.use((req, res) => {

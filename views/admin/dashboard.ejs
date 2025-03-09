@@ -159,7 +159,7 @@
     <div class="container">
         <div class="admin-title">
             <h2>Posts</h2>
-            <a href="/add-post" class="button">+ Add New</a>
+            <a href="/dashboard/add-post" class="button">+ Add New</a>
         </div>
 
         <ul class="admin-posts">
@@ -169,9 +169,9 @@
                         <%= post.title %> &nearr;
                     </a>
                     <div class="admin-post-controls">
-                        <a href="/edit-post/<%= post._id %>" class="btn-edit btn" style="color:white;">Edit</a>
+                        <a href="/dashboard/edit-post/<%= post._id %>" class="btn-edit btn" style="color:white;">Edit</a>
                         
-                        <form action="/delete-post/<%= post._id %>?_method=DELETE" method="POST">
+                        <form action="/dashboard/delete-post/<%= post._id %>?_method=DELETE" method="POST">
                             <input type="submit" value="Delete" class="btn-delete btn">
                         </form>
                     </div>

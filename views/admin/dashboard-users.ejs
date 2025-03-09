@@ -143,27 +143,58 @@
 
     <div class="container">
         <div class="admin-title">
-            <h2>Usuarios</h2>
-            <a href="/add-user" class="button">+ Añadir Nuevo Usuario</a>
+          <h2>Usuarios</h2>
+          <a href="/add-user" class="button">+ Añadir Nuevo Usuario</a>
         </div>
-
-        <ul class="admin-posts">
+        
+      
+        <table border="1" cellspacing="0" cellpadding="8" style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="background-color: #1e3c72; color: white;">
+              <th>Nombre de Usuario</th>
+              <th>Email</th>
+              <th>Roles</th>
+              <th>Posts</th>
+              <th>Creado el</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
             <% data.forEach(user => { %>
-                <li>
-                    <span><strong>Nombre:</strong> <%= user.username %> | <strong>Email:</strong> <%= user.email %></span>
-                    <div class="admin-post-controls">
-                        <a href="/dashboard/users/edit/<%= user._id %>" class="btn-edit btn">Editar</a>
-
-                        <form action="/dashboard/users/delete/<%= user._id %>?_method=DELETE" method="POST">
-                            <button type="submit" class="btn-delete btn" onclick="return confirm('¿Seguro que deseas eliminar este usuario?');">
-                                Eliminar
-                            </button>
-                        </form>
-                    </div>
-                </li>
+              <tr>
+                <td><%= user.username %></td>
+                <td><%= user.email %></td>
+                <td>
+                  <% if (user.roles && user.roles.length > 0) { %>
+                    <% user.roles.forEach(role => { %>
+                      <span style="display:inline-block; background-color:#f1c40f; padding:3px 6px; border-radius:4px; margin-right:5px;"><%= role.name %></span>
+                    <% }) %>
+                  <% } else { %>
+                    <em>Sin roles</em>
+                  <% } %>
+                </td>
+                <td>
+                  <% if (user.posts && user.posts.length > 0) { %>
+                    <%= user.posts.length %> post(s)
+                  <% } else { %>
+                    <em>Sin posts</em>
+                  <% } %>
+                </td>
+                <td><%= new Date(user.createdAt).toLocaleString('es-ES') %></td>
+                <td>
+                  <a href="/dashboard/users/edit/<%= user._id %>" class="btn-edit btn">Editar</a>
+      
+                  <form action="/dashboard/users/delete/<%= user._id %>?_method=DELETE" method="POST" style="display:inline;">
+                    <button type="submit" class="btn-delete btn" onclick="return confirm('¿Seguro que deseas eliminar este usuario?');">
+                      Eliminar
+                    </button>
+                  </form>
+                </td>
+              </tr>
             <% }) %>
-        </ul>
-    </div>
+          </tbody>
+        </table>
+      </div>
 
 </body>
 </html>
