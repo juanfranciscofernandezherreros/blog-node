@@ -138,24 +138,7 @@ router.get('/users/:username', async (req, res) => {
   }
 });
 
-/**
- * ✅ GET /profile
- * Muestra el perfil del usuario autenticado (Solo autenticados pueden acceder)
- */
-router.get('/profile', authenticateToken, async (req, res) => {
-  try {
-    console.log(`📌 Perfil solicitado por el usuario autenticado: ${req.user.username}`);
-    
-    res.json({
-      message: "Perfil del usuario autenticado",
-      user: req.user
-    });
 
-  } catch (error) {
-    console.error("❌ Error obteniendo perfil:", error);
-    res.status(500).json({ message: "Error interno del servidor" });
-  }
-});
 
 /**
  * ✅ GET /administrator

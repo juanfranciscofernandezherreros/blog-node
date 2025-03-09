@@ -39,10 +39,18 @@ const authorizeRoles = (roles) => {
     }
 
     const userRoles = req.user.roles.map(role => role.name);
+
+    // Si el usuario NO tiene alguno de los roles requeridos
     if (!roles.some(role => userRoles.includes(role))) {
-      return res.status(403).json({ message: "Acceso denegado" });
+      // 🔥 Renderiza la vista 403.ejs
+      return res.status(403).render('403', {
+        pageTitle: 'Acceso denegado',
+        description: 'No tienes permiso para acceder a esta página',
+        user: req.user
+      });
     }
 
+    // Si pasa la validación de roles
     next();
   };
 };

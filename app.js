@@ -164,6 +164,7 @@ app.locals.isActiveRoute = isActiveRoute;
 // 📌 Rutas
 app.use('/', require('./server/routes/main'));
 app.use('/', require('./server/routes/admin'));
+app.use('/profile', require('./server/routes/profile'));
 app.use('/dashboard/', require('./server/routes/posts'));
 app.use('/dashboard/newsletter', require('./server/routes/newsletter'));
 app.use('/dashboard/users', require('./server/routes/users'));
