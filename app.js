@@ -167,6 +167,8 @@ app.use('/', require('./server/routes/admin'));
 app.use('/dashboard/', require('./server/routes/posts'));
 app.use('/dashboard/newsletter', require('./server/routes/newsletter'));
 app.use('/dashboard/users', require('./server/routes/users'));
+app.use('/auth', require('./server/routes/signup'));
+app.use('/auth', require('./server/routes/signin'));
 app.use('/dashboard/tags', require('./server/routes/tags'));
 app.use('/dashboard/categories', require('./server/routes/categories'));
 app.use('/dashboard/comments', require('./server/routes/comments'));

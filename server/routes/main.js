@@ -536,16 +536,6 @@ router.get('/about', (req, res) => {
 });
 
 
-/**
- * GET /
- * Signup
- */
-router.get('/signup', (req, res) => {
-  res.render('signup', {
-    currentRoute: '/signup'
-  });
-});
-
 
 
 router.post('/newsletter', async (req, res) => {
@@ -635,37 +625,6 @@ async function insertPostData() {
     console.log("Error inserting sample data:", error);
   }
 }
-
-router.post('/register', async (req, res) => {
-  const { username, password } = req.body;
-
-  console.log("Datos recibidos del formulario:", { username, password });
-
-  // Validación básica
-  if (!username.trim() || !password.trim()) {
-    return res.status(400).json({ error: 'Todos los campos son obligatorios.' });
-  }
-
-  try {
-    // Verificar si el usuario ya existe
-    const existingUser = await User.findOne({ username });
-    if (existingUser) {
-      return res.status(400).json({ error: 'El nombre de usuario ya está en uso.' });
-    }
-
-    // Encriptar la contraseña
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Guardar en la base de datos
-    const newUser = new User({ username, password: hashedPassword });
-    await newUser.save();
-
-    res.json({ success: 'Usuario registrado con éxito.' });
-  } catch (error) {
-    console.error("Error al registrar usuario:", error);
-    res.status(500).json({ error: 'Ocurrió un error al procesar tu registro.' });
-  }
-});
 
 router.post('/keyword/search', async (req, res) => {
   try {
