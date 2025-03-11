@@ -10,6 +10,7 @@ const User = require('../models/User'); // Importa el modelo
 const Comment = require('../models/Comment'); // Importa el modelo
 const Category = require('../models/Category'); // Importa el modelo
 const Tag = require('../models/Tags'); // Importa el modelo
+const { authenticateToken } = require('../middlewares/authMiddleware');
 require('dotenv').config(); // Cargar variables de entorno
 
 // Configurar el transporter de Nodemailer
@@ -450,15 +451,10 @@ router.get('/post/:id', async (req, res) => {
   }
 });
 
-router.post('/post/:id/like', async (req, res) => {
+router.post('/post/:id/like', authenticateToken, async (req, res) => {
   try {
     const postId = req.params.id;
-
-    // 🚨 Verificar si el usuario está logueado
-    if (!req.user) {
-      // Puedes cambiar por redirección o JSON si es API
-      return res.status(401).render('401', { title: 'Debes iniciar sesión para dar like' });
-    }
+    const userId = req.user._id;
 
     const post = await Post.findById(postId);
 
@@ -466,10 +462,14 @@ router.post('/post/:id/like', async (req, res) => {
       return res.status(404).render('404', { title: 'Post no encontrado' });
     }
 
-    // ✅ Togglear like (agregar o quitar)
-    await post.toggleLike(req.user._id);
+    const hasLiked = post.likes.includes(userId);
 
-    // ✅ Redirigir nuevamente al post
+    if (hasLiked) {
+      await Post.findByIdAndUpdate(postId, { $pull: { likes: userId } });
+    } else {
+      await Post.findByIdAndUpdate(postId, { $addToSet: { likes: userId } });
+    }
+
     res.redirect(`/post/${postId}`);
   } catch (error) {
     console.error('❌ Error al dar like:', error);
