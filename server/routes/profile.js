@@ -27,4 +27,13 @@ router.get('/user', authenticateToken, async (req, res) => {
   }
 });
 
+/**
+ * GET /logout
+ * Cierra la sesión del usuario
+ */
+router.get('/logout', (req, res) => {
+  res.clearCookie('token'); // Elimina la cookie del token
+  res.redirect('/auth/signin'); // Redirige al login
+});
+
 module.exports = router;
