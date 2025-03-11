@@ -1,19 +1,49 @@
 <div class="container mt-4">
   <div class="row">
-    
+
     <!-- 🔹 Contenedor principal del artículo (8 columnas en pantallas grandes) -->
     <div class="col-lg-8">
+
+      <!-- 🔹 Información sobre el autor y la fecha -->
       <p class="text-muted">
-        Publicado el 
+        Publicado
         <a href="/articles?date=<%= new Date(data.publishDate).toLocaleDateString('es-ES') %>">
           <%= new Date(data.publishDate).toLocaleDateString('es-ES') %>
         </a>
-        
         por el usuario
         <a href="/users/<%= data.userId %>">
           <%= data.author ? data.author.username : 'Anónimo' %>
         </a>
-      </p>     
+      </p>
+
+      <!-- 🔥 Estado del post -->
+      <p class="text-muted">
+        Estado del post:
+        <% if (postStatus === 'draft') { %>
+          <span class="badge bg-warning text-dark">Borrador</span>
+        <% } else { %>
+          <span class="badge bg-success">Publicado</span>
+        <% } %>
+      </p>
+
+      <!-- 🔥 Likes y Favoritos -->
+      <div class="d-flex align-items-center mb-3">
+        <!-- Botón de Like -->
+        <form action="/post/<%= data._id %>/like" method="POST" class="me-3">
+          <button type="submit" class="btn btn-sm <%= isLiked ? 'btn-danger' : 'btn-outline-danger' %>">
+            <%= isLiked ? '💖 Quitar Like' : '🤍 Dar Like' %>
+          </button>
+          <span><%= likesCount %> Likes</span>
+        </form>
+
+        <!-- Botón de Favorito -->
+        <form action="/post/<%= data._id %>/favorite" method="POST">
+          <button type="submit" class="btn btn-sm <%= isFavorited ? 'btn-warning' : 'btn-outline-warning' %>">
+            <%= isFavorited ? '⭐ Quitar de Favoritos' : '☆ Guardar en Favoritos' %>
+          </button>
+          <span><%= favoritesCount %> Favoritos</span>
+        </form>
+      </div>
 
       <!-- 🔹 Contenedor oculto con el contenido Markdown -->
       <div id="article-body" data-body="<%= encodeURIComponent(data.body) %>"></div>
@@ -26,6 +56,8 @@
       <a href="/" class="btn btn-primary mt-3">Volver al inicio</a>
 
       <hr>
+
+      <!-- 🔹 Sección de Comentarios -->
       <h3>Comentarios</h3>
 
       <% if (comments.length > 0) { %>
@@ -68,7 +100,7 @@
         <p class="text-muted">No hay comentarios aún.</p>
       <% } %>
 
-      <!-- Formulario para agregar un nuevo comentario -->
+      <!-- 🔹 Formulario para agregar un nuevo comentario -->
       <form action="/post/<%= data._id %>/comment" method="POST" class="mb-4">
         <div class="mb-3">
           <label for="author" class="form-label">Nombre</label>
@@ -80,6 +112,7 @@
         </div>
         <button type="submit" class="btn btn-primary">Enviar Comentario</button>
       </form>
+
     </div>
 
     <!-- 🔹 Sidebar en el lateral derecho -->
@@ -93,12 +126,14 @@
 <!-- 🔹 Librerías necesarias -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.3/purify.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.0.0/marked.min.js"></script>
+
 <script>
   function toggleReplyForm(commentId) {
     const form = document.getElementById(`reply-form-${commentId}`);
     form.classList.toggle('d-none');
   }
 </script>
+
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     const articleBodyDiv = document.getElementById("article-body");

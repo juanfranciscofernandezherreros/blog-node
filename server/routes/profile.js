@@ -2,10 +2,7 @@ const express = require('express');
 const User = require('../models/User'); 
 const router = express.Router();
 
-const { authenticateToken, authorizeRoles } = require('../middlewares/authMiddleware');
-
-// Ruta al layout (opcional si usas layouts en EJS)
-const adminLayout = '../views/layouts/admin'; // Asegúrate que este path es correcto
+const { authenticateToken } = require('../middlewares/authMiddleware');
 
 /**
  * ✅ GET /user
@@ -18,7 +15,6 @@ router.get('/user', authenticateToken, async (req, res) => {
     res.render('profile', {
       pageTitle: 'Perfil de Usuario',
       description: 'Aquí puedes ver la información de tu cuenta',
-      layout: adminLayout,  // ✅ Solo si usas express-ejs-layouts o un motor que soporte layouts
       user: req.user
     });
 

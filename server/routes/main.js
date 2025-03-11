@@ -393,28 +393,55 @@ router.get('/category/:name', async (req, res) => {
  */
 router.get('/post/:id', async (req, res) => {
   try {
-    let postId = req.params.id;
+    const postId = req.params.id;
 
+    // ✅ Validación de ID
     if (!mongoose.Types.ObjectId.isValid(postId)) {
       return res.status(400).render('404', { title: "ID inválido" });
     }
 
-    // 🔹 Asegúrate de hacer populate en `author` para obtener el username
-    const data = await Post.findById(postId)
-      .populate('author', 'username') // 🔹 Traer solo el `username` del autor
+    // ✅ Obtener el post y popular los campos necesarios
+    const post = await Post.findById(postId)
+      .populate('author', 'username') // Solo username del autor
+      .populate('likes', 'username')  // Usuarios que dieron like (opcional)
+      .populate('favoritedBy', 'username'); // Usuarios que lo guardaron (opcional)
 
-    if (!data) {
+    if (!post) {
       return res.status(404).render('404', { title: "Artículo no encontrado" });
     }
 
-    // 🔹 Obtener los comentarios relacionados con el post
-    const comments = await Comment.find({ postId }).sort({ createdAt: 1 });
+    // ✅ Comentarios anidados
+    const comments = await getNestedComments(postId);
 
+    // ✅ Usuario actual (ajusta según cómo manejes autenticación)
+    let user = req.user;
+    if (!user && req.session && req.session.userId) {
+      user = await User.findById(req.session.userId);
+    }
+
+    // ✅ Valores por defecto
+    let isLiked = false;
+    let isFavorited = false;
+
+    if (user) {
+      const userId = user._id.toString();
+
+      // ✅ Revisar si el usuario actual ya dio like o favorito
+      isLiked = post.likes.some(likeUser => likeUser._id.toString() === userId);
+      isFavorited = post.favoritedBy.some(favUser => favUser._id.toString() === userId);
+    }
+
+    // ✅ Renderizar la vista post.ejs
     res.render('post', {
-      title: data.title,
-      data,
-      comments,
-      currentRoute: `/post/${postId}`
+      title: post.title,
+      data: post,
+      comments,                    // Comentarios estructurados como árbol
+      currentRoute: `/post/${postId}`,
+      isLiked,
+      isFavorited,
+      likesCount: post.likes.length,
+      favoritesCount: post.favoritedBy.length,
+      postStatus: post.status
     });
 
   } catch (error) {
@@ -422,6 +449,63 @@ router.get('/post/:id', async (req, res) => {
     res.status(500).render('500', { title: "Error del servidor" });
   }
 });
+
+router.post('/post/:id/like', async (req, res) => {
+  try {
+    const postId = req.params.id;
+
+    // 🚨 Verificar si el usuario está logueado
+    if (!req.user) {
+      // Puedes cambiar por redirección o JSON si es API
+      return res.status(401).render('401', { title: 'Debes iniciar sesión para dar like' });
+    }
+
+    const post = await Post.findById(postId);
+
+    if (!post) {
+      return res.status(404).render('404', { title: 'Post no encontrado' });
+    }
+
+    // ✅ Togglear like (agregar o quitar)
+    await post.toggleLike(req.user._id);
+
+    // ✅ Redirigir nuevamente al post
+    res.redirect(`/post/${postId}`);
+  } catch (error) {
+    console.error('❌ Error al dar like:', error);
+    res.status(500).render('500', { title: 'Error del servidor' });
+  }
+});
+
+
+// Obtener comentarios anidados para un post
+async function getNestedComments(postId) {
+  // Obtenemos todos los comentarios planos del post
+  const comments = await Comment.find({ postId }).sort({ createdAt: 1 }).lean();
+
+  // Crear un mapa por id para referencia rápida
+  const commentsById = {};
+  comments.forEach(comment => {
+    comment.replies = []; // Inicializamos el array de respuestas
+    commentsById[comment._id.toString()] = comment;
+  });
+
+  const rootComments = [];
+
+  comments.forEach(comment => {
+    if (comment.parentId) {
+      const parent = commentsById[comment.parentId.toString()];
+      if (parent) {
+        parent.replies.push(comment);
+      }
+    } else {
+      rootComments.push(comment);
+    }
+  });
+
+  return rootComments;
+}
+
 
 
 /**
@@ -572,59 +656,6 @@ router.get('/contact', (req, res) => {
     currentRoute: '/contact'
   });
 });
-
-/**
- * Insert sample data into the database
- */
-async function insertPostData() {
-  try {
-    await Post.insertMany([
-      {
-        title: "Building APIs with Node.js",
-        body: "Learn how to use Node.js to build RESTful APIs using frameworks like Express.js."
-      },
-      {
-        title: "Deployment of Node.js applications",
-        body: "Understand the different ways to deploy your Node.js applications, including on-premises, cloud, and container environments."
-      },
-      {
-        title: "Authentication and Authorization in Node.js",
-        body: "Learn how to add authentication and authorization to your Node.js web applications using Passport.js or other authentication libraries."
-      },
-      {
-        title: "Understand how to work with MongoDB and Mongoose",
-        body: "Understand how to work with MongoDB and Mongoose, an Object Data Modeling (ODM) library, in Node.js applications."
-      },
-      {
-        title: "Build real-time, event-driven applications in Node.js",
-        body: "Learn how to use Socket.io to build real-time, event-driven applications in Node.js."
-      },
-      {
-        title: "Discover how to use Express.js",
-        body: "Discover how to use Express.js, a popular Node.js web framework, to build web applications."
-      },
-      {
-        title: "Asynchronous Programming with Node.js",
-        body: "Explore the asynchronous nature of Node.js and how it allows for non-blocking I/O operations."
-      },
-      {
-        title: "Learn the basics of Node.js and its architecture",
-        body: "Learn the basics of Node.js and its architecture, how it works, and why it is popular among developers."
-      },
-      {
-        title: "NodeJs Limiting Network Traffic",
-        body: "Learn how to limit network traffic."
-      },
-      {
-        title: "Learn Morgan - HTTP Request logger for NodeJs",
-        body: "Learn Morgan."
-      },
-    ]);
-    console.log("Sample data inserted successfully!");
-  } catch (error) {
-    console.log("Error inserting sample data:", error);
-  }
-}
 
 router.post('/keyword/search', async (req, res) => {
   try {
