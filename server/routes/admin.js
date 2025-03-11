@@ -10,7 +10,6 @@ const Category = require('../models/Category'); // Importa el modelo
 const Tag = require('../models/Tags'); // Importa el modelo
 const adminLayout = '../views/layouts/admin';
 const jwtSecret = process.env.JWT_SECRET;
-const { authenticateToken, authorizeRoles } = require('../middlewares/authMiddleware');
 
 
 router.get('/admin', async (req, res) => {

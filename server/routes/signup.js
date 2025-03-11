@@ -21,36 +21,52 @@ router.post('/register', async (req, res) => {
     const { username, email, password } = req.body;
 
     if (!username || !email || !password) {
-      return res.status(400).json({ message: 'Todos los campos son obligatorios' });
+      return res.render('signup', { 
+        pageTitle: 'Registro de Usuario',
+        description: 'Crea una cuenta nueva',
+        error: 'Todos los campos son obligatorios'
+      });
     }
 
     const existingUser = await User.findOne({ $or: [{ username }, { email }] });
     if (existingUser) {
-      return res.status(409).json({ message: 'El usuario o email ya están en uso' });
+      return res.render('signup', {
+        pageTitle: 'Registro de Usuario',
+        description: 'Crea una cuenta nueva',
+        error: 'El usuario o email ya están en uso'
+      });
     }
 
     const defaultRole = await Role.findOne({ name: 'user' });
     if (!defaultRole) {
-      return res.status(500).json({ message: 'Rol por defecto no encontrado. Crea el rol "user" en la base de datos.' });
+      return res.render('signup', {
+        pageTitle: 'Registro de Usuario',
+        description: 'Crea una cuenta nueva',
+        error: 'Rol por defecto no encontrado. Contacta al administrador'
+      });
     }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = new User({
       username,
       email,
-      password: hashedPassword,
+      password, // Lo hashea el pre('save')
       roles: [defaultRole._id]
     });
 
     await user.save();
 
-    res.status(201).json({ message: 'Usuario registrado exitosamente', user });
+    // ✅ Redirige al main o al perfil
+    res.redirect('/');
 
   } catch (error) {
     console.error('❌ Error en el registro:', error);
-    res.status(500).json({ message: 'Error interno del servidor' });
+    res.status(500).render('signup', {
+      pageTitle: 'Registro de Usuario',
+      description: 'Crea una cuenta nueva',
+      error: 'Error interno del servidor'
+    });
   }
 });
+
 
 module.exports = router;

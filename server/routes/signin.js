@@ -24,7 +24,7 @@ router.post('/signin', async (req, res) => {
   try {
     const { username, password } = req.body;
     const user = await User.findOne({ username });
-
+    console.log(user);
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({ message: 'Credenciales inválidas' });
     }

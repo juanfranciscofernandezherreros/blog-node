@@ -13,9 +13,14 @@ const UserSchema = new mongoose.Schema({
 // Middleware para encriptar la contraseña antes de guardar
 UserSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
+
+  console.log('Password antes del hash:', this.password); // Plain text
   this.password = await bcrypt.hash(this.password, 10);
+  console.log('Password después del hash:', this.password); // Hasheado
+
   next();
 });
+
 
 // Método para comparar contraseñas
 UserSchema.methods.comparePassword = async function (password) {
