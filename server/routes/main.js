@@ -451,24 +451,25 @@ router.get('/post/:id', async (req, res) => {
   }
 });
 
+// LIKE un post
 router.post('/post/:id/like', authenticateToken, async (req, res) => {
   try {
     const postId = req.params.id;
     const userId = req.user._id;
 
+    // Encuentra el post y revisa si el usuario ya ha dado like
     const post = await Post.findById(postId);
-
     if (!post) {
       return res.status(404).render('404', { title: 'Post no encontrado' });
     }
 
     const hasLiked = post.likes.includes(userId);
 
-    if (hasLiked) {
-      await Post.findByIdAndUpdate(postId, { $pull: { likes: userId } });
-    } else {
-      await Post.findByIdAndUpdate(postId, { $addToSet: { likes: userId } });
-    }
+    const update = hasLiked
+      ? { $pull: { likes: userId } }     // Si ya ha dado like, lo quitamos
+      : { $addToSet: { likes: userId } };// Si no, lo añadimos
+
+    await Post.findByIdAndUpdate(postId, update);
 
     res.redirect(`/post/${postId}`);
   } catch (error) {
@@ -477,6 +478,33 @@ router.post('/post/:id/like', authenticateToken, async (req, res) => {
   }
 });
 
+
+// FAVORITE un post
+router.post('/post/:id/favorite', authenticateToken, async (req, res) => {
+  try {
+    const postId = req.params.id;
+    const userId = req.user._id;
+
+    // Encuentra el post y revisa si el usuario ya lo ha marcado como favorito
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).render('404', { title: 'Post no encontrado' });
+    }
+
+    const hasFavorited = post.favoritedBy.includes(userId);
+
+    const update = hasFavorited
+      ? { $pull: { favoritedBy: userId } }     // Si ya lo tiene en favoritos, lo quitamos
+      : { $addToSet: { favoritedBy: userId } };// Si no, lo añadimos a favoritos
+
+    await Post.findByIdAndUpdate(postId, update);
+
+    res.redirect(`/post/${postId}`);
+  } catch (error) {
+    console.error('❌ Error al agregar a favoritos:', error);
+    res.status(500).render('500', { title: 'Error del servidor' });
+  }
+});
 
 // Obtener comentarios anidados para un post
 async function getNestedComments(postId) {
