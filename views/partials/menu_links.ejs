@@ -22,9 +22,22 @@
       </ul>
   </li>
     <!-- Menú de Usuarios -->
-    <li><a href="/users">Users</a></li>
-    <li><a href="/auth/signin">SignIn</a></li>
-    <li><a href="/auth/register">SignUp</a></li>
+    <% if (!user) { %>
+      <!-- Usuario no autenticado -->
+      <li><a href="/auth/signin">Sign In</a></li>
+      <li><a href="/auth/register">Sign Up</a></li>
+    <% } else { %>
+      <!-- Usuario autenticado -->
+      <li class="nav-item dropdown">
+        <a href="#" class="dropdown-toggle" data-bs-toggle="dropdown">
+          👤 <%= user.username %>
+        </a>
+        <ul class="dropdown-menu">
+          <li><a class="dropdown-item" href="/profile/user">Mi Perfil</a></li>
+          <li><a class="dropdown-item" href="/profile/logout">Cerrar Sesión</a></li>
+        </ul>
+      </li>
+    <% } %>
 
 
 </li>

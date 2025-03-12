@@ -11,8 +11,14 @@
       <td><%= user.email %></td>
     </tr>
     <tr>
-      <th>Rol:</th>
-      <td><%= user.role %></td>
+      <th>Roles:</th>
+      <td>
+        <% if (user.roles && user.roles.length) { %>
+          <%= user.roles.map(role => role.name).join(', ') %>
+        <% } else { %>
+          Sin roles
+        <% } %>
+      </td>
     </tr>
     <tr>
       <th>Fecha de Creación:</th>
@@ -21,5 +27,57 @@
   </table>
 
   <!-- Enlace de cerrar sesión -->
-  <a href="/profile/logout" class="btn btn-danger" style="margin-top: 20px; display: inline-block;">Cerrar Sesión</a>
+  <a href="/auth/logout" class="btn btn-danger" style="margin-top: 20px;">Cerrar Sesión</a>
+
+  <hr>
+
+  <!-- Posts que el usuario ha dado like -->
+  <h2 class="mt-4">Artículos que te gustaron ❤️</h2>
+
+  <% if (likedPosts.length > 0) { %>
+    <div class="row">
+      <% likedPosts.forEach(post => { %>
+        <div class="col-md-4 mb-4">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <h5 class="card-title"><a href="/post/<%= post._id %>"><%= post.title %></a></h5>
+              <p class="card-text">
+                Categoría: <%= post.category ? post.category.name : 'Sin categoría' %><br>
+                Autor: <%= post.author ? post.author.username : 'Anónimo' %>
+              </p>
+              <a href="/post/<%= post._id %>" class="btn btn-primary btn-sm">Ver artículo</a>
+            </div>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+  <% } else { %>
+    <p>No has dado like a ningún artículo todavía.</p>
+  <% } %>
+
+  <hr>
+
+  <!-- Posts que el usuario ha guardado como favorito -->
+  <h2 class="mt-4">Tus Favoritos ⭐</h2>
+
+  <% if (favoritedPosts.length > 0) { %>
+    <div class="row">
+      <% favoritedPosts.forEach(post => { %>
+        <div class="col-md-4 mb-4">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <h5 class="card-title"><a href="/post/<%= post._id %>"><%= post.title %></a></h5>
+              <p class="card-text">
+                Categoría: <%= post.category ? post.category.name : 'Sin categoría' %><br>
+                Autor: <%= post.author ? post.author.username : 'Anónimo' %>
+              </p>
+              <a href="/post/<%= post._id %>" class="btn btn-primary btn-sm">Ver artículo</a>
+            </div>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+  <% } else { %>
+    <p>No has guardado ningún artículo como favorito.</p>
+  <% } %>
 </div>

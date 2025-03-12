@@ -1,4 +1,4 @@
-require('dotenv').config(); // ✅ Carga las variables de entorno al inicio
+require('dotenv').config(); // ✅
 
 const express = require('express');
 const expressLayout = require('express-ejs-layouts');
@@ -6,21 +6,24 @@ const methodOverride = require('method-override');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
+const jwt = require('jsonwebtoken'); // ⬅️ IMPORTANTE
 const connectDB = require('./server/config/db');
 const { isActiveRoute } = require('./server/helpers/routeHelpers');
 
-// Modelos de Tags y Categorías
-const Tag = require('./server/models/Tags'); 
-const Category = require('./server/models/Category'); 
-const Post = require('./server/models/Post'); // Importa el modelo de Post
-const Comment = require('./server/models/Comment'); // Importa el modelo de Comentarios
+// Modelos
+const Tag = require('./server/models/Tags');
+const Category = require('./server/models/Category');
+const Post = require('./server/models/Post');
+const Comment = require('./server/models/Comment');
+const User = require('./server/models/User');
 
-// Configuración del servidor
 const app = express();
 const PORT = process.env.PORT || 3001;
+const jwtSecret = process.env.JWT_SECRET;
 
-// ✅ Conectar a la base de datos
+// ✅ Conexión a la base de datos
 connectDB();
+
 
 // 📌 Middlewares
 app.use(express.urlencoded({ extended: true }));
@@ -125,6 +128,33 @@ app.use(async (req, res, next) => {
     res.locals.categories = [];
   }
   next();
+});
+
+// Middleware global para recuperar el usuario autenticado desde el JWT
+app.use(async (req, res, next) => {
+  const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
+
+  if (!token) {
+    res.locals.user = null; // Si no hay token, no hay user
+    return next();
+  }
+
+  try {
+    const decoded = jwt.verify(token, jwtSecret);
+    const user = await User.findById(decoded.userId).select('username email roles'); // puedes añadir más campos si quieres
+
+    if (!user) {
+      res.locals.user = null;
+    } else {
+      res.locals.user = user;
+    }
+
+    next();
+  } catch (error) {
+    console.error('❌ Error recuperando usuario autenticado:', error);
+    res.locals.user = null; // Si el token es inválido o expiró
+    next();
+  }
 });
 
 // ✅ Middleware para cargar los posts más comentados (solo visibles)
