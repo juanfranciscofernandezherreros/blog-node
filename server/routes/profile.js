@@ -1,6 +1,7 @@
 const express = require('express');
 const User = require('../models/User'); 
 const Post = require('../models/Post'); 
+const Comment = require('../models/Comment'); 
 
 const router = express.Router();
 
@@ -16,16 +17,21 @@ router.get('/user', authenticateToken, async (req, res) => {
 
     const userId = req.user._id;
 
-    // 🔹 Obtener los posts que el usuario ha dado like
+    // 🔹 Posts que el usuario ha dado like
     const likedPosts = await Post.find({ likes: userId })
       .populate('author', 'username')
       .populate('category', 'name')
       .sort({ createdAt: -1 });
 
-    // 🔹 Obtener los posts que el usuario ha marcado como favoritos
+    // 🔹 Posts que el usuario ha marcado como favoritos
     const favoritedPosts = await Post.find({ favoritedBy: userId })
       .populate('author', 'username')
       .populate('category', 'name')
+      .sort({ createdAt: -1 });
+
+    // 🔹 Comentarios que el usuario ha dejado
+    const userComments = await Comment.find({ author: req.user.username })
+      .populate('postId', 'title') // Solo traemos el título para mostrar en el enlace
       .sort({ createdAt: -1 });
 
     res.render('profile', {
@@ -33,7 +39,8 @@ router.get('/user', authenticateToken, async (req, res) => {
       description: 'Aquí puedes ver la información de tu cuenta',
       user: req.user,
       likedPosts,
-      favoritedPosts
+      favoritedPosts,
+      userComments
     });
 
   } catch (error) {
@@ -44,6 +51,7 @@ router.get('/user', authenticateToken, async (req, res) => {
     });
   }
 });
+
 
 /**
  * GET /logout

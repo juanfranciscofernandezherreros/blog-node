@@ -80,4 +80,36 @@
   <% } else { %>
     <p>No has guardado ningún artículo como favorito.</p>
   <% } %>
+
+  
+
 </div>
+
+<hr>
+
+<!-- Comentarios que el usuario ha dejado -->
+<h2 class="mt-4">Tus Comentarios 📝</h2>
+
+<% if (userComments.length > 0) { %>
+  <ul class="list-group">
+    <% userComments.forEach(comment => { %>
+      <li class="list-group-item">
+        <strong>En el post:</strong> 
+        <% if (comment.postId) { %>
+          <a href="/post/<%= comment.postId._id %>"><%= comment.postId.title %></a>
+        <% } else { %>
+          <em>Post eliminado</em>
+        <% } %>
+        <br>
+
+        <strong>Fecha:</strong> <%= new Date(comment.createdAt).toLocaleDateString('es-ES') %>
+        <p class="mb-1"><%= comment.body %></p>
+      </li>
+    <% }); %>
+  </ul>
+<% } else { %>
+  <p>No has dejado ningún comentario todavía.</p>
+<% } %>
+
+
+

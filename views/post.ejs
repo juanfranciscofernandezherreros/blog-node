@@ -102,16 +102,43 @@
 
       <!-- 🔹 Formulario para agregar un nuevo comentario -->
       <form action="/post/<%= data._id %>/comment" method="POST" class="mb-4">
+
         <div class="mb-3">
           <label for="author" class="form-label">Nombre</label>
-          <input type="text" class="form-control" id="author" name="author" required>
+      
+          <% if (user) { %>
+            <!-- Si el usuario está logueado, prellenar y deshabilitar -->
+            <input 
+              type="text" 
+              class="form-control" 
+              id="author" 
+              name="author" 
+              value="<%= user.username %>" 
+              readonly
+            >
+          <% } else { %>
+            <!-- Si NO está logueado, campo editable -->
+            <input 
+              type="text" 
+              class="form-control" 
+              id="author" 
+              name="author" 
+              placeholder="Tu nombre" 
+              required
+            >
+          <% } %>
+      
         </div>
+      
         <div class="mb-3">
           <label for="body" class="form-label">Comentario</label>
           <textarea class="form-control" id="body" name="body" rows="3" required></textarea>
         </div>
+      
         <button type="submit" class="btn btn-primary">Enviar Comentario</button>
       </form>
+      
+      
 
     </div>
 
