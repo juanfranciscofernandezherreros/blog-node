@@ -555,43 +555,52 @@ async function getNestedComments(postId) {
  * POST /post/:id/comment
  * Agregar un comentario o responder a uno
  */
-router.post('/post/:id/comment', async (req, res) => {
+/**
+ * POST /post/:id/comment
+ * Agregar un comentario o responder a uno
+ */
+router.post('/post/:id/comment', authenticateToken, async (req, res) => {
   try {
-    let postId = req.params.id;
-    let { author, body, parentId } = req.body;
+    const postId = req.params.id;
+    const { body, parentId } = req.body;
 
-    if (!author.trim() || !body.trim()) {
+    // ✅ Aquí tomas el usuario autenticado
+    const userId = req.user._id;
+
+    if (!body.trim()) {
       return res.redirect(`/post/${postId}?error=Campos obligatorios`);
     }
 
     const newComment = new Comment({
       postId,
       parentId: parentId || null,
-      author,
+      author: userId,  // Ahora el usuario es el que está autenticado
       body
     });
 
     await newComment.save();
+
+    // ✅ Creamos el log de la acción COMMENT o REPLY
+    await createLog({
+      entity: 'Comment',
+      action: parentId ? 'REPLY' : 'COMMENT',
+      entityId: newComment._id,
+      performedBy: userId,
+      after: {
+        postId: postId,
+        parentId: parentId || null,
+        author: userId,
+        body: body,
+      }
+    });
+
     res.redirect(`/post/${postId}`);
 
   } catch (error) {
-    console.error("Error al agregar comentario:", error);
+    console.error("❌ Error al agregar comentario:", error);
     res.redirect(`/post/${postId}?error=Error al guardar el comentario`);
   }
 });
-
-/**
- * Función para construir una estructura de comentarios anidados
- */
-function buildNestedComments(comments, parentId = null) {
-  return comments
-    .filter(comment => String(comment.parentId) === String(parentId))
-    .map(comment => ({
-      ...comment.toObject(),
-      replies: buildNestedComments(comments, comment._id) // 🔹 Llamada recursiva correcta
-    }));
-}
-
 
 
 /**

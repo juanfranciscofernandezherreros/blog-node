@@ -4,6 +4,7 @@ const Comment = require('../models/Comment');
 const Post = require('../models/Post');
 const { authenticateToken, authorizeRoles } = require('../middlewares/authMiddleware');
 const adminLayout = '../views/layouts/admin';
+const { createLog } = require('../middlewares/logger.js');
 
 /**
  * GET /dashboard/comments
