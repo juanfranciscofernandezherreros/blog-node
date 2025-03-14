@@ -5,6 +5,7 @@ const bcrypt = require('bcrypt');
 const User = require('../models/User');
 const Role = require('../models/Role');
 
+const { createLog } = require('../middlewares/logger.js');
 
 // ✅ GET /register - Renderiza el formulario de registro
 router.get('/register', (req, res) => {
@@ -15,6 +16,7 @@ router.get('/register', (req, res) => {
 });
 
 
+// ✅ POST /register - Registro de Usuario con Rol por Defecto
 // ✅ POST /register - Registro de Usuario con Rol por Defecto
 router.post('/register', async (req, res) => {
   try {
@@ -54,6 +56,21 @@ router.post('/register', async (req, res) => {
     });
 
     await user.save();
+
+    // ✅ Creamos el log/registro de la notificación
+    await createLog({
+      entity: 'User',
+      action: 'CREATE',
+      entityId: user._id,
+      performedBy: user._id, // O null si es anónimo
+      after: {
+        username: user.username,
+        email: user.email,
+        roles: user.roles
+      }
+    });
+
+    console.log('✅ Usuario registrado y log guardado');
 
     // ✅ Redirige al main o al perfil
     res.redirect('/');

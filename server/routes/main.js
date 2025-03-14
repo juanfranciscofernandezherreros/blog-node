@@ -12,6 +12,7 @@ const Category = require('../models/Category'); // Importa el modelo
 const Tag = require('../models/Tags'); // Importa el modelo
 const { authenticateToken } = require('../middlewares/authMiddleware');
 require('dotenv').config(); // Cargar variables de entorno
+const { createLog } = require('../middlewares/logger.js');
 
 // Configurar el transporter de Nodemailer
 const transporter = nodemailer.createTransport({
@@ -146,10 +147,6 @@ router.get('', async (req, res) => {
   }
 });
 
-
-
-
-
 router.get('/articles', async (req, res) => {
   try {
     const { date } = req.query;
@@ -275,9 +272,6 @@ router.get('/articles/tags/:tagId', async (req, res) => {
   }
 });
 
-
-
-
 router.get('/users_articles/:username', async (req, res) => {
   try {
     const { username } = req.params;
@@ -328,8 +322,6 @@ router.get('/users_articles/:username', async (req, res) => {
     res.status(500).render('500', { title: "Error del servidor" });
   }
 });
-
-
 
 
 /**
@@ -451,7 +443,7 @@ router.get('/post/:id', async (req, res) => {
   }
 });
 
-// LIKE un post
+// ✅ LIKE / UNLIKE un post
 router.post('/post/:id/like', authenticateToken, async (req, res) => {
   try {
     const postId = req.params.id;
@@ -463,13 +455,25 @@ router.post('/post/:id/like', authenticateToken, async (req, res) => {
       return res.status(404).render('404', { title: 'Post no encontrado' });
     }
 
-    const hasLiked = post.likes.includes(userId);
+    const hasLiked = post.likes.includes(userId.toString());
 
     const update = hasLiked
       ? { $pull: { likes: userId } }     // Si ya ha dado like, lo quitamos
       : { $addToSet: { likes: userId } };// Si no, lo añadimos
 
     await Post.findByIdAndUpdate(postId, update);
+
+    // ✅ Creamos el log de la acción LIKE o UNLIKE
+    await createLog({
+      entity: 'Post',
+      action: hasLiked ? 'UNLIKE' : 'LIKE',
+      entityId: post._id,
+      performedBy: userId,
+      before: { likesCount: post.likes.length }, // antes del cambio
+      after: { likesCount: hasLiked ? post.likes.length - 1 : post.likes.length + 1 } // después del cambio
+    });
+
+    console.log(`📝 Se registró el ${hasLiked ? 'UNLIKE' : 'LIKE'} en logs`);
 
     res.redirect(`/post/${postId}`);
   } catch (error) {
@@ -478,8 +482,7 @@ router.post('/post/:id/like', authenticateToken, async (req, res) => {
   }
 });
 
-
-// FAVORITE un post
+// ✅ FAVORITE / UNFAVORITE un post
 router.post('/post/:id/favorite', authenticateToken, async (req, res) => {
   try {
     const postId = req.params.id;
@@ -491,13 +494,25 @@ router.post('/post/:id/favorite', authenticateToken, async (req, res) => {
       return res.status(404).render('404', { title: 'Post no encontrado' });
     }
 
-    const hasFavorited = post.favoritedBy.includes(userId);
+    const hasFavorited = post.favoritedBy.includes(userId.toString());
 
     const update = hasFavorited
       ? { $pull: { favoritedBy: userId } }     // Si ya lo tiene en favoritos, lo quitamos
       : { $addToSet: { favoritedBy: userId } };// Si no, lo añadimos a favoritos
 
     await Post.findByIdAndUpdate(postId, update);
+
+    // ✅ Crear el log de FAVORITE o UNFAVORITE
+    await createLog({
+      entity: 'Post',
+      action: hasFavorited ? 'UNFAVORITE' : 'FAVORITE',
+      entityId: post._id,
+      performedBy: userId,
+      before: { favoritesCount: post.favoritedBy.length },
+      after: { favoritesCount: hasFavorited ? post.favoritedBy.length - 1 : post.favoritedBy.length + 1 }
+    });
+
+    console.log(`📝 Se registró el ${hasFavorited ? 'UNFAVORITE' : 'FAVORITE'} en logs`);
 
     res.redirect(`/post/${postId}`);
   } catch (error) {
