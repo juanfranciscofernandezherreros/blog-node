@@ -11,27 +11,51 @@ const { authenticateToken } = require('../middlewares/authMiddleware');
  * ✅ GET /user
  * Muestra el perfil del usuario autenticado (Solo autenticados pueden acceder)
  */
+/**
+ * ✅ GET /user
+ * Muestra el perfil del usuario autenticado (Solo autenticados pueden acceder)
+ */
 router.get('/user', authenticateToken, async (req, res) => {
   try {
     console.log(`📌 Perfil solicitado por el usuario autenticado: ${req.user.username}`);
 
     const userId = req.user._id;
 
-    // 🔹 Posts que el usuario ha dado like
-    const likedPosts = await Post.find({ likes: userId })
+    // 🔹 Posts que el usuario ha dado like Y que están en estado 'published'
+    const likedPosts = await Post.find({ 
+        likes: userId, 
+        published: true // Asegura que el post esté publicado 
+      })
       .populate('author', 'username')
       .populate('category', 'name')
       .sort({ createdAt: -1 });
 
-    // 🔹 Posts que el usuario ha marcado como favoritos
-    const favoritedPosts = await Post.find({ favoritedBy: userId })
+    // 🔹 Posts que el usuario ha marcado como favoritos Y que están en estado 'published'
+    const favoritedPosts = await Post.find({ 
+        favoritedBy: userId, 
+        published: true // Asegura que el post esté publicado 
+      })
       .populate('author', 'username')
       .populate('category', 'name')
       .sort({ createdAt: -1 });
 
-    // 🔹 Comentarios que el usuario ha dejado
-    const userComments = await Comment.find({ author: req.user.username })
-      .populate('postId', 'title') // Solo traemos el título para mostrar en el enlace
+    // 🔹 Comentarios que el usuario ha dejado (solo los comentarios raíz) y publicados
+    const userComments = await Comment.find({ 
+      author: req.user.username, 
+      parentId: null, 
+      published: true
+    })
+      .populate('postId', 'title published')
+      .sort({ createdAt: -1 });
+
+    // 🔹 Respuestas que el usuario ha dejado (hijos de otros comentarios) y publicados
+    const userReplies = await Comment.find({ 
+      author: req.user.username, 
+      parentId: { $ne: null },
+      published: true
+    })
+      .populate('postId', 'title published')
+      .populate('parentId', 'body')
       .sort({ createdAt: -1 });
 
     res.render('profile', {
@@ -40,7 +64,8 @@ router.get('/user', authenticateToken, async (req, res) => {
       user: req.user,
       likedPosts,
       favoritedPosts,
-      userComments
+      userComments,
+      userReplies
     });
 
   } catch (error) {
@@ -51,6 +76,7 @@ router.get('/user', authenticateToken, async (req, res) => {
     });
   }
 });
+
 
 
 /**

@@ -1,7 +1,8 @@
 <div class="container">
-  <h1>Mi Perfil</h1>
+  <h1 class="mb-4">Mi Perfil</h1>
 
-  <table class="table">
+  <!-- Información básica del usuario -->
+  <table class="table table-bordered">
     <tr>
       <th>Usuario:</th>
       <td><%= user.username %></td>
@@ -22,7 +23,7 @@
     </tr>
     <tr>
       <th>Fecha de Creación:</th>
-      <td><%= new Date(user.createdAt).toLocaleDateString() %></td>
+      <td><%= new Date(user.createdAt).toLocaleDateString('es-ES') %></td>
     </tr>
   </table>
 
@@ -35,9 +36,11 @@
     <div class="row">
       <% likedPosts.forEach(post => { %>
         <div class="col-md-4 mb-4">
-          <div class="card shadow-sm">
+          <div class="card shadow-sm h-100">
             <div class="card-body">
-              <h5 class="card-title"><a href="/post/<%= post._id %>"><%= post.title %></a></h5>
+              <h5 class="card-title">
+                <a href="/post/<%= post._id %>"><%= post.title %></a>
+              </h5>
               <p class="card-text">
                 Categoría: <%= post.category ? post.category.name : 'Sin categoría' %><br>
                 Autor: <%= post.author ? post.author.username : 'Anónimo' %>
@@ -61,9 +64,11 @@
     <div class="row">
       <% favoritedPosts.forEach(post => { %>
         <div class="col-md-4 mb-4">
-          <div class="card shadow-sm">
+          <div class="card shadow-sm h-100">
             <div class="card-body">
-              <h5 class="card-title"><a href="/post/<%= post._id %>"><%= post.title %></a></h5>
+              <h5 class="card-title">
+                <a href="/post/<%= post._id %>"><%= post.title %></a>
+              </h5>
               <p class="card-text">
                 Categoría: <%= post.category ? post.category.name : 'Sin categoría' %><br>
                 Autor: <%= post.author ? post.author.username : 'Anónimo' %>
@@ -78,36 +83,67 @@
     <p>No has guardado ningún artículo como favorito.</p>
   <% } %>
 
-  
+  <hr>
 
-</div>
+  <!-- Comentarios que el usuario ha dejado -->
+  <h2 class="mt-4">Tus Comentarios 📝</h2>
 
-<hr>
+  <% if (userComments.length > 0) { %>
+    <ul class="list-group">
+      <% userComments.forEach(comment => { %>
+        <li class="list-group-item">
+          <strong>En el post:</strong>
+          <% if (comment.postId) { %>
+            <a href="/post/<%= comment.postId._id %>"><%= comment.postId.title %></a>
+          <% } else { %>
+            <em>Post eliminado</em>
+          <% } %>
+          <br>
+          <strong>Fecha:</strong> <%= new Date(comment.createdAt).toLocaleDateString('es-ES') %>
+          <p class="mb-1"><%= comment.body %></p>
+        </li>
+      <% }); %>
+    </ul>
+  <% } else { %>
+    <p>No has dejado ningún comentario todavía.</p>
+  <% } %>
 
-<!-- Comentarios que el usuario ha dejado -->
-<h2 class="mt-4">Tus Comentarios 📝</h2>
+  <hr>
 
-<% if (userComments.length > 0) { %>
-  <ul class="list-group">
-    <% userComments.forEach(comment => { %>
-      <li class="list-group-item">
-        <strong>En el post:</strong> 
-        <% if (comment.postId) { %>
-          <a href="/post/<%= comment.postId._id %>"><%= comment.postId.title %></a>
-        <% } else { %>
-          <em>Post eliminado</em>
-        <% } %>
-        <br>
+  <!-- Respuestas que el usuario ha dejado -->
+  <h2 class="mt-4">Tus Respuestas 💬</h2>
 
-        <strong>Fecha:</strong> <%= new Date(comment.createdAt).toLocaleDateString('es-ES') %>
-        <p class="mb-1"><%= comment.body %></p>
-      </li>
-    <% }); %>
-  </ul>
-<% } else { %>
-  <p>No has dejado ningún comentario todavía.</p>
-<% } %>
+  <% if (userReplies.length > 0) { %>
+    <ul class="list-group">
+      <% userReplies.forEach(reply => { %>
+        <li class="list-group-item">
+          <strong>En el post:</strong>
+          <% if (reply.postId) { %>
+            <a href="/post/<%= reply.postId._id %>"><%= reply.postId.title %></a>
+          <% } else { %>
+            <em>Post eliminado</em>
+          <% } %>
+          <br>
+          <strong>A la respuesta:</strong>
+          <% if (reply.parentId) { %>
+            "<%= reply.parentId.body.length > 50 ? reply.parentId.body.slice(0, 50) + '...' : reply.parentId.body %>"
+          <% } else { %>
+            <em>Comentario eliminado</em>
+          <% } %>
+          <br>
+          <strong>Fecha:</strong> <%= new Date(reply.createdAt).toLocaleDateString('es-ES') %>
+          <p class="mb-1"><%= reply.body %></p>
+        </li>
+      <% }); %>
+    </ul>
+  <% } else { %>
+    <p>No has respondido a ningún comentario todavía.</p>
+  <% } %>
 
+  <hr>
 
   <!-- Enlace de cerrar sesión -->
-  <a href="/auth/logout" class="btn btn-danger" style="margin-top: 20px;">Cerrar Sesión</a>
+  <div class="text-center">
+    <a href="/profile/logout" class="btn btn-danger mt-4">Cerrar Sesión</a>
+  </div>
+</div>

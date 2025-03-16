@@ -10,7 +10,11 @@ const authenticateToken = async (req, res, next) => {
   const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
 
   if (!token) {
-    return res.status(401).json({ message: "Token requerido" });
+    // Renderiza la vista 401.ejs
+    return res.status(401).render('401', {
+      pageTitle: 'No autorizado',
+      description: 'Debes iniciar sesión para acceder a esta página'
+    });
   }
 
   try {
@@ -18,14 +22,20 @@ const authenticateToken = async (req, res, next) => {
     const user = await User.findById(decoded.userId).populate('roles');
 
     if (!user) {
-      return res.status(401).json({ message: "Usuario no encontrado" });
+      return res.status(401).render('401', {
+        pageTitle: 'No autorizado',
+        description: 'Usuario no encontrado. Debes iniciar sesión nuevamente.'
+      });
     }
 
     req.user = user;
     next();
   } catch (error) {
     console.error("❌ Error en la autenticación:", error);
-    res.status(401).json({ message: "Token inválido o expirado" });
+    res.status(401).render('401', {
+      pageTitle: 'No autorizado',
+      description: 'El token es inválido o ha expirado. Inicia sesión nuevamente.'
+    });
   }
 };
 
@@ -35,14 +45,15 @@ const authenticateToken = async (req, res, next) => {
 const authorizeRoles = (roles) => {
   return (req, res, next) => {
     if (!req.user) {
-      return res.status(401).json({ message: "Usuario no autenticado" });
+      return res.status(401).render('401', {
+        pageTitle: 'No autorizado',
+        description: 'Debes iniciar sesión para acceder a esta página'
+      });
     }
 
     const userRoles = req.user.roles.map(role => role.name);
 
-    // Si el usuario NO tiene alguno de los roles requeridos
     if (!roles.some(role => userRoles.includes(role))) {
-      // 🔥 Renderiza la vista 403.ejs
       return res.status(403).render('403', {
         pageTitle: 'Acceso denegado',
         description: 'No tienes permiso para acceder a esta página',
@@ -50,7 +61,6 @@ const authorizeRoles = (roles) => {
       });
     }
 
-    // Si pasa la validación de roles
     next();
   };
 };
