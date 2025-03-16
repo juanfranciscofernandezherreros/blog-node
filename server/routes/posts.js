@@ -43,7 +43,7 @@ router.get('/add-post',
         layout: adminLayout,
         categories,
         tags,
-        user: req.userInfo // 👉 Aquí accedes al usuario con el username
+        user: req.user // ✅ Aquí sí tienes acceso al usuario
       });
     } catch (error) {
       console.log('Error loading add-post page:', error);
@@ -55,13 +55,23 @@ router.get('/add-post',
  * POST /add-post
  * Admin - Crear Nuevo Post
  */
+/**
+ * POST /add-post
+ * Admin - Crear Nuevo Post
+ */
 router.post('/add-post', authenticateToken, authorizeRoles(['admin']), async (req, res) => {
   try {
-    const { title, summary, body, category, publishDate, tags } = req.body;
+    const { title, summary, body, category, publishDate, tags, status } = req.body;
 
     // Validación básica de campos
-    if (!title || !summary || !body || !category || !publishDate) {
+    if (!title || !summary || !body || !category || !publishDate || !status) {
       return res.status(400).send('Todos los campos son obligatorios');
+    }
+
+    // Validar que el estado es uno de los valores aceptados
+    const validStatuses = ['draft', 'published', 'review'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).send('El estado del artículo no es válido');
     }
 
     // Manejo de tags como array
@@ -78,14 +88,14 @@ router.post('/add-post', authenticateToken, authorizeRoles(['admin']), async (re
       body: body.trim(),
       category,
       tags: tagsArray,
-      author: req.user.userId, // Esto debe venir del token verificado en authenticateToken
+      author: req.user._id, // ✅ Referencia al usuario autenticado
       publishDate: new Date(publishDate),
+      status, // ✅ Aquí se añade el estado al nuevo post
     });
 
     await newPost.save();
 
-    // Redirect al dashboard eliminado, puedes dejarlo vacío o ir a "/"
-    res.redirect('/');
+    res.redirect('/'); // O la ruta que consideres adecuada
   } catch (error) {
     console.error('Error creando post:', error);
     res.status(500).send('Error al crear el post');
@@ -99,8 +109,8 @@ router.post('/add-post', authenticateToken, authorizeRoles(['admin']), async (re
 router.get('/edit-post/:id', authenticateToken, authorizeRoles(['admin']), async (req, res) => {
   try {
     const locals = {
-      title: 'Edit Post',
-      description: 'Edit an existing blog post'
+      title: 'Editar Post',
+      description: 'Edita un artículo existente'
     };
 
     const post = await Post.findById(req.params.id);
@@ -115,7 +125,8 @@ router.get('/edit-post/:id', authenticateToken, authorizeRoles(['admin']), async
       layout: adminLayout,
       categories,
       tags,
-      selectedTags: post.tags
+      selectedTags: post.tags,
+      user: req.user
     });
   } catch (error) {
     console.error('Error cargando el post:', error);
@@ -129,8 +140,20 @@ router.get('/edit-post/:id', authenticateToken, authorizeRoles(['admin']), async
  */
 router.post('/edit-post/:id', authenticateToken, authorizeRoles(['admin']), async (req, res) => {
   try {
-    const { title, summary, body, category, tags } = req.body;
+    const { title, summary, body, category, tags, status, publishDate } = req.body;
 
+    // Validación básica
+    if (!title || !summary || !body || !category || !status || !publishDate) {
+      return res.status(400).send('Todos los campos son obligatorios');
+    }
+
+    // Validación del campo status
+    const validStatuses = ['draft', 'published', 'review'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).send('El estado del artículo no es válido');
+    }
+
+    // Manejo de tags como array
     let tagsArray = [];
     if (Array.isArray(tags)) {
       tagsArray = tags;
@@ -138,14 +161,18 @@ router.post('/edit-post/:id', authenticateToken, authorizeRoles(['admin']), asyn
       tagsArray = tags.split(',').map(tag => tag.trim());
     }
 
+    // Buscar el post por ID
     const postToUpdate = await Post.findById(req.params.id);
     if (!postToUpdate) return res.status(404).send('Post no encontrado');
 
-    postToUpdate.title = title;
-    postToUpdate.summary = summary;
-    postToUpdate.body = body;
+    // Actualizar los campos
+    postToUpdate.title = title.trim();
+    postToUpdate.summary = summary.trim();
+    postToUpdate.body = body.trim();
     postToUpdate.category = category;
     postToUpdate.tags = tagsArray;
+    postToUpdate.status = status; // ✅ Actualiza el estado
+    postToUpdate.publishDate = new Date(publishDate); // ✅ Actualiza la fecha de publicación
     postToUpdate.updatedAt = Date.now();
 
     await postToUpdate.save();
@@ -153,26 +180,43 @@ router.post('/edit-post/:id', authenticateToken, authorizeRoles(['admin']), asyn
     res.redirect('/');
   } catch (error) {
     console.error('Error actualizando post:', error);
-    res.status(500).send('Error updating post');
+    res.status(500).send('Error actualizando el post');
   }
 });
 
 /**
- * POST /delete-post/:id
+ * POST /dashboard/delete-post/:id
  * Admin - Eliminar un post
  */
 router.post('/delete-post/:id', authenticateToken, authorizeRoles(['admin']), async (req, res) => {
   try {
-    const post = await Post.findById(req.params.id);
-    if (!post) return res.status(404).send('Post no encontrado');
+    const postId = req.params.id;
 
-    await Post.deleteOne({ _id: req.params.id });
+    // Verificación básica del ID
+    if (!postId || postId.length !== 24) {
+      return res.status(400).send('ID del artículo no es válido');
+    }
 
-    res.redirect('/');
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).send('Post no encontrado');
+    }
+
+    await Post.deleteOne({ _id: postId });
+
+    console.log(`✅ Post eliminado: ${post.title}`);
+
+    // Redirecciona al dashboard después de borrar
+    res.redirect('/dashboard');
+    
+    // Si quieres responder JSON porque usarías fetch/AJAX:
+    // res.json({ success: true, message: 'Artículo eliminado' });
+
   } catch (error) {
     console.error('Error eliminando post:', error);
-    res.status(500).send('Error deleting post');
+    res.status(500).send('Error eliminando el post');
   }
 });
+
 
 module.exports = router;

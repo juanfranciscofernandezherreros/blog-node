@@ -1,167 +1,251 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Post</title>
-    <style>
-        /* Estilos globales */
-        body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(to right, #1e3c72, #2a5298);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            flex-direction: column;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editar Post</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #1e3c72, #2a5298);
+      margin: 0;
+      min-height: 100vh;
+      padding-top: 70px;
+    }
 
-        /* Estilos para el menú */
-        nav {
-            width: 100%;
-            background: #1e3c72;
-            padding: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: absolute;
-            top: 0;
-            left: 0;
-            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
-        }
+    nav {
+      background: #1e3c72;
+      color: white;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 70px;
+      z-index: 1000;
+    }
 
-        .menu {
-            display: flex;
-            gap: 20px;
-        }
+    nav .logo { font-size: 20px; font-weight: bold; }
 
-        .menu a {
-            color: white;
-            text-decoration: none;
-            font-size: 16px;
-            transition: color 0.3s ease;
-        }
+    nav .menu {
+      display: flex;
+      gap: 15px;
+    }
 
-        .menu a:hover {
-            color: #f1c40f;
-        }
+    nav .menu a {
+      color: white;
+      text-decoration: none;
+      font-size: 14px;
+    }
 
-        .container {
-            background: #ffffff;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
-            width: 100%;
-            max-width: 80%;
-            text-align: left;
-        }
+    nav .menu a:hover { color: #f1c40f; }
 
-        h2 {
-            text-align: center;
-            color: #333;
-        }
+    .container {
+      background: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      max-width: 800px;
+      margin: 40px auto;
+    }
 
-        form {
-            display: flex;
-            flex-direction: column;
-        }
+    label {
+      display: block;
+      margin-top: 20px;
+      margin-bottom: 5px;
+      color: #333;
+      text-align: left;
+    }
 
-        label {
-            font-weight: bold;
-            margin-top: 10px;
-            text-align: left;
-        }
+    input[type="text"],
+    input[type="date"],
+    textarea,
+    select {
+      width: 100%;
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+      transition: border 0.3s;
+    }
 
-        input, textarea, select {
-            padding: 10px;
-            margin-top: 5px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            width: 100%;
-        }
+    .input-error { border-color: red; }
 
-        textarea {
-            resize: vertical;
-            min-height: 100px;
-        }
+    .error-message {
+      color: red;
+      font-size: 13px;
+      margin-top: -5px;
+      margin-bottom: 10px;
+      display: none;
+    }
 
-        input:focus, textarea:focus, select:focus {
-            border-color: #1e3c72;
-            outline: none;
-            box-shadow: 0px 0px 5px rgba(30, 60, 114, 0.5);
-        }
+    .btn {
+      background: #1e3c72;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
 
-        .btn {
-            background: #1e3c72;
-            color: white;
-            padding: 10px;
-            margin-top: 15px;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background 0.3s ease;
-            text-align: center;
-        }
+    .btn:hover { background: #163c5a; }
 
-        .btn:hover {
-            background: #163c5a;
-        }
+    .back-link {
+      display: inline-block;
+      margin-top: 20px;
+      color: #1e3c72;
+      text-decoration: none;
+      font-size: 14px;
+    }
 
-        .back-link {
-            display: block;
-            text-align: center;
-            margin-top: 15px;
-            color: #1e3c72;
-            text-decoration: none;
-            font-weight: bold;
-        }
+    .back-link:hover { text-decoration: underline; }
+  </style>
 
-        .back-link:hover {
-            text-decoration: underline;
-        }
-    </style>
+  <!-- ✅ CKEditor 5 CDN -->
+  <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
 </head>
+
 <body>
-    <%- include('menu_top_admin') %>
 
+  <!-- ✅ Menú Fijo -->
+  <%- include('menu_top_admin') %>
 
-    <div class="container">
-        <h2>Editar Post</h2>
-        <form action="/dashboard/edit-post/<%= data._id %>?_method=PUT" method="POST">
-            <input type="hidden" name="_method" value="PUT">
+  <div class="container">
+    <h2>Editar Post</h2>
 
-            <label for="title">Título:</label>
-            <input type="text" name="title" id="title" value="<%= data.title %>" required>
+    <form id="editPostForm" action="/dashboard/edit-post/<%= data._id %>" method="POST" novalidate>
 
-            <label for="summary">Resumen:</label>
-            <textarea name="summary" id="summary" required><%= data.summary %></textarea>
+      <label for="title">Título:</label>
+      <input type="text" name="title" id="title" value="<%= data.title %>" required>
+      <div id="titleError" class="error-message">El título es obligatorio.</div>
 
-            <label for="body">Contenido:</label>
-            <textarea name="body" id="body" required><%= data.body %></textarea>
+      <label for="summary">Resumen:</label>
+      <textarea name="summary" id="summary" required><%= data.summary %></textarea>
+      <div id="summaryError" class="error-message">El resumen es obligatorio.</div>
 
-            <label for="category">Categoría:</label>
-            <select name="category" id="category" required>
-                <% categories.forEach(category => { %>
-                    <option value="<%= category._id %>" <%= category._id.toString() === data.category.toString() ? 'selected' : '' %>><%= category.name %></option>
-                <% }) %>
-            </select>
+      <label for="body">Contenido:</label>
+      <textarea name="body" id="body"><%= data.body %></textarea>
+      <div id="bodyError" class="error-message">El contenido es obligatorio.</div>
 
-            <label for="tags">Etiquetas:</label>
-            <select name="tags" id="tags" multiple>
-                <% tags.forEach(tag => { %>
-                    <option value="<%= tag._id %>" <%= selectedTags.includes(tag._id.toString()) ? 'selected' : '' %>><%= tag.name %></option>
-                <% }) %>
-            </select>
+      <label for="category">Categoría:</label>
+      <select name="category" id="category" required>
+        <option value="">Selecciona una categoría</option>
+        <% categories.forEach(category => { %>
+          <option value="<%= category._id %>" <%= data.category == category._id ? 'selected' : '' %>>
+            <%= category.name %>
+          </option>
+        <% }) %>
+      </select>
+      <div id="categoryError" class="error-message">Selecciona una categoría.</div>
 
-            <button type="submit" class="btn">Actualizar Post</button>
-        </form>
+      <label for="tags">Etiquetas:</label>
+      <select name="tags" id="tags" multiple>
+        <% tags.forEach(tag => { %>
+          <option value="<%= tag._id %>" <%= selectedTags.includes(tag._id.toString()) ? 'selected' : '' %>>
+            <%= tag.name %>
+          </option>
+        <% }) %>
+      </select>
 
-        <a href="/dashboard" class="back-link">← Volver al Dashboard</a>
-    </div>
+      <label for="status">Tipo de Artículo:</label>
+      <select name="status" id="status" required>
+        <option value="draft" <%= data.status === 'draft' ? 'selected' : '' %>>Borrador</option>
+        <option value="published" <%= data.status === 'published' ? 'selected' : '' %>>Publicado</option>
+        <option value="review" <%= data.status === 'review' ? 'selected' : '' %>>En Revisión</option>
+      </select>
+      <div id="statusError" class="error-message">Selecciona el estado del artículo.</div>
+
+      <label for="publishDate">Fecha de Publicación:</label>
+      <input type="date" name="publishDate" id="publishDate"
+             value="<%= data.publishDate ? data.publishDate.toISOString().split('T')[0] : '' %>" required>
+      <div id="publishDateError" class="error-message">La fecha de publicación es obligatoria.</div>
+
+      <p>Editando como: <strong><%= user.username %></strong></p>
+
+      <button type="submit" class="btn">Guardar Cambios</button>
+    </form>
+
+    <a href="/dashboard" class="back-link">← Volver al Dashboard</a>
+  </div>
+
+  <script>
+    let editorBody;
+
+    ClassicEditor
+      .create(document.querySelector('#body'))
+      .then(editor => {
+        editorBody = editor;
+        console.log('Editor cargado en edición');
+      })
+      .catch(error => {
+        console.error('❌ Error al cargar CKEditor:', error);
+      });
+
+    const form = document.getElementById('editPostForm');
+
+    form.addEventListener('submit', function (e) {
+      let hasErrors = false;
+      clearErrors();
+
+      const title = document.getElementById('title');
+      if (!title.value.trim()) {
+        showError(title, 'titleError');
+        hasErrors = true;
+      }
+
+      const summary = document.getElementById('summary');
+      if (!summary.value.trim()) {
+        showError(summary, 'summaryError');
+        hasErrors = true;
+      }
+
+      const bodyTextarea = document.getElementById('body');
+      const editorData = editorBody ? editorBody.getData().trim() : '';
+
+      if (!editorData) {
+        showError(bodyTextarea, 'bodyError');
+        hasErrors = true;
+      } else {
+        bodyTextarea.value = editorData;
+      }
+
+      const category = document.getElementById('category');
+      if (!category.value) {
+        showError(category, 'categoryError');
+        hasErrors = true;
+      }
+
+      const status = document.getElementById('status');
+      if (!status.value) {
+        showError(status, 'statusError');
+        hasErrors = true;
+      }
+
+      const publishDate = document.getElementById('publishDate');
+      if (!publishDate.value) {
+        showError(publishDate, 'publishDateError');
+        hasErrors = true;
+      }
+
+      if (hasErrors) e.preventDefault();
+    });
+
+    function showError(element, errorId) {
+      element.classList.add('input-error');
+      const errorDiv = document.getElementById(errorId);
+      errorDiv.style.display = 'block';
+    }
+
+    function clearErrors() {
+      const errorInputs = document.querySelectorAll('.input-error');
+      errorInputs.forEach(input => input.classList.remove('input-error'));
+
+      const errorMessages = document.querySelectorAll('.error-message');
+      errorMessages.forEach(msg => msg.style.display = 'none');
+    }
+  </script>
 
 </body>
 </html>

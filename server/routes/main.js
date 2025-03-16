@@ -90,6 +90,83 @@ router.post('/contact', async (req, res) => {
   }
 });
 
+/**
+ * POST /post/:id/favorite
+ */
+/**
+ * POST /post/:id/favorite
+ */
+router.post('/post/:id/favorite', authenticateToken, async (req, res) => {
+  try {
+    const { id: postId } = req.params;
+    const userId = req.user._id;
+
+    if (!mongoose.Types.ObjectId.isValid(postId)) {
+      return res.status(400).render('404', { title: "ID de post inválido" });
+    }
+
+    const post = await Post.findById(postId);
+    if (!post || (!post.isVisible || post.status !== 'published')) {
+      return res.status(404).render('404', { title: "Post no encontrado" });
+    }
+
+    const alreadyFavorited = post.favoritedBy.includes(userId);
+
+    if (alreadyFavorited) {
+      post.favoritedBy.pull(userId);
+    } else {
+      post.favoritedBy.push(userId);
+    }
+
+    await post.save();
+
+    res.redirect(`/post/${postId}`); // Aquí redirige al detalle del post
+
+  } catch (error) {
+    console.error("❌ Error al añadir a favoritos:", error);
+    res.status(500).render('500', { title: "Error del servidor" });
+  }
+});
+
+/**
+ * POST /post/:id/like
+ */
+/**
+ * POST /post/:id/like
+ */
+router.post('/post/:id/like', authenticateToken, async (req, res) => {
+  try {
+    const { id: postId } = req.params;
+    const userId = req.user._id;
+
+    if (!mongoose.Types.ObjectId.isValid(postId)) {
+      return res.status(400).render('404', { title: "ID de post inválido" });
+    }
+
+    const post = await Post.findById(postId);
+    if (!post || (!post.isVisible || post.status !== 'published')) {
+      return res.status(404).render('404', { title: "Post no encontrado" });
+    }
+
+    const alreadyLiked = post.likes.includes(userId);
+
+    if (alreadyLiked) {
+      post.likes.pull(userId);
+    } else {
+      post.likes.push(userId);
+    }
+
+    await post.save();
+
+    res.redirect(`/post/${postId}`); // Redirige al detalle del post
+
+  } catch (error) {
+    console.error("❌ Error al dar like:", error);
+    res.status(500).render('500', { title: "Error del servidor" });
+  }
+});
+
+
 // ✅ HOME - Lista de posts
 router.get('/', async (req, res) => {
   try {
@@ -98,19 +175,44 @@ router.get('/', async (req, res) => {
       learning: "Aprende con @kiferhe"
     };
 
-    const perPage = req.app.locals.perPage;
+    const perPage = req.app.locals.perPage || 10;
     const page = parseInt(req.query.page) || 1;
 
     const data = await Post.aggregate([
       { $match: publishedPostFilter },
       { $sort: { createdAt: -1 } },
-      { $lookup: { from: "categories", localField: "category", foreignField: "_id", as: "category" } },
-      { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
-      { $lookup: { from: "users", localField: "author", foreignField: "_id", as: "author" } },
-      { $unwind: { path: "$author", preserveNullAndEmptyArrays: true } },
+      { 
+        $lookup: { 
+          from: "categories", 
+          localField: "category", 
+          foreignField: "_id", 
+          as: "category" 
+        } 
+      },
+      { 
+        $unwind: { 
+          path: "$category", 
+          preserveNullAndEmptyArrays: true 
+        } 
+      },
+      { 
+        $lookup: { 
+          from: "users", 
+          localField: "author", 
+          foreignField: "_id", 
+          as: "author" 
+        } 
+      },
+      { 
+        $unwind: { 
+          path: "$author", 
+          preserveNullAndEmptyArrays: true 
+        } 
+      },
       {
         $project: {
           title: 1,
+          summary: 1, // ✅ Incluimos el resumen del post
           publishDate: 1,
           "category.name": 1,
           "author.username": 1,
@@ -144,6 +246,7 @@ router.get('/', async (req, res) => {
     res.status(500).send("Error interno del servidor");
   }
 });
+
 
 // ✅ ARTÍCULOS POR FECHA
 router.get('/articles', async (req, res) => {
@@ -195,6 +298,75 @@ router.get('/articles', async (req, res) => {
     res.status(500).json({ error: "❌ Error del servidor" });
   }
 });
+
+/**
+ * POST /keyword/search
+ * Busca artículos publicados por palabra clave
+ */
+router.post('/keyword/search', async (req, res) => {
+  try {
+    const keyword = req.body.keyword;
+
+    if (!keyword || keyword.trim().length === 0) {
+      return res.status(400).render('index', {
+        locals: {
+          title: 'Búsqueda',
+          description: 'Resultados de la búsqueda'
+        },
+        data: [],
+        recentPosts: await getRecentPosts(),
+        currentPage: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPrevPage: false,
+        error: '❌ Debes proporcionar una palabra clave.',
+        currentRoute: '/keyword/search'
+      });
+    }
+
+    const perPage = req.app.locals.perPage || 10;
+    const page = 1; // Por POST no tiene sentido paginar directamente, si quieres lo adaptamos luego
+
+    const searchRegex = new RegExp(keyword.trim(), 'i');
+
+    const query = {
+      ...publishedPostFilter,
+      $or: [
+        { title: searchRegex },
+        { content: searchRegex }
+      ]
+    };
+
+    const data = await Post.find(query)
+      .populate('category', 'name')
+      .populate('author', 'username')
+      .sort({ createdAt: -1 })
+      .limit(perPage);
+
+    const count = await Post.countDocuments(query);
+    const totalPages = Math.ceil(count / perPage);
+    const recentPosts = await getRecentPosts();
+
+    res.render('index', {
+      locals: {
+        title: `Resultados de búsqueda para: "${keyword}"`,
+        description: `Artículos que contienen la palabra clave "${keyword}".`
+      },
+      data,
+      recentPosts,
+      currentPage: page,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
+      currentRoute: '/keyword/search'
+    });
+
+  } catch (error) {
+    console.error('❌ Error en la búsqueda por keyword:', error);
+    res.status(500).render('500', { title: 'Error del servidor' });
+  }
+});
+
 
 // ✅ ARTÍCULOS POR TAG
 router.get('/articles/tags/:tagId', async (req, res) => {

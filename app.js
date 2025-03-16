@@ -85,20 +85,30 @@ app.use(async (req, res, next) => {
 });
 
 // ✅ Middleware para obtener 3 artículos aleatorios (solo visibles)
+// ✅ Middleware para obtener 3 artículos aleatorios (solo publicados y visibles)
 app.use(async (req, res, next) => {
   try {
     const randomPosts = await Post.aggregate([
-      { $match: req.queryFilter }, // Aplicar filtro de artículos visibles
-      { $sample: { size: 3 } }
+      {
+        $match: {
+          isVisible: true,      // 👈 Solo los que estén marcados como visibles
+          status: 'published'   // 👈 Solo los publicados
+        }
+      },
+      {
+        $sample: { size: 3 }    // 👈 Elegir 3 al azar
+      }
     ]);
 
-    res.locals.randomPosts = randomPosts || []; // Asignamos los artículos a `res.locals`
+    res.locals.randomPosts = randomPosts || [];
   } catch (error) {
     console.error("❌ Error al obtener artículos aleatorios:", error);
     res.locals.randomPosts = [];
   }
+
   next();
 });
+
 
 // Definir una variable global para perPage
 app.locals.perPage = 6; // Puedes cambiar este valor según sea necesario

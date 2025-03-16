@@ -1,17 +1,17 @@
 <div class="container mt-4">
   <div class="row">
 
-    <!-- 🔹 Contenedor principal del artículo (8 columnas en pantallas grandes) -->
+    <!-- 🔹 Contenedor principal del artículo -->
     <div class="col-lg-8">
 
-      <!-- 🔹 Información sobre el autor y la fecha -->
+      <!-- 🔹 Info de fecha y autor -->
       <p class="text-muted">
         Publicado
         <a href="/articles?date=<%= new Date(data.publishDate).toLocaleDateString('es-ES') %>">
           <%= new Date(data.publishDate).toLocaleDateString('es-ES') %>
         </a>
         por el usuario
-        <a href="/users/<%= data.userId %>">
+        <a href="/users_articles/<%= data.author ? data.author.username : 'anonimo' %>">
           <%= data.author ? data.author.username : 'Anónimo' %>
         </a>
       </p>
@@ -28,7 +28,7 @@
 
       <!-- 🔥 Likes y Favoritos -->
       <div class="d-flex align-items-center mb-3">
-        <!-- Botón de Like -->
+        <!-- Like -->
         <form action="/post/<%= data._id %>/like" method="POST" class="me-3">
           <button type="submit" class="btn btn-sm <%= isLiked ? 'btn-danger' : 'btn-outline-danger' %>">
             <%= isLiked ? '💖 Quitar Like' : '🤍 Dar Like' %>
@@ -36,7 +36,7 @@
           <span><%= likesCount %> Likes</span>
         </form>
 
-        <!-- Botón de Favorito -->
+        <!-- Favorito -->
         <form action="/post/<%= data._id %>/favorite" method="POST">
           <button type="submit" class="btn btn-sm <%= isFavorited ? 'btn-warning' : 'btn-outline-warning' %>">
             <%= isFavorited ? '⭐ Quitar de Favoritos' : '☆ Guardar en Favoritos' %>
@@ -45,19 +45,16 @@
         </form>
       </div>
 
-      <!-- 🔹 Contenedor oculto con el contenido Markdown -->
+      <!-- 🔹 Contenido del artículo -->
       <div id="article-body" data-body="<%= encodeURIComponent(data.body) %>"></div>
-
-      <!-- 🔹 Renderización del contenido en HTML -->
       <div class="article-body border rounded p-4" id="rendered-article-body"></div>
 
+      <!-- 🔹 Botón volver -->
       <hr>
-
       <a href="/" class="btn btn-primary mt-3">Volver al inicio</a>
-
       <hr>
 
-      <!-- 🔹 Sección de Comentarios -->
+      <!-- 🔹 Comentarios -->
       <h3>Comentarios</h3>
 
       <% if (comments.length > 0) { %>
@@ -69,10 +66,8 @@
                 <span class="text-muted small"> - <%= new Date(comment.createdAt).toLocaleDateString('es-ES') %></span>
                 <p class="mt-1"><%= comment.body %></p>
 
-                <!-- Botón para responder -->
                 <button class="btn btn-sm btn-link text-primary" onclick="toggleReplyForm('<%= comment._id %>')">Responder</button>
 
-                <!-- Formulario de respuesta -->
                 <form id="reply-form-<%= comment._id %>" action="/post/<%= data._id %>/comment" method="POST" class="mt-2 d-none">
                   <input type="hidden" name="parentId" value="<%= comment._id %>">
                   <div class="mb-2">
@@ -84,7 +79,6 @@
                   <button type="submit" class="btn btn-sm btn-primary">Enviar Respuesta</button>
                 </form>
 
-                <!-- Renderizar respuestas de manera recursiva -->
                 <% if (comment.replies && comment.replies.length > 0) { %>
                   <ul class="list-group mt-2">
                     <%= renderComments(comment.replies, level + 1) %> 
@@ -93,56 +87,34 @@
               </li>
             <% }) %>
           <% } %>
-
           <%= renderComments(comments) %>
         </ul>
       <% } else { %>
         <p class="text-muted">No hay comentarios aún.</p>
       <% } %>
 
-      <!-- 🔹 Formulario para agregar un nuevo comentario -->
+      <!-- 🔹 Formulario nuevo comentario -->
       <form action="/post/<%= data._id %>/comment" method="POST" class="mb-4">
-
         <div class="mb-3">
           <label for="author" class="form-label">Nombre</label>
-      
           <% if (user) { %>
-            <!-- Si el usuario está logueado, prellenar y deshabilitar -->
-            <input 
-              type="text" 
-              class="form-control" 
-              id="author" 
-              name="author" 
-              value="<%= user.username %>" 
-              readonly
-            >
+            <input type="text" class="form-control" id="author" name="author" value="<%= user.username %>" readonly>
           <% } else { %>
-            <!-- Si NO está logueado, campo editable -->
-            <input 
-              type="text" 
-              class="form-control" 
-              id="author" 
-              name="author" 
-              placeholder="Tu nombre" 
-              required
-            >
+            <input type="text" class="form-control" id="author" name="author" placeholder="Tu nombre" required>
           <% } %>
-      
         </div>
-      
+
         <div class="mb-3">
           <label for="body" class="form-label">Comentario</label>
           <textarea class="form-control" id="body" name="body" rows="3" required></textarea>
         </div>
-      
+
         <button type="submit" class="btn btn-primary">Enviar Comentario</button>
       </form>
-      
-      
 
     </div>
 
-    <!-- 🔹 Sidebar en el lateral derecho -->
+    <!-- 🔹 Sidebar -->
     <div class="col-lg-4 sidebar">
       <%- include('partials/sidebar') %>
     </div>
@@ -159,9 +131,7 @@
     const form = document.getElementById(`reply-form-${commentId}`);
     form.classList.toggle('d-none');
   }
-</script>
 
-<script>
   document.addEventListener("DOMContentLoaded", function () {
     const articleBodyDiv = document.getElementById("article-body");
     const renderedArticleBodyDiv = document.getElementById("rendered-article-body");

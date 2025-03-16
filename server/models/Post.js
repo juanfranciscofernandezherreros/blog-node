@@ -31,9 +31,10 @@ const PostSchema = new mongoose.Schema({
   // ✅ Estado del artículo
   status: {
     type: String,
-    enum: ['draft', 'published'],
+    enum: ['draft', 'published', 'review'],  // ✅ añadido 'review'
     default: 'draft'
   },
+  
   // 👍 Lista de usuarios que dieron like
   likes: [{
     type: mongoose.Schema.Types.ObjectId,
