@@ -29,7 +29,7 @@
 
   <hr>
 
-  <!-- Posts que el usuario ha dado like -->
+  <!-- Likes -->
   <h2 class="mt-4">Artículos que te gustaron ❤️</h2>
 
   <% if (likedPosts.length > 0) { %>
@@ -43,9 +43,16 @@
               </h5>
               <p class="card-text">
                 Categoría: <%= post.category ? post.category.name : 'Sin categoría' %><br>
-                Autor: <%= post.author ? post.author.username : 'Anónimo' %>
+                Autor:
+                <a href="/users_articles/<%= post.author ? post.author.username : 'anonimo' %>">
+                  <%= post.author ? post.author.username : 'Anónimo' %>
+                </a>
               </p>
-              <a href="/post/<%= post._id %>" class="btn btn-primary btn-sm">Ver artículo</a>
+
+              <form action="/post/<%= post._id %>/unlike" method="POST" onsubmit="return confirm('¿Quitar Like de este artículo?');">
+                <button type="submit" class="btn btn-danger btn-sm mt-2">Quitar Like ❤️</button>
+              </form>
+
             </div>
           </div>
         </div>
@@ -57,7 +64,7 @@
 
   <hr>
 
-  <!-- Posts que el usuario ha guardado como favorito -->
+  <!-- Favoritos -->
   <h2 class="mt-4">Tus Favoritos ⭐</h2>
 
   <% if (favoritedPosts.length > 0) { %>
@@ -71,9 +78,16 @@
               </h5>
               <p class="card-text">
                 Categoría: <%= post.category ? post.category.name : 'Sin categoría' %><br>
-                Autor: <%= post.author ? post.author.username : 'Anónimo' %>
+                Autor:
+                <a href="/users_articles/<%= post.author ? post.author.username : 'anonimo' %>">
+                  <%= post.author ? post.author.username : 'Anónimo' %>
+                </a>
               </p>
-              <a href="/post/<%= post._id %>" class="btn btn-primary btn-sm">Ver artículo</a>
+
+              <form action="/post/<%= post._id %>/unfavorite" method="POST" onsubmit="return confirm('¿Quitar de favoritos este artículo?');">
+                <button type="submit" class="btn btn-warning btn-sm mt-2">Quitar Favorito ⭐</button>
+              </form>
+
             </div>
           </div>
         </div>
@@ -85,7 +99,7 @@
 
   <hr>
 
-  <!-- Comentarios que el usuario ha dejado -->
+  <!-- Comentarios -->
   <h2 class="mt-4">Tus Comentarios 📝</h2>
 
   <% if (userComments.length > 0) { %>
@@ -110,7 +124,7 @@
 
   <hr>
 
-  <!-- Respuestas que el usuario ha dejado -->
+  <!-- Respuestas -->
   <h2 class="mt-4">Tus Respuestas 💬</h2>
 
   <% if (userReplies.length > 0) { %>
@@ -142,7 +156,7 @@
 
   <hr>
 
-  <!-- Enlace de cerrar sesión -->
+  <!-- Cerrar sesión -->
   <div class="text-center">
     <a href="/profile/logout" class="btn btn-danger mt-4">Cerrar Sesión</a>
   </div>

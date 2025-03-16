@@ -21,41 +21,33 @@ router.get('/user', authenticateToken, async (req, res) => {
 
     const userId = req.user._id;
 
-    // 🔹 Posts que el usuario ha dado like Y que están en estado 'published'
-    const likedPosts = await Post.find({ 
-        likes: userId, 
-        published: true // Asegura que el post esté publicado 
-      })
+    // 🔹 Posts que el usuario ha dado like
+    const likedPosts = await Post.find({ likes: userId })
       .populate('author', 'username')
       .populate('category', 'name')
       .sort({ createdAt: -1 });
 
-    // 🔹 Posts que el usuario ha marcado como favoritos Y que están en estado 'published'
-    const favoritedPosts = await Post.find({ 
-        favoritedBy: userId, 
-        published: true // Asegura que el post esté publicado 
-      })
+    // 🔹 Posts que el usuario ha marcado como favoritos
+    const favoritedPosts = await Post.find({ favoritedBy: userId })
       .populate('author', 'username')
       .populate('category', 'name')
       .sort({ createdAt: -1 });
 
-    // 🔹 Comentarios que el usuario ha dejado (solo los comentarios raíz) y publicados
+    // 🔹 Comentarios que el usuario ha dejado (solo los comentarios raíz)
     const userComments = await Comment.find({ 
       author: req.user.username, 
-      parentId: null, 
-      published: true
+      parentId: null 
     })
-      .populate('postId', 'title published')
+      .populate('postId', 'title')
       .sort({ createdAt: -1 });
 
-    // 🔹 Respuestas que el usuario ha dejado (hijos de otros comentarios) y publicados
+    // 🔹 Respuestas que el usuario ha dejado (hijos de otros comentarios)
     const userReplies = await Comment.find({ 
       author: req.user.username, 
-      parentId: { $ne: null },
-      published: true
+      parentId: { $ne: null } 
     })
-      .populate('postId', 'title published')
-      .populate('parentId', 'body')
+      .populate('postId', 'title')
+      .populate('parentId', 'body') // Trae el contenido del comentario padre
       .sort({ createdAt: -1 });
 
     res.render('profile', {
@@ -76,7 +68,6 @@ router.get('/user', authenticateToken, async (req, res) => {
     });
   }
 });
-
 
 
 /**
