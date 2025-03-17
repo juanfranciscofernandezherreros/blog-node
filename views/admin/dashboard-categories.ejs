@@ -159,19 +159,19 @@
     <div class="container">
         <div class="admin-title">
             <h2>Categorías</h2>
-            <a href="/add-category" class="button">+ Añadir Nueva</a>
+            <a href="/dashboard/categories/add-category" class="button">+ Añadir Nueva</a>
         </div>
 
         <ul class="admin-posts">
             <% data.forEach(category => { %>
                 <li>
-                    <a href="/category/<%= category._id %>">
+                    <a href="/dashboard/categories/category/<%= category._id %>">
                         <%= category.name %> &nearr;
                     </a>
                     <div class="admin-post-controls">
-                        <a href="/edit-category/<%= category._id %>" class="btn-edit btn" style="color:white;">Editar</a>
+                        <a href="/dashboard/categories/edit-category/<%= category._id %>" class="btn-edit btn" style="color:white;">Editar</a>
                         
-                        <form action="/delete-category/<%= category._id %>?_method=DELETE" method="POST">
+                        <form action="/dashboard/categories/delete-category/<%= category._id %>?_method=DELETE" method="POST">
                             <input type="submit" value="Eliminar" class="btn-delete btn">
                         </form>
                     </div>

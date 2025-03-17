@@ -159,7 +159,7 @@
     <div class="container">
         <div class="admin-title">
             <h2>Newsletters</h2>
-            <a href="/add-newsletter" class="button">+ Añadir Nueva</a>
+            <a href="/dashboard/newsletter/add-newsletter" class="button">+ Añadir Nueva</a>
         </div>
 
         <ul class="admin-posts">
@@ -167,10 +167,9 @@
                 <li>
                     <%= newsletter.email %>
                     <div class="admin-post-controls">
-
                         <a href="/dashboard/newsletter/edit/<%= newsletter._id %>" class="btn-edit btn" style="color:white;">Editar</a>
 
-                        <form action="/delete-newsletter/<%= newsletter.email %>?_method=DELETE" method="POST">
+                        <form action="/dashboard/newsletter/delete-newsletter/<%= newsletter.email %>?_method=DELETE" method="POST">
                             <input type="submit" value="Eliminar" class="btn-delete btn">
                         </form>
                     </div>
