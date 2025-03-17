@@ -93,9 +93,6 @@ router.post('/contact', async (req, res) => {
 /**
  * POST /post/:id/favorite
  */
-/**
- * POST /post/:id/favorite
- */
 router.post('/post/:id/favorite', authenticateToken, async (req, res) => {
   try {
     const { id: postId } = req.params;
@@ -128,9 +125,6 @@ router.post('/post/:id/favorite', authenticateToken, async (req, res) => {
   }
 });
 
-/**
- * POST /post/:id/like
- */
 /**
  * POST /post/:id/like
  */
@@ -501,7 +495,7 @@ router.get('/category/:name', async (req, res) => {
 });
 
 // ✅ POST DETALLE
-router.get('/post/:id', authenticateToken, async (req, res) => {
+router.get('/post/:id', async (req, res) => {
   try {
     const { id: postId } = req.params;
     if (!mongoose.Types.ObjectId.isValid(postId)) {
