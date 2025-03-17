@@ -158,7 +158,7 @@
     <div class="container">
         <div class="admin-title">
             <h2>Etiquetas</h2>
-            <a href="/add-tag" class="button">+ Añadir Nueva</a>
+            <a href="/dashboard/tags/add-tag" class="button">+ Añadir Nueva</a>
         </div>
 
         <ul class="admin-posts">
@@ -166,9 +166,9 @@
                 <li>
                     <%= tag.name %>
                     <div class="admin-post-controls">
-                        <a href="/edit-tag/<%= tag._id %>" class="btn-edit btn">Editar</a>
+                        <a href="/dashboard/tags/edit-tag/<%= tag._id %>" class="btn-edit btn">Editar</a>
 
-                        <form action="/delete-tag/<%= tag._id %>?_method=DELETE" method="POST">
+                        <form action="/dashboard/tags/delete-tag/<%= tag._id %>?_method=DELETE" method="POST">
                             <button type="submit" class="btn-delete btn" onclick="return confirm('¿Seguro que deseas eliminar esta etiqueta?');">
                                 Eliminar
                             </button>
