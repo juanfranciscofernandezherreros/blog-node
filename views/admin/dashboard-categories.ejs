@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
+    <title>Categories Dashboard</title>
     <style>
         /* Estilos globales */
         body {
@@ -158,28 +158,27 @@
     <!-- Contenido principal -->
     <div class="container">
         <div class="admin-title">
-            <h2>Posts</h2>
-            <a href="/dashboard/add-post" class="button">+ Add New</a>
+            <h2>Categorías</h2>
+            <a href="/dashboard/categories/add-category" class="button">+ Añadir Nueva</a>
         </div>
 
         <ul class="admin-posts">
-            <% data.forEach(post => { %>
+            <% data.forEach(category => { %>
                 <li>
-                    <a href="/post/<%= post._id %>">
-                        <%= post.title %> &nearr;
+                    <a href="/dashboard/categories/category/<%= category._id %>">
+                        <%= category.name %> &nearr;
                     </a>
                     <div class="admin-post-controls">
-                        <a href="/dashboard/edit-post/<%= post._id %>" class="btn-edit btn" style="color:white;">Edit</a>
+                        <a href="/dashboard/categories/edit-category/<%= category._id %>" class="btn-edit btn" style="color:white;">Editar</a>
                         
-                        <form action="/dashboard/delete-post/<%= post._id %>" method="POST" onsubmit="return confirm('¿Estás seguro de eliminar este artículo?');">
+                        <form action="/dashboard/categories/delete-category/<%= category._id %>?_method=DELETE" method="POST">
                             <input type="submit" value="Eliminar" class="btn-delete btn">
-                          </form>
-                          
+                        </form>
                     </div>
                 </li>
             <% }) %>
         </ul>  
-    </div>
+    </div>  
 
 </body>
 </html>

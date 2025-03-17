@@ -1,5 +1,5 @@
 <div class="container">
-  <div class="row">
+  <div class="row">    
     
     <!-- 🔹 Sección principal con los artículos (8 columnas en pantallas grandes) -->
     <div class="col-lg-8">
@@ -32,12 +32,16 @@
                   <p class="text-muted">
                     <strong>Autor:</strong> 
                     <% if (post.author) { %>
-                      <a href="/users/<%= post.author.username %>" class="text-primary">
+                      <a href="/users_articles/<%= post.author.username %>" class="text-primary">
                         <%= post.author.username %>
                       </a>
                     <% } else { %>
                       Desconocido
                     <% } %>
+                  </p>
+
+                  <p class="text-muted">
+                        <%= post.summary %>                    
                   </p>
 
                   <p class="text-muted"><%= post.summary %></p>

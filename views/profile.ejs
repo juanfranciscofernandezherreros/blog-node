@@ -1,0 +1,163 @@
+<div class="container">
+  <h1 class="mb-4">Mi Perfil</h1>
+
+  <!-- Información básica del usuario -->
+  <table class="table table-bordered">
+    <tr>
+      <th>Usuario:</th>
+      <td><%= user.username %></td>
+    </tr>
+    <tr>
+      <th>Email:</th>
+      <td><%= user.email %></td>
+    </tr>
+    <tr>
+      <th>Roles:</th>
+      <td>
+        <% if (user.roles && user.roles.length) { %>
+          <%= user.roles.map(role => role.name).join(', ') %>
+        <% } else { %>
+          Sin roles
+        <% } %>
+      </td>
+    </tr>
+    <tr>
+      <th>Fecha de Creación:</th>
+      <td><%= new Date(user.createdAt).toLocaleDateString('es-ES') %></td>
+    </tr>
+  </table>
+
+  <hr>
+
+  <!-- Likes -->
+  <h2 class="mt-4">Artículos que te gustaron ❤️</h2>
+
+  <% if (likedPosts.length > 0) { %>
+    <div class="row">
+      <% likedPosts.forEach(post => { %>
+        <div class="col-md-4 mb-4">
+          <div class="card shadow-sm h-100">
+            <div class="card-body">
+              <h5 class="card-title">
+                <a href="/post/<%= post._id %>"><%= post.title %></a>
+              </h5>
+              <p class="card-text">
+                Categoría: <%= post.category ? post.category.name : 'Sin categoría' %><br>
+                Autor:
+                <a href="/users_articles/<%= post.author ? post.author.username : 'anonimo' %>">
+                  <%= post.author ? post.author.username : 'Anónimo' %>
+                </a>
+              </p>
+
+              <form action="/post/<%= post._id %>/unlike" method="POST" onsubmit="return confirm('¿Quitar Like de este artículo?');">
+                <button type="submit" class="btn btn-danger btn-sm mt-2">Quitar Like ❤️</button>
+              </form>
+
+            </div>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+  <% } else { %>
+    <p>No has dado like a ningún artículo todavía.</p>
+  <% } %>
+
+  <hr>
+
+  <!-- Favoritos -->
+  <h2 class="mt-4">Tus Favoritos ⭐</h2>
+
+  <% if (favoritedPosts.length > 0) { %>
+    <div class="row">
+      <% favoritedPosts.forEach(post => { %>
+        <div class="col-md-4 mb-4">
+          <div class="card shadow-sm h-100">
+            <div class="card-body">
+              <h5 class="card-title">
+                <a href="/post/<%= post._id %>"><%= post.title %></a>
+              </h5>
+              <p class="card-text">
+                Categoría: <%= post.category ? post.category.name : 'Sin categoría' %><br>
+                Autor:
+                <a href="/users_articles/<%= post.author ? post.author.username : 'anonimo' %>">
+                  <%= post.author ? post.author.username : 'Anónimo' %>
+                </a>
+              </p>
+
+              <form action="/post/<%= post._id %>/unfavorite" method="POST" onsubmit="return confirm('¿Quitar de favoritos este artículo?');">
+                <button type="submit" class="btn btn-warning btn-sm mt-2">Quitar Favorito ⭐</button>
+              </form>
+
+            </div>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+  <% } else { %>
+    <p>No has guardado ningún artículo como favorito.</p>
+  <% } %>
+
+  <hr>
+
+  <!-- Comentarios -->
+  <h2 class="mt-4">Tus Comentarios 📝</h2>
+
+  <% if (userComments.length > 0) { %>
+    <ul class="list-group">
+      <% userComments.forEach(comment => { %>
+        <li class="list-group-item">
+          <strong>En el post:</strong>
+          <% if (comment.postId) { %>
+            <a href="/post/<%= comment.postId._id %>"><%= comment.postId.title %></a>
+          <% } else { %>
+            <em>Post eliminado</em>
+          <% } %>
+          <br>
+          <strong>Fecha:</strong> <%= new Date(comment.createdAt).toLocaleDateString('es-ES') %>
+          <p class="mb-1"><%= comment.body %></p>
+        </li>
+      <% }); %>
+    </ul>
+  <% } else { %>
+    <p>No has dejado ningún comentario todavía.</p>
+  <% } %>
+
+  <hr>
+
+  <!-- Respuestas -->
+  <h2 class="mt-4">Tus Respuestas 💬</h2>
+
+  <% if (userReplies.length > 0) { %>
+    <ul class="list-group">
+      <% userReplies.forEach(reply => { %>
+        <li class="list-group-item">
+          <strong>En el post:</strong>
+          <% if (reply.postId) { %>
+            <a href="/post/<%= reply.postId._id %>"><%= reply.postId.title %></a>
+          <% } else { %>
+            <em>Post eliminado</em>
+          <% } %>
+          <br>
+          <strong>A la respuesta:</strong>
+          <% if (reply.parentId) { %>
+            "<%= reply.parentId.body.length > 50 ? reply.parentId.body.slice(0, 50) + '...' : reply.parentId.body %>"
+          <% } else { %>
+            <em>Comentario eliminado</em>
+          <% } %>
+          <br>
+          <strong>Fecha:</strong> <%= new Date(reply.createdAt).toLocaleDateString('es-ES') %>
+          <p class="mb-1"><%= reply.body %></p>
+        </li>
+      <% }); %>
+    </ul>
+  <% } else { %>
+    <p>No has respondido a ningún comentario todavía.</p>
+  <% } %>
+
+  <hr>
+
+  <!-- Cerrar sesión -->
+  <div class="text-center">
+    <a href="/profile/logout" class="btn btn-danger mt-4">Cerrar Sesión</a>
+  </div>
+</div>

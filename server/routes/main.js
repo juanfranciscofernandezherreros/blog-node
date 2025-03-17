@@ -1,34 +1,59 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const mongoose = require('mongoose');
+const nodemailer = require('nodemailer');
+require('dotenv').config();
 
 const router = express.Router();
-const Post = require('../models/Post');
-const nodemailer = require('nodemailer');
-const Newsletter = require('../models/Newsletter'); // Importamos el modelo
-const User = require('../models/User'); // Importa el modelo
-const Comment = require('../models/Comment'); // Importa el modelo
-const Category = require('../models/Category'); // Importa el modelo
-const Tag = require('../models/Tags'); // Importa el modelo
-require('dotenv').config(); // Cargar variables de entorno
 
-// Configurar el transporter de Nodemailer
+const Post = require('../models/Post');
+const Newsletter = require('../models/Newsletter');
+const User = require('../models/User');
+const Comment = require('../models/Comment');
+const Category = require('../models/Category');
+const Tag = require('../models/Tags');
+const { authenticateToken, authorizeRoles } = require('../middlewares/authMiddleware');
+const { createLog } = require('../middlewares/logger');
+
+// ✅ Filtros comunes para posts publicados y visibles
+const publishedPostFilter = { isVisible: true, status: 'published' };
+
+// ✅ Helper: obtener publicaciones recientes
+const getRecentPosts = async (limit = 5) => {
+  return await Post.find(publishedPostFilter)
+    .sort({ createdAt: -1 })
+    .limit(limit)
+    .populate('author', 'username')
+    .populate('category', 'name');
+};
+
+// ✅ Helper: obtener post por ID considerando el rol del usuario
+const getPostByRole = async (postId, user) => {
+  const isAdmin = user?.roles?.includes('admin') || user?.roles?.includes('editor');
+  const filter = isAdmin
+    ? { _id: postId }
+    : { _id: postId, ...publishedPostFilter };
+
+  return await Post.findOne(filter)
+    .populate('author', 'username')
+    .populate('likes', 'username')
+    .populate('favoritedBy', 'username');
+};
+
+// ✅ Configurar el transporter de Nodemailer
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com", // Gmail requiere este host
-  port: process.env.SMTP_PORT || 465, // Usa 465 (SSL) o 587 (STARTTLS)
-  secure: process.env.SMTP_PORT == 465, // true si es 465, false para 587
+  host: "smtp.gmail.com",
+  port: process.env.SMTP_PORT || 465,
+  secure: process.env.SMTP_PORT == 465,
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASSWORD,
   },
-  tls: {
-    rejectUnauthorized: false // Evita problemas con certificados en localhost
-  },
+  tls: { rejectUnauthorized: false },
 });
 
 /**
  * POST /contact
- * Envía un correo con los datos del formulario de contacto
  */
 router.post('/contact', async (req, res) => {
   const { name, email, message } = req.body;
@@ -45,13 +70,11 @@ router.post('/contact', async (req, res) => {
 
   try {
     await transporter.sendMail({
-      from: `"Blog Contact" <${process.env.SMTP_USER}>`, // Usa tu correo Gmail
-      to: process.env.SMTP_USER, // Recibirás el mensaje en este mismo correo
+      from: `"Blog Contact" <${process.env.SMTP_USER}>`,
+      to: process.env.SMTP_USER,
       subject: `Nuevo mensaje de contacto de ${name}`,
       text: `De: ${name} <${email}>\n\nMensaje:\n${message}`,
-      html: `<p><strong>De:</strong> ${name} (<a href="mailto:${email}">${email}</a>)</p>
-             <p><strong>Mensaje:</strong></p>
-             <p>${message}</p>`
+      html: `<p><strong>De:</strong> ${name} (<a href="mailto:${email}">${email}</a>)</p><p><strong>Mensaje:</strong></p><p>${message}</p>`
     });
 
     res.render('contact', {
@@ -67,75 +90,154 @@ router.post('/contact', async (req, res) => {
   }
 });
 
+/**
+ * POST /post/:id/favorite
+ */
+/**
+ * POST /post/:id/favorite
+ */
+router.post('/post/:id/favorite', authenticateToken, async (req, res) => {
+  try {
+    const { id: postId } = req.params;
+    const userId = req.user._id;
 
-router.get('', async (req, res) => {
+    if (!mongoose.Types.ObjectId.isValid(postId)) {
+      return res.status(400).render('404', { title: "ID de post inválido" });
+    }
+
+    const post = await Post.findById(postId);
+    if (!post || (!post.isVisible || post.status !== 'published')) {
+      return res.status(404).render('404', { title: "Post no encontrado" });
+    }
+
+    const alreadyFavorited = post.favoritedBy.includes(userId);
+
+    if (alreadyFavorited) {
+      post.favoritedBy.pull(userId);
+    } else {
+      post.favoritedBy.push(userId);
+    }
+
+    await post.save();
+
+    res.redirect(`/post/${postId}`); // Aquí redirige al detalle del post
+
+  } catch (error) {
+    console.error("❌ Error al añadir a favoritos:", error);
+    res.status(500).render('500', { title: "Error del servidor" });
+  }
+});
+
+/**
+ * POST /post/:id/like
+ */
+/**
+ * POST /post/:id/like
+ */
+router.post('/post/:id/like', authenticateToken, async (req, res) => {
+  try {
+    const { id: postId } = req.params;
+    const userId = req.user._id;
+
+    if (!mongoose.Types.ObjectId.isValid(postId)) {
+      return res.status(400).render('404', { title: "ID de post inválido" });
+    }
+
+    const post = await Post.findById(postId);
+    if (!post || (!post.isVisible || post.status !== 'published')) {
+      return res.status(404).render('404', { title: "Post no encontrado" });
+    }
+
+    const alreadyLiked = post.likes.includes(userId);
+
+    if (alreadyLiked) {
+      post.likes.pull(userId);
+    } else {
+      post.likes.push(userId);
+    }
+
+    await post.save();
+
+    res.redirect(`/post/${postId}`); // Redirige al detalle del post
+
+  } catch (error) {
+    console.error("❌ Error al dar like:", error);
+    res.status(500).render('500', { title: "Error del servidor" });
+  }
+});
+
+
+// ✅ HOME - Lista de posts
+router.get('/', async (req, res) => {
   try {
     const locals = {
       title: "Juan Francisco Fernandez Herreros | Senior Software Engineer",
       learning: "Aprende con @kiferhe"
     };
-    const perPage = req.app.locals.perPage;
-    let page = parseInt(req.query.page) || 1;
 
-    // 🔹 Obtener posts visibles con la categoría, autor y publishDate formateado
+    const perPage = req.app.locals.perPage || 10;
+    const page = parseInt(req.query.page) || 1;
+
     const data = await Post.aggregate([
-      { $match: { isVisible: true } }, // Filtrar solo los posts visibles
-      { $sort: { createdAt: -1 } }, // Ordenar por fecha descendente
-
-      // 🔹 Unir con la colección de categorías para obtener `category.name`
-      {
-        $lookup: {
-          from: "categories",
-          localField: "category",
-          foreignField: "_id",
-          as: "category"
-        }
+      { $match: publishedPostFilter },
+      { $sort: { createdAt: -1 } },
+      { 
+        $lookup: { 
+          from: "categories", 
+          localField: "category", 
+          foreignField: "_id", 
+          as: "category" 
+        } 
       },
-      { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
-
-      // 🔹 Unir con la colección de usuarios para obtener `author.username`
-      {
-        $lookup: {
-          from: "users",
-          localField: "author",
-          foreignField: "_id",
-          as: "author"
-        }
+      { 
+        $unwind: { 
+          path: "$category", 
+          preserveNullAndEmptyArrays: true 
+        } 
       },
-      { $unwind: { path: "$author", preserveNullAndEmptyArrays: true } },
-
-      // 🔹 Proyectar solo los campos necesarios y formatear publishDate
+      { 
+        $lookup: { 
+          from: "users", 
+          localField: "author", 
+          foreignField: "_id", 
+          as: "author" 
+        } 
+      },
+      { 
+        $unwind: { 
+          path: "$author", 
+          preserveNullAndEmptyArrays: true 
+        } 
+      },
       {
         $project: {
           title: 1,
-          isVisible: 1,
+          summary: 1, // ✅ Incluimos el resumen del post
           publishDate: 1,
           "category.name": 1,
           "author.username": 1,
           formattedPublishDate: {
-            $dateToString: { format: "%Y-%m-%d", date: "$publishDate" } // Formato ISO YYYY-MM-DD
+            $dateToString: { format: "%Y-%m-%d", date: "$publishDate" }
           }
         }
       },
-
       { $skip: perPage * (page - 1) },
       { $limit: perPage }
     ]).allowDiskUse(true);
 
-    // 🔹 Obtener el total de posts visibles
-    const count = await Post.countDocuments({ isVisible: true });
-
+    const count = await Post.countDocuments(publishedPostFilter);
     const totalPages = Math.ceil(count / perPage);
-    const hasNextPage = page < totalPages;
-    const hasPrevPage = page > 1;
 
-    res.render('index', { 
+    const recentPosts = await getRecentPosts();
+
+    res.render('index', {
       locals,
       data,
+      recentPosts,
       currentPage: page,
       totalPages,
-      hasNextPage,
-      hasPrevPage,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
       currentRoute: '/'
     });
 
@@ -146,71 +248,48 @@ router.get('', async (req, res) => {
 });
 
 
-
-
-
+// ✅ ARTÍCULOS POR FECHA
 router.get('/articles', async (req, res) => {
   try {
     const { date } = req.query;
-
-    if (!date) {
-      return res.status(400).json({ error: "❌ Debes proporcionar una fecha en formato DD/MM/YYYY" });
+    if (!date || !/^\d{2}\/\d{2}\/\d{4}$/.test(date)) {
+      return res.status(400).json({ error: "❌ Debes proporcionar una fecha válida en formato DD/MM/YYYY" });
     }
 
-    // 🔹 Validar el formato de la fecha
-    const dateParts = date.split('/');
-    if (dateParts.length !== 3) {
-      return res.status(400).json({ error: "❌ Formato de fecha inválido. Usa DD/MM/YYYY" });
-    }
-
-    const [day, month, year] = dateParts.map(Number);
-    if (!day || !month || !year || day > 31 || month > 12) {
-      return res.status(400).json({ error: "❌ Fecha no válida. Asegúrate de que sea numérica y en formato DD/MM/YYYY" });
-    }
-
-    // 🔹 Convertir la fecha a formato UTC
+    const [day, month, year] = date.split('/').map(Number);
     const startDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
     const endDate = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
 
-    if (isNaN(startDate.getTime())) {
-      return res.status(400).json({ error: "❌ Fecha inválida. Verifica el formato." });
-    }
-
     const perPage = req.app.locals.perPage;
-    let page = parseInt(req.query.page) || 1;
+    const page = parseInt(req.query.page) || 1;
 
-    // 🔹 Buscar los artículos creados en la fecha especificada
-    const data = await Post.find({
-      createdAt: { $gte: startDate, $lte: endDate }
-    })
+    const query = {
+      createdAt: { $gte: startDate, $lte: endDate },
+      ...publishedPostFilter
+    };
+
+    const data = await Post.find(query)
       .populate('category', 'name')
       .populate('author', 'username')
       .sort({ createdAt: -1 })
       .skip(perPage * (page - 1))
       .limit(perPage);
 
-    // 🔹 Contar los artículos que cumplen la condición
-    const count = await Post.countDocuments({
-      createdAt: { $gte: startDate, $lte: endDate }
-    });
-
+    const count = await Post.countDocuments(query);
     const totalPages = Math.ceil(count / perPage);
-    const hasNextPage = page < totalPages;
-    const hasPrevPage = page > 1;
+    const recentPosts = await getRecentPosts();
 
-    // 🔹 Definir variables para la vista
-    const locals = {
-      title: `Artículos del ${date}`,
-      description: "Lista de artículos publicados en la fecha seleccionada."
-    };
-
-    res.render('index', { 
-      locals,
-      data, // 🔹 Aquí cambiamos `articles` por `data`
+    res.render('index', {
+      locals: {
+        title: `Artículos del ${date}`,
+        description: "Lista de artículos publicados en la fecha seleccionada."
+      },
+      data,
+      recentPosts,
       currentPage: page,
       totalPages,
-      hasNextPage,
-      hasPrevPage,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
       currentRoute: `/articles?date=${date}`
     });
 
@@ -220,51 +299,113 @@ router.get('/articles', async (req, res) => {
   }
 });
 
+/**
+ * POST /keyword/search
+ * Busca artículos publicados por palabra clave
+ */
+router.post('/keyword/search', async (req, res) => {
+  try {
+    const keyword = req.body.keyword;
 
+    if (!keyword || keyword.trim().length === 0) {
+      return res.status(400).render('index', {
+        locals: {
+          title: 'Búsqueda',
+          description: 'Resultados de la búsqueda'
+        },
+        data: [],
+        recentPosts: await getRecentPosts(),
+        currentPage: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPrevPage: false,
+        error: '❌ Debes proporcionar una palabra clave.',
+        currentRoute: '/keyword/search'
+      });
+    }
+
+    const perPage = req.app.locals.perPage || 10;
+    const page = 1; // Por POST no tiene sentido paginar directamente, si quieres lo adaptamos luego
+
+    const searchRegex = new RegExp(keyword.trim(), 'i');
+
+    const query = {
+      ...publishedPostFilter,
+      $or: [
+        { title: searchRegex },
+        { content: searchRegex }
+      ]
+    };
+
+    const data = await Post.find(query)
+      .populate('category', 'name')
+      .populate('author', 'username')
+      .sort({ createdAt: -1 })
+      .limit(perPage);
+
+    const count = await Post.countDocuments(query);
+    const totalPages = Math.ceil(count / perPage);
+    const recentPosts = await getRecentPosts();
+
+    res.render('index', {
+      locals: {
+        title: `Resultados de búsqueda para: "${keyword}"`,
+        description: `Artículos que contienen la palabra clave "${keyword}".`
+      },
+      data,
+      recentPosts,
+      currentPage: page,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
+      currentRoute: '/keyword/search'
+    });
+
+  } catch (error) {
+    console.error('❌ Error en la búsqueda por keyword:', error);
+    res.status(500).render('500', { title: 'Error del servidor' });
+  }
+});
+
+
+// ✅ ARTÍCULOS POR TAG
 router.get('/articles/tags/:tagId', async (req, res) => {
   try {
     const { tagId } = req.params;
-
     if (!mongoose.Types.ObjectId.isValid(tagId)) {
       return res.status(400).json({ error: "❌ Tag ID inválido." });
     }
 
     const perPage = req.app.locals.perPage;
-    let page = parseInt(req.query.page) || 1;
+    const page = parseInt(req.query.page) || 1;
 
-    // 🔹 Buscar los artículos que contienen el tag
-    const articles = await Post.find({ tags: tagId })
+    const query = { tags: tagId, ...publishedPostFilter };
+
+    const data = await Post.find(query)
       .populate('category', 'name')
       .populate('author', 'username')
       .sort({ createdAt: -1 })
       .skip(perPage * (page - 1))
       .limit(perPage);
 
-    // 🔹 Contar los artículos que tienen el tag
-    const count = await Post.countDocuments({ tags: tagId });
+    const count = await Post.countDocuments(query);
     const totalPages = Math.ceil(count / perPage);
-    const hasNextPage = page < totalPages;
-    const hasPrevPage = page > 1;
-
-    // Obtener el nombre del tag para mostrar en la vista
     const tag = await Tag.findById(tagId);
-    if (!tag) {
-      return res.status(404).render('404', { title: "Tag no encontrado" });
-    }
+    const recentPosts = await getRecentPosts();
 
-    const locals = {
-      title: `Artículos con el tag: ${tag.name}`,
-      description: `Lista de artículos etiquetados con ${tag.name}.`
-    };
+    if (!tag) return res.status(404).render('404', { title: "Tag no encontrado" });
 
-    // 🔹 Aquí cambiamos 'articles' por 'data' para que coincida con la vista
-    res.render('index', { 
-      locals,
-      data: articles,  // 🔹 Cambié "articles" por "data" para que coincida con EJS
+    res.render('index', {
+      locals: {
+        title: `Artículos con el tag: ${tag.name}`,
+        description: `Lista de artículos etiquetados con ${tag.name}.`
+      },
+      data,
+      recentPosts,
       currentPage: page,
       totalPages,
-      hasNextPage,
-      hasPrevPage,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
       currentRoute: `/articles/tags/${tagId}`
     });
 
@@ -274,52 +415,40 @@ router.get('/articles/tags/:tagId', async (req, res) => {
   }
 });
 
-
-
-
-router.get('/users/:username', async (req, res) => {
+// ✅ ARTÍCULOS POR USUARIO
+router.get('/users_articles/:username', async (req, res) => {
   try {
     const { username } = req.params;
-
-    const locals = {
-      title: `Artículos por ${username}`
-    };
-
+    const user = await User.findOne({ username });
+    if (!user) return res.status(404).render('404', { title: "Usuario no encontrado" });
 
     const perPage = req.app.locals.perPage;
-    let page = parseInt(req.query.page) || 1;
+    const page = parseInt(req.query.page) || 1;
 
-    // 🔹 Buscar el usuario por username
-    const user = await User.findOne({ username: req.params.username });
+    const query = { author: user._id, ...publishedPostFilter };
 
-    if (!user) {
-      return res.status(404).render('404', { title: "Usuario no encontrado" });
-    }
-
-    // 🔹 Obtener los posts del usuario con categoría y paginación
-    const data = await Post.find({ author: user._id })
-      .populate('author', 'username') // Traer el nombre del usuario
-      .populate('category', 'name') // Traer el nombre de la categoría
-      .sort({ createdAt: -1 }) // Ordenar por fecha de creación
+    const data = await Post.find(query)
+      .populate('category', 'name')
+      .populate('author', 'username')
+      .sort({ createdAt: -1 })
       .skip(perPage * (page - 1))
-      .limit(perPage)
-      .exec();
+      .limit(perPage);
 
-    // 🔹 Contar los posts del usuario
-    const count = await Post.countDocuments({ author: user._id });
+    const count = await Post.countDocuments(query);
     const totalPages = Math.ceil(count / perPage);
-    const hasNextPage = page < totalPages;
-    const hasPrevPage = page > 1;
+    const recentPosts = await getRecentPosts();
 
-    res.render('index', { 
-      locals,
-      user,
+    res.render('index', {
+      locals: {
+        title: `Artículos por ${username}`
+      },
       data,
+      recentPosts,
       currentPage: page,
       totalPages,
-      hasNextPage,
-      hasPrevPage,
-      currentRoute: `/users/${req.params.username}`
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
+      currentRoute: `/users/${username}`
     });
 
   } catch (error) {
@@ -328,56 +457,41 @@ router.get('/users/:username', async (req, res) => {
   }
 });
 
-
-
-
-/**
- * GET /category/:slug
- * Filtrar artículos por categoría y paginarlos
- */
+// ✅ ARTÍCULOS POR CATEGORÍA
 router.get('/category/:name', async (req, res) => {
   try {
     const { name } = req.params;
-
-    const locals = {
-      title: `Artículos por ${name}`,
-      description: "Encuentra artículos relacionados en nuestro blog."
-    };
+    const category = await Category.findOne({ name });
+    if (!category) return res.status(404).render('404', { title: "Categoría no encontrada" });
 
     const perPage = req.app.locals.perPage;
-    let page = parseInt(req.query.page) || 1;
+    const page = parseInt(req.query.page) || 1;
 
-    // 🔹 Buscar la categoría por slug (NO por name)
-    const category = await Category.findOne({ name: req.params.name });
+    const query = { category: category._id, ...publishedPostFilter };
 
-    if (!category) {
-      return res.status(404).render('404', { title: "Categoría no encontrada" });
-    }
-
-    // 🔹 Obtener los posts de la categoría con autor y paginación
-    const data = await Post.find({ category: category._id })
-      .populate('author', 'username') // Traer el nombre del usuario
-      .populate('category', 'name') // Traer el nombre y slug de la categoría
-      .sort({ createdAt: -1 }) // Ordenar por fecha de creación
+    const data = await Post.find(query)
+      .populate('category', 'name')
+      .populate('author', 'username')
+      .sort({ createdAt: -1 })
       .skip(perPage * (page - 1))
-      .limit(perPage)
-      .exec();
+      .limit(perPage);
 
-    // 🔹 Contar los posts de la categoría
-    const count = await Post.countDocuments({ category: category._id });
+    const count = await Post.countDocuments(query);
     const totalPages = Math.ceil(count / perPage);
-    const hasNextPage = page < totalPages;
-    const hasPrevPage = page > 1;
+    const recentPosts = await getRecentPosts();
 
-    res.render('index', { 
-      locals,
-      category,
+    res.render('index', {
+      locals: {
+        title: `Artículos por ${name}`,
+        description: "Encuentra artículos relacionados en nuestro blog."
+      },
       data,
+      recentPosts,
       currentPage: page,
       totalPages,
-      hasNextPage,
-      hasPrevPage,
-      currentRoute: `/category/${req.params.slug}`
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
+      currentRoute: `/category/${name}`
     });
 
   } catch (error) {
@@ -386,190 +500,42 @@ router.get('/category/:name', async (req, res) => {
   }
 });
 
-
-/**
- * GET /post/:id
- * Muestra un artículo con comentarios anidados
- */
-router.get('/post/:id', async (req, res) => {
+// ✅ POST DETALLE
+router.get('/post/:id', authenticateToken, async (req, res) => {
   try {
-    let postId = req.params.id;
-
+    const { id: postId } = req.params;
     if (!mongoose.Types.ObjectId.isValid(postId)) {
       return res.status(400).render('404', { title: "ID inválido" });
     }
 
-    // 🔹 Asegúrate de hacer populate en `author` para obtener el username
-    const data = await Post.findById(postId)
-      .populate('author', 'username') // 🔹 Traer solo el `username` del autor
+    const post = await getPostByRole(postId, req.user);
+    if (!post) return res.status(404).render('404', { title: "Artículo no encontrado" });
 
-    if (!data) {
-      return res.status(404).render('404', { title: "Artículo no encontrado" });
-    }
+    const comments = await getNestedComments(postId);
+    const recentPosts = await getRecentPosts();
 
-    // 🔹 Obtener los comentarios relacionados con el post
-    const comments = await Comment.find({ postId }).sort({ createdAt: 1 });
+    let user = req.user;
+    const userId = user?._id?.toString();
+
+    const isLiked = userId ? post.likes.some(u => u._id.toString() === userId) : false;
+    const isFavorited = userId ? post.favoritedBy.some(u => u._id.toString() === userId) : false;
 
     res.render('post', {
-      title: data.title,
-      data,
+      title: post.title,
+      data: post,
       comments,
-      currentRoute: `/post/${postId}`
+      recentPosts,
+      currentRoute: `/post/${postId}`,
+      isLiked,
+      isFavorited,
+      likesCount: post.likes.length,
+      favoritesCount: post.favoritedBy.length,
+      postStatus: post.status
     });
 
   } catch (error) {
     console.error("❌ Error al obtener el post:", error);
     res.status(500).render('500', { title: "Error del servidor" });
-  }
-});
-
-
-/**
- * POST /post/:id/comment
- * Agregar un comentario o responder a uno
- */
-router.post('/post/:id/comment', async (req, res) => {
-  try {
-    let postId = req.params.id;
-    let { author, body, parentId } = req.body;
-
-    if (!author.trim() || !body.trim()) {
-      return res.redirect(`/post/${postId}?error=Campos obligatorios`);
-    }
-
-    const newComment = new Comment({
-      postId,
-      parentId: parentId || null,
-      author,
-      body
-    });
-
-    await newComment.save();
-    res.redirect(`/post/${postId}`);
-
-  } catch (error) {
-    console.error("Error al agregar comentario:", error);
-    res.redirect(`/post/${postId}?error=Error al guardar el comentario`);
-  }
-});
-
-/**
- * Función para construir una estructura de comentarios anidados
- */
-function buildNestedComments(comments, parentId = null) {
-  return comments
-    .filter(comment => String(comment.parentId) === String(parentId))
-    .map(comment => ({
-      ...comment.toObject(),
-      replies: buildNestedComments(comments, comment._id) // 🔹 Llamada recursiva correcta
-    }));
-}
-
-
-
-/**
- * POST /
- * Post - searchTerm
- */
-router.post('/contact', (req, res) => {
-  const { name, email, message } = req.body;
-
-  // Validar datos si es necesario
-  if (!name || !email || !message) {
-    return res.status(400).render('contact', {
-      currentRoute: '/contact',
-      error: 'Todos los campos son obligatorios.',
-    });
-  }
-
-  // Aquí puedes procesar los datos, como enviarlos a una base de datos o por correo
-  console.log(`Contacto recibido: Nombre: ${name}, Email: ${email}, Mensaje: ${message}`);
-
-  // Renderizar la página de contacto con un mensaje de éxito
-  res.render('contact', {
-    currentRoute: '/contact',
-    success: 'Tu mensaje ha sido enviado con éxito.',
-  });
-});
-
-
-/**
- * POST /
- * Post - searchTerm
- */
-router.post('/search', async (req, res) => {
-  try {
-    const locals = {
-      title: "Search",
-      description: "Simple Blog created with NodeJs, Express & MongoDb."
-    };
-
-    let searchTerm = req.body.searchTerm;
-    const searchNoSpecialChar = searchTerm.replace(/[^a-zA-Z0-9 ]/g, "");
-
-    const data = await Post.find({
-      $or: [
-        { title: { $regex: new RegExp(searchNoSpecialChar, 'i') }},
-        { body: { $regex: new RegExp(searchNoSpecialChar, 'i') }}
-      ]
-    });
-
-    res.render("search", {
-      data,
-      locals,
-      currentRoute: '/'
-    });
-
-  } catch (error) {
-    console.log(error);
-  }
-});
-
-/**
- * GET /
- * About
- */
-router.get('/about', (req, res) => {
-  res.render('about', {
-    currentRoute: '/about'
-  });
-});
-
-
-/**
- * GET /
- * Signup
- */
-router.get('/signup', (req, res) => {
-  res.render('signup', {
-    currentRoute: '/signup'
-  });
-});
-
-
-
-router.post('/newsletter', async (req, res) => {
-  const { email } = req.body;
-
-  console.log("Datos recibidos del formulario:", { email });
-
-  // Validación básica
-  if (!email || !email.trim()) {
-    return res.status(400).json({ error: 'El campo de email es obligatorio.' });
-  }
-
-  try {
-    // Intentamos guardar el correo en la base de datos
-    const newSubscription = new Newsletter({ email });
-    await newSubscription.save();
-
-    res.json({ success: 'Te has suscrito con éxito al boletín.' });
-  } catch (error) {
-    if (error.code === 11000) { // Código de error para duplicados en MongoDB
-      return res.status(400).json({ error: 'Este email ya está suscrito.' });
-    }
-    console.error('Error al suscribirse:', error);
-    res.status(500).json({ error: 'Ocurrió un error al procesar tu solicitud.' });
   }
 });
 
@@ -583,164 +549,22 @@ router.get('/contact', (req, res) => {
   });
 });
 
-/**
- * Insert sample data into the database
- */
-async function insertPostData() {
-  try {
-    await Post.insertMany([
-      {
-        title: "Building APIs with Node.js",
-        body: "Learn how to use Node.js to build RESTful APIs using frameworks like Express.js."
-      },
-      {
-        title: "Deployment of Node.js applications",
-        body: "Understand the different ways to deploy your Node.js applications, including on-premises, cloud, and container environments."
-      },
-      {
-        title: "Authentication and Authorization in Node.js",
-        body: "Learn how to add authentication and authorization to your Node.js web applications using Passport.js or other authentication libraries."
-      },
-      {
-        title: "Understand how to work with MongoDB and Mongoose",
-        body: "Understand how to work with MongoDB and Mongoose, an Object Data Modeling (ODM) library, in Node.js applications."
-      },
-      {
-        title: "Build real-time, event-driven applications in Node.js",
-        body: "Learn how to use Socket.io to build real-time, event-driven applications in Node.js."
-      },
-      {
-        title: "Discover how to use Express.js",
-        body: "Discover how to use Express.js, a popular Node.js web framework, to build web applications."
-      },
-      {
-        title: "Asynchronous Programming with Node.js",
-        body: "Explore the asynchronous nature of Node.js and how it allows for non-blocking I/O operations."
-      },
-      {
-        title: "Learn the basics of Node.js and its architecture",
-        body: "Learn the basics of Node.js and its architecture, how it works, and why it is popular among developers."
-      },
-      {
-        title: "NodeJs Limiting Network Traffic",
-        body: "Learn how to limit network traffic."
-      },
-      {
-        title: "Learn Morgan - HTTP Request logger for NodeJs",
-        body: "Learn Morgan."
-      },
-    ]);
-    console.log("Sample data inserted successfully!");
-  } catch (error) {
-    console.log("Error inserting sample data:", error);
-  }
+// ✅ FUNCIONES AUXILIARES
+async function getNestedComments(postId) {
+  const comments = await Comment.find({ postId }).sort({ createdAt: 1 }).lean();
+  const map = {};
+  comments.forEach(c => (map[c._id] = { ...c, replies: [] }));
+
+  const nested = [];
+  comments.forEach(c => {
+    if (c.parentId) {
+      map[c.parentId]?.replies.push(map[c._id]);
+    } else {
+      nested.push(map[c._id]);
+    }
+  });
+
+  return nested;
 }
-
-router.post('/register', async (req, res) => {
-  const { username, password } = req.body;
-
-  console.log("Datos recibidos del formulario:", { username, password });
-
-  // Validación básica
-  if (!username.trim() || !password.trim()) {
-    return res.status(400).json({ error: 'Todos los campos son obligatorios.' });
-  }
-
-  try {
-    // Verificar si el usuario ya existe
-    const existingUser = await User.findOne({ username });
-    if (existingUser) {
-      return res.status(400).json({ error: 'El nombre de usuario ya está en uso.' });
-    }
-
-    // Encriptar la contraseña
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Guardar en la base de datos
-    const newUser = new User({ username, password: hashedPassword });
-    await newUser.save();
-
-    res.json({ success: 'Usuario registrado con éxito.' });
-  } catch (error) {
-    console.error("Error al registrar usuario:", error);
-    res.status(500).json({ error: 'Ocurrió un error al procesar tu registro.' });
-  }
-});
-
-router.post('/keyword/search', async (req, res) => {
-  try {
-    const { keyword } = req.body;
-    const perPage = req.app.locals.perPage;
-    let page = parseInt(req.query.page) || 1; // 🔹 Página actual (por defecto es 1)
-
-    if (!keyword || !keyword.trim()) {
-      return res.status(400).json({ error: 'Debes ingresar una palabra clave válida.' });
-    }
-
-    // 🔹 Limpiar la palabra clave de caracteres especiales
-    const sanitizedKeyword = keyword.trim().replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ ]/g, "");
-
-    // 🔹 Contar el total de documentos que coinciden con la búsqueda (solo visibles)
-    const count = await Post.countDocuments({
-      isVisible: true, // 🔹 Filtrar solo artículos visibles
-      $or: [
-        { title: { $regex: sanitizedKeyword, $options: 'i' } },
-        { body: { $regex: sanitizedKeyword, $options: 'i' } }
-      ]
-    });
-
-    // 🔹 Calcular total de páginas
-    const totalPages = Math.ceil(count / perPage);
-    const hasNextPage = page < totalPages;
-    const hasPrevPage = page > 1;
-
-    // 🔹 Obtener los resultados con paginación (solo artículos visibles)
-    const data = await Post.find({
-      isVisible: true, // 🔹 Filtrar solo artículos visibles
-      $or: [
-        { title: { $regex: sanitizedKeyword, $options: 'i' } },
-        { body: { $regex: sanitizedKeyword, $options: 'i' } }
-      ]
-    })
-    .populate('author', 'username')
-    .populate('category', 'name')
-    .sort({ createdAt: -1 }) // 🔹 Ordenar por fecha más reciente
-    .skip(perPage * (page - 1)) // 🔹 Saltar los elementos de páginas anteriores
-    .limit(perPage); // 🔹 Limitar a `perPage` resultados
-
-    if (!data.length) {
-      return res.render('index', {
-        title: `Resultados para: "${keyword}"`,
-        message: 'No se encontraron resultados para la palabra clave proporcionada.',
-        data: [],
-        currentPage: page,
-        totalPages,
-        hasNextPage,
-        hasPrevPage,
-        keyword, // 🔹 Para mantener la palabra clave en la URL de paginación
-        currentRoute: 'index'
-      });
-    }
-
-    res.render('search_results', {
-      title: `Resultados para: "${keyword}"`,
-      data,
-      currentPage: page,
-      totalPages,
-      hasNextPage,
-      hasPrevPage,
-      keyword, // 🔹 Se pasa la palabra clave a la vista para mantener la búsqueda en paginación
-      currentRoute: 'index'
-    });
-
-  } catch (error) {
-    console.error("❌ Error en la búsqueda por palabra clave:", error);
-    res.status(500).json({ error: "Error del servidor. Intenta nuevamente más tarde." });
-  }
-});
-
-// Uncomment the following line to insert sample data (run only once)
-//insertPostData();
-
 
 module.exports = router;

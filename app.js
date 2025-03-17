@@ -1,4 +1,4 @@
-require('dotenv').config(); // ✅ Carga las variables de entorno al inicio
+require('dotenv').config(); // ✅
 
 const express = require('express');
 const expressLayout = require('express-ejs-layouts');
@@ -6,21 +6,24 @@ const methodOverride = require('method-override');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
+const jwt = require('jsonwebtoken'); // ⬅️ IMPORTANTE
 const connectDB = require('./server/config/db');
 const { isActiveRoute } = require('./server/helpers/routeHelpers');
 
-// Modelos de Tags y Categorías
-const Tag = require('./server/models/Tags'); 
-const Category = require('./server/models/Category'); 
-const Post = require('./server/models/Post'); // Importa el modelo de Post
-const Comment = require('./server/models/Comment'); // Importa el modelo de Comentarios
+// Modelos
+const Tag = require('./server/models/Tags');
+const Category = require('./server/models/Category');
+const Post = require('./server/models/Post');
+const Comment = require('./server/models/Comment');
+const User = require('./server/models/User');
 
-// Configuración del servidor
 const app = express();
 const PORT = process.env.PORT || 3001;
+const jwtSecret = process.env.JWT_SECRET;
 
-// ✅ Conectar a la base de datos
+// ✅ Conexión a la base de datos
 connectDB();
+
 
 // 📌 Middlewares
 app.use(express.urlencoded({ extended: true }));
@@ -82,30 +85,51 @@ app.use(async (req, res, next) => {
 });
 
 // ✅ Middleware para obtener 3 artículos aleatorios (solo visibles)
+// ✅ Middleware para obtener 3 artículos aleatorios (solo publicados y visibles)
 app.use(async (req, res, next) => {
   try {
     const randomPosts = await Post.aggregate([
-      { $match: req.queryFilter }, // Aplicar filtro de artículos visibles
-      { $sample: { size: 3 } }
+      {
+        $match: {
+          isVisible: true,      // 👈 Solo los que estén marcados como visibles
+          status: 'published'   // 👈 Solo los publicados
+        }
+      },
+      {
+        $sample: { size: 3 }    // 👈 Elegir 3 al azar
+      }
     ]);
 
-    res.locals.randomPosts = randomPosts || []; // Asignamos los artículos a `res.locals`
+    res.locals.randomPosts = randomPosts || [];
   } catch (error) {
     console.error("❌ Error al obtener artículos aleatorios:", error);
     res.locals.randomPosts = [];
   }
+
   next();
 });
+
 
 // Definir una variable global para perPage
 app.locals.perPage = 6; // Puedes cambiar este valor según sea necesario
 
 // ✅ Middleware para contar artículos visibles por categoría
+// ✅ Middleware para contar artículos publicados y visibles por categoría
 app.use(async (req, res, next) => {
   try {
     const categoryCounts = await Post.aggregate([
-      { $match: req.queryFilter }, // Solo artículos visibles
-      { $group: { _id: "$category", count: { $sum: 1 } } }
+      {
+        $match: {
+          ...req.queryFilter,           // Esto trae { isVisible: true }
+          status: 'published'            // Ahora filtramos solo los publicados
+        }
+      },
+      {
+        $group: {
+          _id: "$category",
+          count: { $sum: 1 }
+        }
+      }
     ]);
 
     const categories = await Category.find({}).sort({ name: 1 });
@@ -121,17 +145,48 @@ app.use(async (req, res, next) => {
     }));
 
   } catch (error) {
-    console.error("❌ Error al contar artículos visibles por categoría:", error);
+    console.error("❌ Error al contar artículos publicados por categoría:", error);
     res.locals.categories = [];
   }
   next();
 });
 
+
+// Middleware global para recuperar el usuario autenticado desde el JWT
+app.use(async (req, res, next) => {
+  const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
+
+  if (!token) {
+    res.locals.user = null; // Si no hay token, no hay user
+    return next();
+  }
+
+  try {
+    const decoded = jwt.verify(token, jwtSecret);
+    const user = await User.findById(decoded.userId).select('username email roles'); // puedes añadir más campos si quieres
+
+    if (!user) {
+      res.locals.user = null;
+    } else {
+      res.locals.user = user;
+    }
+
+    next();
+  } catch (error) {
+    console.error('❌ Error recuperando usuario autenticado:', error);
+    res.locals.user = null; // Si el token es inválido o expiró
+    next();
+  }
+});
+
 // ✅ Middleware para cargar los posts más comentados (solo visibles)
 app.use(async (req, res, next) => {
   try {
+
+    const publishedPostFilter = { isVisible: true, status: 'published' };
+
     const popularPosts = await Post.aggregate([
-      { $match: req.queryFilter }, // Solo artículos visibles
+      { $match: publishedPostFilter }, // ✅ Solo artículos publicados y visibles
       {
         $lookup: {
           from: "comments",
@@ -140,9 +195,9 @@ app.use(async (req, res, next) => {
           as: "comments"
         }
       },
-      { $addFields: { commentCount: { $size: "$comments" } } },
-      { $sort: { commentCount: -1 } },
-      { $limit: 5 }
+      { $addFields: { commentCount: { $size: "$comments" } } }, // ✅ Cuenta los comentarios
+      { $sort: { commentCount: -1 } }, // ✅ Ordena por más comentados
+      { $limit: 5 } // ✅ Limita a los 5 más comentados
     ]);
 
     res.locals.popularPosts = popularPosts || [];
@@ -164,6 +219,16 @@ app.locals.isActiveRoute = isActiveRoute;
 // 📌 Rutas
 app.use('/', require('./server/routes/main'));
 app.use('/', require('./server/routes/admin'));
+app.use('/profile', require('./server/routes/profile'));
+app.use('/dashboard/', require('./server/routes/posts'));
+app.use('/dashboard/newsletter', require('./server/routes/newsletter'));
+app.use('/dashboard/users', require('./server/routes/users'));
+app.use('/auth', require('./server/routes/signup'));
+app.use('/auth', require('./server/routes/signin'));
+app.use('/dashboard/tags', require('./server/routes/tags'));
+app.use('/dashboard/categories', require('./server/routes/categories'));
+app.use('/dashboard/comments', require('./server/routes/comments'));
+
 
 // Middleware para manejar rutas no encontradas (404)
 app.use((req, res) => {

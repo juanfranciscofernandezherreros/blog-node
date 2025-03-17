@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
+    <title>Tags Dashboard</title>
     <style>
         /* Estilos globales */
         body {
@@ -155,30 +155,28 @@
     <%- include('menu_top_admin') %>
 
 
-    <!-- Contenido principal -->
     <div class="container">
         <div class="admin-title">
-            <h2>Posts</h2>
-            <a href="/dashboard/add-post" class="button">+ Add New</a>
+            <h2>Etiquetas</h2>
+            <a href="/dashboard/tags/add-tag" class="button">+ Añadir Nueva</a>
         </div>
 
         <ul class="admin-posts">
-            <% data.forEach(post => { %>
+            <% tags.forEach(tag => { %>
                 <li>
-                    <a href="/post/<%= post._id %>">
-                        <%= post.title %> &nearr;
-                    </a>
+                    <%= tag.name %>
                     <div class="admin-post-controls">
-                        <a href="/dashboard/edit-post/<%= post._id %>" class="btn-edit btn" style="color:white;">Edit</a>
-                        
-                        <form action="/dashboard/delete-post/<%= post._id %>" method="POST" onsubmit="return confirm('¿Estás seguro de eliminar este artículo?');">
-                            <input type="submit" value="Eliminar" class="btn-delete btn">
-                          </form>
-                          
+                        <a href="/dashboard/tags/edit-tag/<%= tag._id %>" class="btn-edit btn">Editar</a>
+
+                        <form action="/dashboard/tags/delete-tag/<%= tag._id %>?_method=DELETE" method="POST">
+                            <button type="submit" class="btn-delete btn" onclick="return confirm('¿Seguro que deseas eliminar esta etiqueta?');">
+                                Eliminar
+                            </button>
+                        </form>
                     </div>
                 </li>
             <% }) %>
-        </ul>  
+        </ul>
     </div>
 
 </body>

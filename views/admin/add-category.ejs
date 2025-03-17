@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
+    <title>Add New Post</title>
     <style>
         /* Estilos globales */
         body {
@@ -155,30 +155,20 @@
     <%- include('menu_top_admin') %>
 
 
-    <!-- Contenido principal -->
     <div class="container">
-        <div class="admin-title">
-            <h2>Posts</h2>
-            <a href="/dashboard/add-post" class="button">+ Add New</a>
-        </div>
+        <h2>Crear Nueva Categoria</h2>
+        <form action="/dashboard/newsletter/add-category" method="POST">
+            <label for="name">Nombre de la Categoría:</label>
+            <input type="text" name="name" id="name" required>
+        
+            <label for="description">Descripción:</label>
+            <textarea name="description" id="description"></textarea>
+        
+            <button type="submit" class="btn">Crear Categoría</button>
+        </form>
+        
 
-        <ul class="admin-posts">
-            <% data.forEach(post => { %>
-                <li>
-                    <a href="/post/<%= post._id %>">
-                        <%= post.title %> &nearr;
-                    </a>
-                    <div class="admin-post-controls">
-                        <a href="/dashboard/edit-post/<%= post._id %>" class="btn-edit btn" style="color:white;">Edit</a>
-                        
-                        <form action="/dashboard/delete-post/<%= post._id %>" method="POST" onsubmit="return confirm('¿Estás seguro de eliminar este artículo?');">
-                            <input type="submit" value="Eliminar" class="btn-delete btn">
-                          </form>
-                          
-                    </div>
-                </li>
-            <% }) %>
-        </ul>  
+        <a href="/dashboard" class="back-link">← Volver al Dashboard</a>
     </div>
 
 </body>

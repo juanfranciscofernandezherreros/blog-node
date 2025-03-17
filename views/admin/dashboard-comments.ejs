@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
+    <title>Comments Dashboard</title>
     <style>
         /* Estilos globales */
         body {
@@ -12,7 +12,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
             flex-direction: column;
         }
@@ -61,7 +61,7 @@
             width: 100%;
             max-width: 80%;
             text-align: center;
-            margin-top: 80px; /* Ajuste para que no quede oculto bajo el menú */
+            margin-top: 80px;
         }
 
         .admin-title {
@@ -154,32 +154,40 @@
 
     <%- include('menu_top_admin') %>
 
-
     <!-- Contenido principal -->
     <div class="container">
         <div class="admin-title">
-            <h2>Posts</h2>
-            <a href="/dashboard/add-post" class="button">+ Add New</a>
+            <h2>Comentarios</h2>
+            <a href="/add-comment" class="button">+ Añadir Nuevo</a>
         </div>
 
         <ul class="admin-posts">
-            <% data.forEach(post => { %>
+            <% data.forEach(comment => { %>
                 <li>
-                    <a href="/post/<%= post._id %>">
-                        <%= post.title %> &nearr;
-                    </a>
+                    <div>
+                        <p><strong>Autor:</strong> <%= comment.author %></p>
+                        <p><strong>Comentario:</strong> <%= comment.body %></p>
+                        <p><strong>Fecha:</strong> <%= new Date(comment.createdAt).toLocaleString() %></p>
+                        <p><strong>ID del comentario:</strong> <%= comment._id %></p>
+                        <p><strong>ID del post:</strong> <%= comment.postId ? comment.postId : 'N/A' %></p>
+                        <% if (comment.parentId) { %>
+                            <p><strong>Comentario padre:</strong> <%= comment.parentId %></p>
+                        <% } else { %>
+                            <p><strong>Comentario principal</strong></p>
+                        <% } %>
+                    </div>
+                    
                     <div class="admin-post-controls">
-                        <a href="/dashboard/edit-post/<%= post._id %>" class="btn-edit btn" style="color:white;">Edit</a>
-                        
-                        <form action="/dashboard/delete-post/<%= post._id %>" method="POST" onsubmit="return confirm('¿Estás seguro de eliminar este artículo?');">
-                            <input type="submit" value="Eliminar" class="btn-delete btn">
-                          </form>
-                          
+                        <a href="/dashboard/comments/edit/<%= comment._id %>" class="btn">Editar</a>
+
+                        <form action="/comments/<%= comment._id %>?_method=DELETE" method="POST" onsubmit="return confirm('¿Seguro que deseas eliminar este comentario?');">
+                            <button type="submit" class="btn-delete btn">Eliminar</button>
+                        </form>
                     </div>
                 </li>
             <% }) %>
         </ul>  
-    </div>
+    </div>  
 
 </body>
 </html>

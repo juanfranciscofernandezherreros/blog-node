@@ -1,87 +1,120 @@
 <div class="container mt-4">
   <div class="row">
-    
-    <!-- 🔹 Contenedor principal del artículo (8 columnas en pantallas grandes) -->
+
+    <!-- 🔹 Contenedor principal del artículo -->
     <div class="col-lg-8">
+
+      <!-- 🔹 Info de fecha y autor -->
       <p class="text-muted">
-        Publicado el 
+        Publicado
         <a href="/articles?date=<%= new Date(data.publishDate).toLocaleDateString('es-ES') %>">
           <%= new Date(data.publishDate).toLocaleDateString('es-ES') %>
         </a>
-        
         por el usuario
-        <a href="/users/<%= data.userId %>">
+        <a href="/users_articles/<%= data.author ? data.author.username : 'anonimo' %>">
           <%= data.author ? data.author.username : 'Anónimo' %>
         </a>
-      </p>     
+      </p>
 
-      <!-- 🔹 Contenedor oculto con el contenido Markdown -->
+      <!-- 🔥 Estado del post -->
+      <p class="text-muted">
+        Estado del post:
+        <% if (postStatus === 'draft') { %>
+          <span class="badge bg-warning text-dark">Borrador</span>
+        <% } else { %>
+          <span class="badge bg-success">Publicado</span>
+        <% } %>
+      </p>
+
+      <!-- 🔥 Likes y Favoritos -->
+      <div class="d-flex align-items-center mb-3">
+        <!-- Like -->
+        <form action="/post/<%= data._id %>/like" method="POST" class="me-3">
+          <button type="submit" class="btn btn-sm <%= isLiked ? 'btn-danger' : 'btn-outline-danger' %>">
+            <%= isLiked ? '💖 Quitar Like' : '🤍 Dar Like' %>
+          </button>
+          <span><%= likesCount %> Likes</span>
+        </form>
+
+        <!-- Favorito -->
+        <form action="/post/<%= data._id %>/favorite" method="POST">
+          <button type="submit" class="btn btn-sm <%= isFavorited ? 'btn-warning' : 'btn-outline-warning' %>">
+            <%= isFavorited ? '⭐ Quitar de Favoritos' : '☆ Guardar en Favoritos' %>
+          </button>
+          <span><%= favoritesCount %> Favoritos</span>
+        </form>
+      </div>
+
+      <!-- 🔹 Contenido del artículo -->
       <div id="article-body" data-body="<%= encodeURIComponent(data.body) %>"></div>
-
-      <!-- 🔹 Renderización del contenido en HTML -->
       <div class="article-body border rounded p-4" id="rendered-article-body"></div>
 
+      <!-- 🔹 Botón volver -->
       <hr>
-
       <a href="/" class="btn btn-primary mt-3">Volver al inicio</a>
-
       <hr>
+
+      <!-- 🔹 Comentarios -->
       <h3>Comentarios</h3>
 
       <% if (comments.length > 0) { %>
-        <ul class="list-group mb-4">
-          <% comments.forEach(comment => { %>
-            <li class="list-group-item">
-              <strong><%= comment.author %></strong>
-              <span class="text-muted small"> - <%= new Date(comment.createdAt).toLocaleDateString('es-ES') %></span>
-              <p class="mt-1"><%= comment.body %></p>
+        <ul class="list-group">
+          <% function renderComments(comments, level = 0) { %>
+            <% comments.forEach(comment => { %>
+              <li class="list-group-item" style="margin-left: <%= level * 30 %>px;">
+                <strong><%= comment.author %></strong>
+                <span class="text-muted small"> - <%= new Date(comment.createdAt).toLocaleDateString('es-ES') %></span>
+                <p class="mt-1"><%= comment.body %></p>
 
-              <button class="btn btn-sm btn-link text-primary" onclick="toggleReplyForm('<%= comment._id %>')">Responder</button>
+                <button class="btn btn-sm btn-link text-primary" onclick="toggleReplyForm('<%= comment._id %>')">Responder</button>
 
-              <form id="reply-form-<%= comment._id %>" action="/post/<%= data._id %>/comment" method="POST" class="mt-2 d-none">
-                <input type="hidden" name="parentId" value="<%= comment._id %>">
-                <div class="mb-2">
-                  <input type="text" class="form-control" name="author" placeholder="Tu nombre" required>
-                </div>
-                <div class="mb-2">
-                  <textarea class="form-control" name="body" placeholder="Escribe tu respuesta..." rows="2" required></textarea>
-                </div>
-                <button type="submit" class="btn btn-sm btn-primary">Enviar Respuesta</button>
-              </form>
+                <form id="reply-form-<%= comment._id %>" action="/post/<%= data._id %>/comment" method="POST" class="mt-2 d-none">
+                  <input type="hidden" name="parentId" value="<%= comment._id %>">
+                  <div class="mb-2">
+                    <input type="text" class="form-control" name="author" placeholder="Tu nombre" required>
+                  </div>
+                  <div class="mb-2">
+                    <textarea class="form-control" name="body" placeholder="Escribe tu respuesta..." rows="2" required></textarea>
+                  </div>
+                  <button type="submit" class="btn btn-sm btn-primary">Enviar Respuesta</button>
+                </form>
 
-              <% if (comment.replies && comment.replies.length > 0) { %>
-                <ul class="list-group mt-2">
-                  <% comment.replies.forEach(reply => { %>
-                    <li class="list-group-item" style="margin-left: 30px;">
-                      <strong><%= reply.author %></strong>
-                      <span class="text-muted small"> - <%= new Date(reply.createdAt).toLocaleDateString('es-ES') %></span>
-                      <p class="mt-1"><%= reply.body %></p>
-                    </li>
-                  <% }) %>
-                </ul>
-              <% } %>
-            </li>
-          <% }) %>
+                <% if (comment.replies && comment.replies.length > 0) { %>
+                  <ul class="list-group mt-2">
+                    <%= renderComments(comment.replies, level + 1) %> 
+                  </ul>
+                <% } %>
+              </li>
+            <% }) %>
+          <% } %>
+          <%= renderComments(comments) %>
         </ul>
       <% } else { %>
         <p class="text-muted">No hay comentarios aún.</p>
       <% } %>
 
-      <!-- Formulario para agregar un nuevo comentario -->
+      <!-- 🔹 Formulario nuevo comentario -->
       <form action="/post/<%= data._id %>/comment" method="POST" class="mb-4">
         <div class="mb-3">
           <label for="author" class="form-label">Nombre</label>
-          <input type="text" class="form-control" id="author" name="author" required>
+          <% if (user) { %>
+            <input type="text" class="form-control" id="author" name="author" value="<%= user.username %>" readonly>
+          <% } else { %>
+            <input type="text" class="form-control" id="author" name="author" placeholder="Tu nombre" required>
+          <% } %>
         </div>
+
         <div class="mb-3">
           <label for="body" class="form-label">Comentario</label>
           <textarea class="form-control" id="body" name="body" rows="3" required></textarea>
         </div>
+
         <button type="submit" class="btn btn-primary">Enviar Comentario</button>
       </form>
+
     </div>
 
-    <!-- 🔹 Sidebar en el lateral derecho -->
+    <!-- 🔹 Sidebar -->
     <div class="col-lg-4 sidebar">
       <%- include('partials/sidebar') %>
     </div>
@@ -92,28 +125,21 @@
 <!-- 🔹 Librerías necesarias -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.3/purify.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.0.0/marked.min.js"></script>
+
 <script>
   function toggleReplyForm(commentId) {
     const form = document.getElementById(`reply-form-${commentId}`);
     form.classList.toggle('d-none');
   }
-</script>
-<script>
+
   document.addEventListener("DOMContentLoaded", function () {
     const articleBodyDiv = document.getElementById("article-body");
     const renderedArticleBodyDiv = document.getElementById("rendered-article-body");
 
     if (articleBodyDiv && renderedArticleBodyDiv) {
-      // 🔹 Obtener el Markdown almacenado en MongoDB
       const markdownContent = decodeURIComponent(articleBodyDiv.dataset.body);
-
-      // 🔹 Convertir Markdown a HTML
       const htmlContent = marked.parse(markdownContent);
-
-      // 🔹 Sanitizar HTML para prevenir ataques XSS
       const sanitizedHtml = DOMPurify.sanitize(htmlContent);
-
-      // 🔹 Renderizar el HTML en la página
       renderedArticleBodyDiv.innerHTML = sanitizedHtml;
     }
   });

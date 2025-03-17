@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crear Nuevo Post</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #1e3c72, #2a5298);
+      margin: 0;
+      min-height: 100vh;
+      padding-top: 70px;
+    }
+
+    nav {
+      background: #1e3c72;
+      color: white;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 70px;
+      z-index: 1000;
+    }
+
+    nav .logo {
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    nav .menu {
+      display: flex;
+      gap: 15px;
+    }
+
+    nav .menu a {
+      color: white;
+      text-decoration: none;
+      font-size: 14px;
+      transition: color 0.3s ease;
+    }
+
+    nav .menu a:hover {
+      color: #f1c40f;
+    }
+
+    .container {
+      background: #ffffff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+      max-width: 800px;
+      margin: 40px auto;
+    }
+
+    label {
+      display: block;
+      margin-top: 20px;
+      margin-bottom: 5px;
+      color: #333;
+      text-align: left;
+    }
+
+    input[type="text"],
+    input[type="date"],
+    textarea,
+    select {
+      width: 100%;
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+      margin-bottom: 10px;
+      transition: border 0.3s;
+    }
+
+    /* ✅ Estilo para inputs en error */
+    .input-error {
+      border-color: red;
+    }
+
+    /* ✅ Mensaje de error */
+    .error-message {
+      color: red;
+      font-size: 13px;
+      margin-top: -5px;
+      margin-bottom: 10px;
+      display: none;
+    }
+
+    .btn {
+      background: #1e3c72;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.3s;
+    }
+
+    .btn:hover {
+      background: #163c5a;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-top: 20px;
+      color: #1e3c72;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+
+  <!-- ✅ CKEditor 5 CDN -->
+  <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
+</head>
+
+<body>
+
+  <!-- ✅ Aquí va el menú fijo -->
+  <%- include('menu_top_admin') %>
+
+  <!-- ✅ Contenido principal -->
+  <div class="container">
+    <h2>Crear Nuevo Post</h2>
+
+    <form id="createPostForm" action="/dashboard/add-post" method="POST" novalidate>
+
+      <label for="title">Título:</label>
+      <input type="text" name="title" id="title" required>
+      <div id="titleError" class="error-message">El título es obligatorio.</div>
+
+      <label for="summary">Resumen:</label>
+      <textarea name="summary" id="summary" required></textarea>
+      <div id="summaryError" class="error-message">El resumen es obligatorio.</div>
+
+      <label for="body">Contenido:</label>
+      <textarea name="body" id="body"></textarea>
+      <div id="bodyError" class="error-message">El contenido es obligatorio.</div>
+
+      <label for="category">Categoría:</label>
+      <select name="category" id="category" required>
+        <option value="">Selecciona una categoría</option>
+        <% categories.forEach(category => { %>
+          <option value="<%= category._id %>"><%= category.name %></option>
+        <% }) %>
+      </select>
+      <div id="categoryError" class="error-message">Selecciona una categoría.</div>
+
+      <label for="tags">Etiquetas:</label>
+      <select name="tags" id="tags" multiple>
+        <% tags.forEach(tag => { %>
+          <option value="<%= tag._id %>"><%= tag.name %></option>
+        <% }) %>
+      </select>
+
+      <label for="status">Tipo de Artículo:</label>
+      <select name="status" id="status" required>
+        <option value="draft" selected>Borrador</option>
+        <option value="published">Publicado</option>
+        <option value="review">En Revisión</option>
+      </select>
+      <div id="statusError" class="error-message">Selecciona el estado del artículo.</div>
+
+      <label for="publishDate">Fecha de Publicación:</label>
+      <input type="date" name="publishDate" id="publishDate" required>
+      <div id="publishDateError" class="error-message">La fecha de publicación es obligatoria.</div>
+
+      <p>Estás creando un post como: <strong><%= user.username %></strong></p>
+
+      <button type="submit" class="btn">Crear Post</button>
+    </form>
+
+    <a href="/dashboard" class="back-link">← Volver al Dashboard</a>
+  </div>
+
+  <!-- ✅ Inicialización de CKEditor -->
+  <script>
+    let editorBody;
+
+    ClassicEditor
+      .create(document.querySelector('#body'))
+      .then(editor => {
+        editorBody = editor;
+        console.log('Editor de contenido cargado');
+      })
+      .catch(error => {
+        console.error('❌ Error al cargar CKEditor:', error);
+      });
+
+    const form = document.getElementById('createPostForm');
+
+    form.addEventListener('submit', function (e) {
+      let hasErrors = false;
+
+      // Limpiamos estilos previos
+      clearErrors();
+
+      // Validar Título
+      const title = document.getElementById('title');
+      if (!title.value.trim()) {
+        showError(title, 'titleError');
+        hasErrors = true;
+      }
+
+      // Validar Resumen
+      const summary = document.getElementById('summary');
+      if (!summary.value.trim()) {
+        showError(summary, 'summaryError');
+        hasErrors = true;
+      }
+
+      // Validar Contenido (Editor)
+      const bodyTextarea = document.getElementById('body');
+      const editorData = editorBody ? editorBody.getData().trim() : '';
+
+      if (!editorData) {
+        showError(bodyTextarea, 'bodyError');
+        hasErrors = true;
+      } else {
+        bodyTextarea.value = editorData; // Pasamos el contenido al textarea oculto
+      }
+
+      // Validar Categoría
+      const category = document.getElementById('category');
+      if (!category.value) {
+        showError(category, 'categoryError');
+        hasErrors = true;
+      }
+
+      // Validar Status
+      const status = document.getElementById('status');
+      if (!status.value) {
+        showError(status, 'statusError');
+        hasErrors = true;
+      }
+
+      // Validar Fecha de Publicación
+      const publishDate = document.getElementById('publishDate');
+      if (!publishDate.value) {
+        showError(publishDate, 'publishDateError');
+        hasErrors = true;
+      }
+
+      if (hasErrors) {
+        e.preventDefault(); // Evitamos el envío del formulario si hay errores
+      }
+    });
+
+    function showError(element, errorId) {
+      element.classList.add('input-error');
+      const errorDiv = document.getElementById(errorId);
+      errorDiv.style.display = 'block';
+    }
+
+    function clearErrors() {
+      const errorInputs = document.querySelectorAll('.input-error');
+      errorInputs.forEach(input => input.classList.remove('input-error'));
+
+      const errorMessages = document.querySelectorAll('.error-message');
+      errorMessages.forEach(msg => msg.style.display = 'none');
+    }
+  </script>
+
+</body>
+</html>

@@ -12,24 +12,19 @@ const adminLayout = '../views/layouts/admin';
 const jwtSecret = process.env.JWT_SECRET;
 
 
-router.get('/admin', async (req, res) => {
-  try {
-    const locals = {
-      title: "Admin",
-      description: "Simple Blog created with NodeJs, Express & MongoDb."
-    }
-
-    res.render('admin/index', { locals, layout: adminLayout });
-  } catch (error) {
-    console.log(error);
-  }
+// ✅ GET /register - Renderiza el formulario de registro
+router.get('/signin', (req, res) => {
+  res.render('signin', {
+    pageTitle: 'Iniciar sesion',  // Puedes enviar datos a la vista si quieres
+    description: 'Iniciar sesion'
+  });
 });
 
-router.post('/admin', async (req, res) => {
+router.post('/signin', async (req, res) => {
   try {
     const { username, password } = req.body;
     const user = await User.findOne({ username });
-
+    console.log(user);
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({ message: 'Credenciales inválidas' });
     }
@@ -42,29 +37,11 @@ router.post('/admin', async (req, res) => {
       sameSite: 'strict'
     });
 
-    res.redirect('/dashboard');
+    res.redirect('/profile/user');
   } catch (error) {
     console.log('Error en login:', error);
     res.status(500).json({ message: 'Error en el servidor' });
   }
 });
-
-/**
- * GET /logout
- * Cierra la sesión del usuario
- */
-router.get('/dashboard/logout', (req, res) => {
-  res.clearCookie('token'); // Elimina la cookie del token
-  res.redirect('/admin'); // Redirige al login
-});
-/**
- * GET /logout
- * Cierra la sesión del usuario
- */
-router.get('dashboard/logout', (req, res) => {
-  res.cookie('token', '', { expires: new Date(0) }); // Expira la cookie del token
-  res.redirect('/login');
-});
-
-
+  
 module.exports = router;
