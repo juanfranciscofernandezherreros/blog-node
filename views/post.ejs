@@ -55,7 +55,7 @@
       <hr>
 
       <!-- 🔹 Comentarios -->
-      <h3>Comentarios</h3>
+      <h3 id="comments">Comentarios</h3>
 
       <% if (comments.length > 0) { %>
         <ul class="list-group">
@@ -66,51 +66,76 @@
                 <span class="text-muted small"> - <%= new Date(comment.createdAt).toLocaleDateString('es-ES') %></span>
                 <p class="mt-1"><%= comment.body %></p>
 
-                <button class="btn btn-sm btn-link text-primary" onclick="toggleReplyForm('<%= comment._id %>')">Responder</button>
+                <% if (user) { %>
+                  <button class="btn btn-sm btn-link text-primary" onclick="toggleReplyForm('<%= comment._id %>')">Responder</button>
+                <% } %>
 
-                <form id="reply-form-<%= comment._id %>" action="/post/<%= data._id %>/comment" method="POST" class="mt-2 d-none">
+                <!-- 🔹 Formulario Respuesta -->
+                <form id="reply-form-<%= comment._id %>" action="/comments/post/<%= data._id %>" method="POST" class="mt-2 d-none">
                   <input type="hidden" name="parentId" value="<%= comment._id %>">
+
                   <div class="mb-2">
-                    <input type="text" class="form-control" name="author" placeholder="Tu nombre" required>
+                    <% if (user) { %>
+                      <input type="text" class="form-control" name="author" value="<%= user.username %>" readonly>
+                    <% } else { %>
+                      <input type="text" class="form-control" name="author" placeholder="Tu nombre" disabled>
+                      <div class="alert alert-warning mt-2">Debes iniciar sesión para responder.</div>
+                    <% } %>
                   </div>
+
                   <div class="mb-2">
-                    <textarea class="form-control" name="body" placeholder="Escribe tu respuesta..." rows="2" required></textarea>
+                    <textarea class="form-control" name="body" placeholder="Escribe tu respuesta..." rows="2" required <%= user ? '' : 'disabled' %>></textarea>
                   </div>
-                  <button type="submit" class="btn btn-sm btn-primary">Enviar Respuesta</button>
+
+                  <button type="submit" class="btn btn-sm btn-primary" <%= user ? '' : 'disabled' %>>Enviar Respuesta</button>
                 </form>
 
+                <!-- 🔹 Respuestas Hijas -->
                 <% if (comment.replies && comment.replies.length > 0) { %>
                   <ul class="list-group mt-2">
-                    <%= renderComments(comment.replies, level + 1) %> 
+                    <%= renderComments(comment.replies, level + 1) %>
                   </ul>
                 <% } %>
               </li>
             <% }) %>
           <% } %>
+
+          <!-- Renderizado inicial de todos los comentarios -->
           <%= renderComments(comments) %>
         </ul>
       <% } else { %>
         <p class="text-muted">No hay comentarios aún.</p>
       <% } %>
 
-      <!-- 🔹 Formulario nuevo comentario -->
-      <form action="/post/<%= data._id %>/comment" method="POST" class="mb-4">
+      <!-- 🔹 Formulario Nuevo Comentario -->
+      <hr class="mt-4">
+      <h4>Agregar un comentario</h4>
+
+      <form action="/comments/post/<%= data._id %>" method="POST" class="mb-4">
         <div class="mb-3">
           <label for="author" class="form-label">Nombre</label>
           <% if (user) { %>
             <input type="text" class="form-control" id="author" name="author" value="<%= user.username %>" readonly>
           <% } else { %>
-            <input type="text" class="form-control" id="author" name="author" placeholder="Tu nombre" required>
+            <input type="text" class="form-control" id="author" name="author" placeholder="Tu nombre" disabled>
+            <div class="alert alert-warning mt-2">
+              Debes iniciar sesión para comentar.
+              <br>
+              ¿Ya tienes cuenta? 
+              <a href="/auth/signin" class="alert-link">Inicia sesión</a> o
+              <a href="/auth/register" class="alert-link">Regístrate</a>.
+            </div>
           <% } %>
         </div>
-
+      
         <div class="mb-3">
           <label for="body" class="form-label">Comentario</label>
-          <textarea class="form-control" id="body" name="body" rows="3" required></textarea>
+          <textarea class="form-control" id="body" name="body" rows="3" required <%= user ? '' : 'disabled' %>></textarea>
         </div>
-
-        <button type="submit" class="btn btn-primary">Enviar Comentario</button>
+      
+        <button type="submit" class="btn btn-primary" <%= user ? '' : 'disabled' %>>Enviar Comentario</button>
       </form>
+      
 
     </div>
 

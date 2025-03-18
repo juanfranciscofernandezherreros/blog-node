@@ -218,6 +218,7 @@ app.locals.isActiveRoute = isActiveRoute;
 
 // 📌 Rutas
 app.use('/', require('./server/routes/main'));
+app.use('/comments', require('./server/routes/comments_post'));
 app.use('/', require('./server/routes/admin'));
 app.use('/profile', require('./server/routes/profile'));
 app.use('/dashboard/', require('./server/routes/posts'));
