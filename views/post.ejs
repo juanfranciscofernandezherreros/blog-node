@@ -1,9 +1,21 @@
 <div class="container mt-4">
   <div class="row">
 
+
     <!-- 🔹 Contenedor principal del artículo -->
     <div class="col-lg-8">
 
+    <!-- 🔹 Imagen principal del artículo (opcional) -->
+    <% if (data.coverImage) { %>
+      <div class="mb-4 text-center">
+        <img src="<%= data.coverImage %>" alt="Imagen del artículo" class="img-fluid rounded shadow-sm" style="max-height: 500px; object-fit: cover;">
+      </div>
+    <% } else { %>
+      <!-- Imagen por defecto si no hay portada definida -->
+      <div class="mb-4 text-center">
+        <img src="https://i.ytimg.com/vi/DM2XmidUt7A/maxresdefault.jpg" alt="Imagen por defecto del artículo" class="img-fluid rounded shadow-sm" style="max-height: 500px; object-fit: cover;">
+      </div>
+    <% } %>
       <!-- 🔹 Info de fecha y autor -->
       <p class="text-muted">
         Publicado
