@@ -28,7 +28,6 @@
 
       <!-- 🔥 Likes y Favoritos -->
       <div class="d-flex align-items-center mb-3">
-        <!-- Like -->
         <form action="/post/<%= data._id %>/like" method="POST" class="me-3">
           <button type="submit" class="btn btn-sm <%= isLiked ? 'btn-danger' : 'btn-outline-danger' %>">
             <%= isLiked ? '💖 Quitar Like' : '🤍 Dar Like' %>
@@ -36,7 +35,6 @@
           <span><%= likesCount %> Likes</span>
         </form>
 
-        <!-- Favorito -->
         <form action="/post/<%= data._id %>/favorite" method="POST">
           <button type="submit" class="btn btn-sm <%= isFavorited ? 'btn-warning' : 'btn-outline-warning' %>">
             <%= isFavorited ? '⭐ Quitar de Favoritos' : '☆ Guardar en Favoritos' %>
@@ -49,7 +47,6 @@
       <div id="article-body" data-body="<%= encodeURIComponent(data.body) %>"></div>
       <div class="article-body border rounded p-4" id="rendered-article-body"></div>
 
-      <!-- 🔹 Botón volver -->
       <hr>
       <a href="/" class="btn btn-primary mt-3">Volver al inicio</a>
       <hr>
@@ -66,9 +63,7 @@
                 <span class="text-muted small"> - <%= new Date(comment.createdAt).toLocaleDateString('es-ES') %></span>
                 <p class="mt-1"><%= comment.body %></p>
 
-                <% if (user) { %>
-                  <button class="btn btn-sm btn-link text-primary" onclick="toggleReplyForm('<%= comment._id %>')">Responder</button>
-                <% } %>
+                <button class="btn btn-sm btn-link text-primary" onclick="toggleReplyForm('<%= comment._id %>')">Responder</button>
 
                 <!-- 🔹 Formulario Respuesta -->
                 <form id="reply-form-<%= comment._id %>" action="/comments/post/<%= data._id %>" method="POST" class="mt-2 d-none">
@@ -77,20 +72,20 @@
                   <div class="mb-2">
                     <% if (user) { %>
                       <input type="text" class="form-control" name="author" value="<%= user.username %>" readonly>
+                      <input type="hidden" name="email" value="<%= user.email %>">
                     <% } else { %>
-                      <input type="text" class="form-control" name="author" placeholder="Tu nombre" disabled>
-                      <div class="alert alert-warning mt-2">Debes iniciar sesión para responder.</div>
+                      <input type="text" class="form-control mb-2" name="author" placeholder="Tu nombre" required>
+                      <input type="email" class="form-control" name="email" placeholder="Tu correo electrónico" required>
                     <% } %>
                   </div>
 
                   <div class="mb-2">
-                    <textarea class="form-control" name="body" placeholder="Escribe tu respuesta..." rows="2" required <%= user ? '' : 'disabled' %>></textarea>
+                    <textarea class="form-control" name="body" placeholder="Escribe tu respuesta..." rows="2" required></textarea>
                   </div>
 
-                  <button type="submit" class="btn btn-sm btn-primary" <%= user ? '' : 'disabled' %>>Enviar Respuesta</button>
+                  <button type="submit" class="btn btn-sm btn-primary">Enviar Respuesta</button>
                 </form>
 
-                <!-- 🔹 Respuestas Hijas -->
                 <% if (comment.replies && comment.replies.length > 0) { %>
                   <ul class="list-group mt-2">
                     <%= renderComments(comment.replies, level + 1) %>
@@ -100,7 +95,6 @@
             <% }) %>
           <% } %>
 
-          <!-- Renderizado inicial de todos los comentarios -->
           <%= renderComments(comments) %>
         </ul>
       <% } else { %>
@@ -117,25 +111,26 @@
           <% if (user) { %>
             <input type="text" class="form-control" id="author" name="author" value="<%= user.username %>" readonly>
           <% } else { %>
-            <input type="text" class="form-control" id="author" name="author" placeholder="Tu nombre" disabled>
-            <div class="alert alert-warning mt-2">
-              Debes iniciar sesión para comentar.
-              <br>
-              ¿Ya tienes cuenta? 
-              <a href="/auth/signin" class="alert-link">Inicia sesión</a> o
-              <a href="/auth/register" class="alert-link">Regístrate</a>.
-            </div>
+            <input type="text" class="form-control" id="author" name="author" placeholder="Tu nombre" required>
           <% } %>
         </div>
-      
+
+        <% if (user) { %>
+          <input type="hidden" name="email" value="<%= user.email %>">
+        <% } else { %>
+          <div class="mb-3">
+            <label for="email" class="form-label">Correo electrónico</label>
+            <input type="email" class="form-control" id="email" name="email" placeholder="Tu correo electrónico" required>
+          </div>
+        <% } %>
+
         <div class="mb-3">
           <label for="body" class="form-label">Comentario</label>
-          <textarea class="form-control" id="body" name="body" rows="3" required <%= user ? '' : 'disabled' %>></textarea>
+          <textarea class="form-control" id="body" name="body" rows="3" placeholder="Escribe tu comentario..." required></textarea>
         </div>
-      
-        <button type="submit" class="btn btn-primary" <%= user ? '' : 'disabled' %>>Enviar Comentario</button>
+
+        <button type="submit" class="btn btn-primary">Enviar Comentario</button>
       </form>
-      
 
     </div>
 

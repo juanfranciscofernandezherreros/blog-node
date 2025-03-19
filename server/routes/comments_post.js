@@ -2,19 +2,41 @@
 const express = require('express');
 const router = express.Router();
 const Comment = require('../models/Comment');
-const { authenticateToken } = require('../middlewares/authMiddleware');
 
-router.post('/post/:postId', authenticateToken, async (req, res) => {
+// ⚠️ Ya no usamos authenticateToken aquí (para que sea libre)
+router.post('/post/:postId', async (req, res) => {
   try {
-    const { body, parentId } = req.body;
+    const { author, email, body, parentId } = req.body;
     const { postId } = req.params;
 
     if (!body || !postId) {
       return res.status(400).send('Faltan datos');
     }
 
+    let commentAuthor = '';
+    let commentEmail = '';
+
+    if (req.user && req.user.username) {
+      commentAuthor = req.user.username;
+      commentEmail = req.user.email; // si tienes el email del usuario autenticado
+    } else {
+      if (!author || !email) {
+        return res.status(400).send('El nombre y el correo electrónico son requeridos');
+      }
+
+      commentAuthor = author.trim();
+      commentEmail = email.trim();
+
+      // Opcional: validación básica de email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(commentEmail)) {
+        return res.status(400).send('Correo electrónico inválido');
+      }
+    }
+
     const newComment = new Comment({
-      author: req.user.username,
+      author: commentAuthor,
+      email: commentEmail,
       body,
       postId,
       parentId: parentId || null
@@ -22,8 +44,8 @@ router.post('/post/:postId', authenticateToken, async (req, res) => {
 
     await newComment.save();
 
-    res.redirect(`/post/${postId}`);
-    // Esto te envía de vuelta a la página del artículo, anclado en la sección de comentarios (opcionalmente)
+    // 🔔 Aquí puedes meter lógica para enviar email cuando le respondan
+    res.redirect(`/post/${postId}#comments`);
     
   } catch (error) {
     console.error('❌ Error al publicar comentario:', error);
