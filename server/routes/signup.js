@@ -7,43 +7,54 @@ const transporter = require('../utils/email');
 const User = require('../models/User');
 const Role = require('../models/Role');
 const { createLog } = require('../middlewares/logger.js');
+const baseUrl = process.env.APP_BASE_URL || 'http://localhost:3001';
 
-// GET /register
+// ✅ GET /register - Renderizar el formulario
 router.get('/register', (req, res) => {
+  const message = req.query.message;
+
   res.render('signup', {
     pageTitle: 'Registro de Usuario',
-    description: 'Crea una cuenta nueva'
+    description: 'Crea una cuenta nueva',
+    success: message || null,
+    error: null
   });
 });
 
-// POST /register
+// ✅ POST /register - Procesar el registro
 router.post('/register', async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
+    // Validaciones básicas
     if (!username || !email || !password) {
       return res.render('signup', { 
         pageTitle: 'Registro de Usuario',
         description: 'Crea una cuenta nueva',
-        error: 'Todos los campos son obligatorios'
+        error: 'Todos los campos son obligatorios',
+        success: null
       });
     }
 
+    // Comprobar si el usuario o email ya existen
     const existingUser = await User.findOne({ $or: [{ username }, { email }] });
     if (existingUser) {
       return res.render('signup', {
         pageTitle: 'Registro de Usuario',
         description: 'Crea una cuenta nueva',
-        error: 'El usuario o email ya están en uso'
+        error: 'El usuario o email ya están en uso',
+        success: null
       });
     }
 
+    // Obtener el rol por defecto
     const defaultRole = await Role.findOne({ name: 'user' });
     if (!defaultRole) {
       return res.render('signup', {
         pageTitle: 'Registro de Usuario',
         description: 'Crea una cuenta nueva',
-        error: 'Rol por defecto no encontrado. Contacta al administrador'
+        error: 'Rol por defecto no encontrado. Contacta al administrador',
+        success: null
       });
     }
 
@@ -53,7 +64,7 @@ router.post('/register', async (req, res) => {
       email,
       password,
       roles: [defaultRole._id],
-      isActive: false // Desactivado al registrarse
+      isActive: false
     });
 
     // ✅ Generar token de activación
@@ -65,7 +76,7 @@ router.post('/register', async (req, res) => {
 
     await user.save();
 
-    // ✅ Guardar el log
+    // ✅ Guardar log de creación
     await createLog({
       entity: 'User',
       action: 'CREATE',
@@ -82,7 +93,7 @@ router.post('/register', async (req, res) => {
     console.log('✅ Usuario registrado y log guardado');
 
     // ✅ Enviar email de activación
-    const activationLink = `http://localhost:3001/auth/activate/${activationToken}`;
+    const activationLink = `${baseUrl}/auth/activate/${activationToken}`;
 
     await transporter.sendMail({
       from: `"Blog App" <${process.env.SMTP_USER}>`,
@@ -91,25 +102,24 @@ router.post('/register', async (req, res) => {
       html: `
         <h1>Hola, ${username}</h1>
         <p>Gracias por registrarte. Por favor, activa tu cuenta haciendo clic en el siguiente enlace:</p>
-        <a href="${activationLink}">Activar cuenta</a>
+        <p><a href="${activationLink}">Activar cuenta</a></p>
         <p>Este enlace expirará en 24 horas.</p>
       `
     });
 
     console.log(`📧 Email de activación enviado a: ${user.email}`);
 
-    res.render('signup', {
-      pageTitle: 'Registro de Usuario',
-      description: 'Crea una cuenta nueva',
-      success: 'Registro exitoso. Revisa tu correo para activar tu cuenta.'
-    });
+    // ✅ Redireccionar al formulario con mensaje de éxito
+    res.redirect('/auth/register?message=Registro exitoso. Revisa tu correo para activar tu cuenta.');
 
   } catch (error) {
     console.error('❌ Error en el registro:', error);
+
     res.status(500).render('signup', {
       pageTitle: 'Registro de Usuario',
       description: 'Crea una cuenta nueva',
-      error: 'Error interno del servidor'
+      error: 'Error interno del servidor',
+      success: null
     });
   }
 });
