@@ -1,23 +1,23 @@
 <div class="container mt-4">
   <div class="row">
 
-
     <!-- 🔹 Contenedor principal del artículo -->
     <div class="col-lg-8">
 
-    <!-- 🔹 Imagen principal del artículo (opcional) -->
-    <% if (data.coverImage) { %>
-      <div class="mb-4 text-center">
-        <img src="<%= data.coverImage %>" alt="Imagen del artículo" class="img-fluid rounded shadow-sm" style="max-height: 500px; object-fit: cover;">
-      </div>
-    <% } else { %>
-      <!-- Imagen por defecto si no hay portada definida -->
-      <div class="mb-4 text-center">
-        <img src="https://i.ytimg.com/vi/DM2XmidUt7A/maxresdefault.jpg" alt="Imagen por defecto del artículo" class="img-fluid rounded shadow-sm" style="max-height: 500px; object-fit: cover;">
-      </div>
-    <% } %>
+      <!-- 🔹 Imagen principal del artículo (opcional) -->
+      <% if (data.coverImage) { %>
+        <div class="mb-4 text-center">
+          <img src="<%= data.coverImage %>" alt="Imagen del artículo" class="img-fluid rounded shadow-sm" style="max-height: 500px; object-fit: cover;">
+        </div>
+      <% } else { %>
+        <!-- Imagen por defecto si no hay portada definida -->
+        <div class="mb-4 text-center">
+          <img src="https://i.ytimg.com/vi/DM2XmidUt7A/maxresdefault.jpg" alt="Imagen por defecto del artículo" class="img-fluid rounded shadow-sm" style="max-height: 500px; object-fit: cover;">
+        </div>
+      <% } %>
+
       <!-- 🔹 Info de fecha y autor -->
-      <p class="text-muted">
+      <p class="text-muted mb-1">
         Publicado
         <a href="/articles?date=<%= new Date(data.publishDate).toLocaleDateString('es-ES') %>">
           <%= new Date(data.publishDate).toLocaleDateString('es-ES') %>
@@ -27,6 +27,28 @@
           <%= data.author ? data.author.username : 'Anónimo' %>
         </a>
       </p>
+
+      <!-- ✅ Categoría del artículo (solo el nombre) -->
+      <% if (data.category) { %>
+        <p class="mb-3">
+          <span class="fw-bold">📂 Categoría:</span>
+          <a href="/category/<%= encodeURIComponent(data.category.name) %>" class="badge bg-primary fs-6 text-decoration-none">
+            <%= data.category.name %>
+          </a>
+        </p>
+      <% } %>
+
+      <!-- ✅ Tags del artículo (solo el nombre) -->
+      <% if (data.tags && data.tags.length > 0) { %>
+        <div class="mb-3">
+          <span class="fw-bold">🏷️ Tags:</span>
+          <% data.tags.forEach(tag => { %>
+            <a href="/articles/tags/<%= encodeURIComponent(tag.id) %>" class="badge bg-secondary text-decoration-none me-1">
+              #<%= tag.name %>
+            </a>
+          <% }) %>
+        </div>
+      <% } %>
 
       <!-- 🔥 Estado del post -->
       <p class="text-muted">
