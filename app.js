@@ -231,6 +231,7 @@ app.use('/dashboard/categories', require('./server/routes/categories'));
 app.use('/dashboard/comments', require('./server/routes/comments'));
 app.use('/auth', require('./server/routes/activate')); // ⬅️ Activa el usuario
 app.use('/auth', require('./server/routes/forgot-password')); // ⬅️ Activa el usuario
+app.use('/auth', require('./server/routes/resend-activation')); // ⬅️ Activa el usuario
 
 // Middleware para manejar rutas no encontradas (404)
 app.use((req, res) => {
