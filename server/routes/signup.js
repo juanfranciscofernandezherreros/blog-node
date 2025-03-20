@@ -1,23 +1,22 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
+const transporter = require('../utils/email');
 
 const User = require('../models/User');
 const Role = require('../models/Role');
-
 const { createLog } = require('../middlewares/logger.js');
 
-// ✅ GET /register - Renderiza el formulario de registro
+// GET /register
 router.get('/register', (req, res) => {
   res.render('signup', {
-    pageTitle: 'Registro de Usuario',  // Puedes enviar datos a la vista si quieres
+    pageTitle: 'Registro de Usuario',
     description: 'Crea una cuenta nueva'
   });
 });
 
-
-// ✅ POST /register - Registro de Usuario con Rol por Defecto
-// ✅ POST /register - Registro de Usuario con Rol por Defecto
+// POST /register
 router.post('/register', async (req, res) => {
   try {
     const { username, email, password } = req.body;
@@ -48,32 +47,62 @@ router.post('/register', async (req, res) => {
       });
     }
 
+    // ✅ Crear el usuario desactivado
     const user = new User({
       username,
       email,
-      password, // Lo hashea el pre('save')
-      roles: [defaultRole._id]
+      password,
+      roles: [defaultRole._id],
+      isActive: false // Desactivado al registrarse
     });
+
+    // ✅ Generar token de activación
+    const activationToken = crypto.randomBytes(32).toString('hex');
+    const activationTokenExpires = Date.now() + 24 * 60 * 60 * 1000; // 24 horas
+
+    user.activationToken = activationToken;
+    user.activationTokenExpires = activationTokenExpires;
 
     await user.save();
 
-    // ✅ Creamos el log/registro de la notificación
+    // ✅ Guardar el log
     await createLog({
       entity: 'User',
       action: 'CREATE',
       entityId: user._id,
-      performedBy: user._id, // O null si es anónimo
+      performedBy: user._id,
       after: {
         username: user.username,
         email: user.email,
-        roles: user.roles
+        roles: user.roles,
+        isActive: user.isActive
       }
     });
 
     console.log('✅ Usuario registrado y log guardado');
 
-    // ✅ Redirige al main o al perfil
-    res.redirect('/');
+    // ✅ Enviar email de activación
+    const activationLink = `http://localhost:3001/auth/activate/${activationToken}`;
+
+    await transporter.sendMail({
+      from: `"Blog App" <${process.env.SMTP_USER}>`,
+      to: user.email,
+      subject: 'Activa tu cuenta en el Blog',
+      html: `
+        <h1>Hola, ${username}</h1>
+        <p>Gracias por registrarte. Por favor, activa tu cuenta haciendo clic en el siguiente enlace:</p>
+        <a href="${activationLink}">Activar cuenta</a>
+        <p>Este enlace expirará en 24 horas.</p>
+      `
+    });
+
+    console.log(`📧 Email de activación enviado a: ${user.email}`);
+
+    res.render('signup', {
+      pageTitle: 'Registro de Usuario',
+      description: 'Crea una cuenta nueva',
+      success: 'Registro exitoso. Revisa tu correo para activar tu cuenta.'
+    });
 
   } catch (error) {
     console.error('❌ Error en el registro:', error);
@@ -84,6 +113,5 @@ router.post('/register', async (req, res) => {
     });
   }
 });
-
 
 module.exports = router;

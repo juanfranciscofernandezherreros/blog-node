@@ -23,12 +23,39 @@ router.get('/signin', (req, res) => {
 router.post('/signin', async (req, res) => {
   try {
     const { username, password } = req.body;
+
+    // ✅ Buscar el usuario por username
     const user = await User.findOne({ username });
-    console.log(user);
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      return res.status(401).json({ message: 'Credenciales inválidas' });
+
+    // ✅ Validar si el usuario existe
+    if (!user) {
+      return res.status(401).render('signin', {
+        pageTitle: 'Iniciar sesión',
+        description: 'Iniciar sesión',
+        error: 'Usuario no encontrado'
+      });
     }
 
+    // ✅ Verificar si la cuenta está activa
+    if (!user.isActive) {
+      return res.status(403).render('signin', {
+        pageTitle: 'Iniciar sesión',
+        description: 'Iniciar sesión',
+        error: 'Debes activar tu cuenta desde el enlace de activación enviado a tu correo.'
+      });
+    }
+
+    // ✅ Verificar la contraseña
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) {
+      return res.status(401).render('signin', {
+        pageTitle: 'Iniciar sesión',
+        description: 'Iniciar sesión',
+        error: 'Contraseña incorrecta'
+      });
+    }
+
+    // ✅ Generar el token si todo está correcto
     const token = jwt.sign({ userId: user._id }, jwtSecret, { expiresIn: '1d' });
 
     res.cookie('token', token, {
@@ -37,11 +64,19 @@ router.post('/signin', async (req, res) => {
       sameSite: 'strict'
     });
 
-    res.redirect('/profile/user');
+    console.log(`✅ Usuario ${user.username} inició sesión`);
+
+    res.redirect('/profile/user'); // Cambia esta ruta según tu necesidad
+
   } catch (error) {
-    console.log('Error en login:', error);
-    res.status(500).json({ message: 'Error en el servidor' });
+    console.error('❌ Error en login:', error);
+    res.status(500).render('signin', {
+      pageTitle: 'Iniciar sesión',
+      description: 'Iniciar sesión',
+      error: 'Error en el servidor'
+    });
   }
 });
+
   
 module.exports = router;

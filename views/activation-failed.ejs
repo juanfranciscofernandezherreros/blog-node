@@ -1,0 +1,14 @@
+<div class="container">
+  <h1>❌ Activación fallida</h1>
+  <p><%= description %></p>
+
+  <% if (error) { %>
+    <div class="alert alert-danger">
+      <%= error %>
+    </div>
+  <% } %>
+
+  <p>¿No has recibido el enlace de activación o ha expirado?</p>
+  <a href="/auth/register" class="btn btn-secondary">Volver a registrarse</a>
+</div>
+
