@@ -1,25 +1,35 @@
 <div class="card shadow-sm p-4"
-     style="width: 22rem; top: 50%; left: 50%; transform: translate(-50%, -50%);">    <h2 class="text-center mb-4">Iniciar Sesión</h2>
-    
-    <form action="/auth/signin" method="POST">
-      <div class="mb-3">
-        <label for="username" class="form-label">Usuario</label>
-        <input type="text" id="username" name="username" class="form-control" placeholder="Introduce tu usuario" required>
-      </div>
+     style="width: 22rem; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+  <h2 class="text-center mb-4">Iniciar Sesión</h2>
 
-      <div class="mb-3">
-        <label for="password" class="form-label">Contraseña</label>
-        <input type="password" id="password" name="password" class="form-control" placeholder="Introduce tu contraseña" required>
-      </div>
-
-      <div class="d-grid mb-3">
-        <button type="submit" class="btn btn-primary">Entrar</button>
-      </div>
-    </form>
-
-    <div class="text-center">
-      <p class="mb-0">¿No tienes cuenta? 
-        <a href="/auth/register" class="btn btn-link">Regístrate</a>
-      </p>
+  <form action="/auth/signin" method="POST">
+    <div class="mb-3">
+      <label for="username" class="form-label">Usuario</label>
+      <input type="text" id="username" name="username" class="form-control" placeholder="Introduce tu usuario" required>
     </div>
+
+    <div class="mb-3">
+      <label for="password" class="form-label">Contraseña</label>
+      <input type="password" id="password" name="password" class="form-control" placeholder="Introduce tu contraseña" required>
+    </div>
+
+    <div class="d-grid mb-3">
+      <button type="submit" class="btn btn-primary">Entrar</button>
+    </div>
+  </form>
+
+  <div class="text-center">
+    <p class="mb-2">
+      <a href="/auth/forgot-password" class="btn btn-link">¿Olvidaste tu contraseña?</a>
+    </p>
+
+    <p class="mb-2">
+      <a href="/auth/resend-activation" class="btn btn-link">Reenviar enlace de activación</a>
+    </p>
+
+    <p class="mb-0">
+      ¿No tienes cuenta?
+      <a href="/auth/register" class="btn btn-link">Regístrate</a>
+    </p>
   </div>
+</div>

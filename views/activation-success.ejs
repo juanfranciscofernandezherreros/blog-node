@@ -1,0 +1,14 @@
+
+<div class="container">
+  <h1>✅ Cuenta activada con éxito</h1>
+  <p><%= description %></p>
+
+  <% if (success) { %>
+    <div class="alert alert-success">
+      <%= success %>
+    </div>
+  <% } %>
+
+  <p>Ahora puedes iniciar sesión:</p>
+  <a href="/auth/signin" class="btn btn-primary">Iniciar sesión</a>
+</div>
