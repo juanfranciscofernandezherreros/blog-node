@@ -1,200 +1,59 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Users Dashboard</title>
-    <style>
-        /* Estilos globales */
-        body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(to right, #1e3c72, #2a5298);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            flex-direction: column;
-        }
-
-        nav {
-            width: 100%;
-            background: #1e3c72;
-            padding: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: absolute;
-            top: 0;
-            left: 0;
-            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
-        }
-
-        .menu {
-            display: flex;
-            gap: 20px;
-        }
-
-        .menu a {
-            color: white;
-            text-decoration: none;
-            font-size: 16px;
-            transition: color 0.3s ease;
-        }
-
-        .menu a:hover {
-            color: #f1c40f;
-        }
-
-        .container {
-            background: #ffffff;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
-            width: 100%;
-            max-width: 80%;
-            text-align: center;
-            margin-top: 80px;
-        }
-
-        .admin-title {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .admin-title h2 {
-            color: #333;
-            margin: 0;
-        }
-
-        .button {
-            background: #1e3c72;
-            color: white;
-            padding: 8px 12px;
-            text-decoration: none;
-            border-radius: 5px;
-            transition: background 0.3s ease;
-            font-size: 14px;
-        }
-
-        .button:hover {
-            background: #163c5a;
-        }
-
-        .admin-posts {
-            list-style: none;
-            padding: 0;
-        }
-
-        .admin-posts li {
-            background: #f9f9f9;
-            padding: 15px;
-            margin-bottom: 10px;
-            border-radius: 5px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: transform 0.2s ease;
-        }
-
-        .admin-posts li:hover {
-            transform: translateX(5px);
-        }
-
-        .admin-post-controls {
-            display: flex;
-            gap: 10px;
-        }
-
-        .btn {
-            background: #1e3c72;
-            color: white;
-            padding: 6px 12px;
-            border: none;
-            border-radius: 5px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: background 0.3s ease;
-            text-decoration: none;
-        }
-
-        .btn:hover {
-            background: #163c5a;
-        }
-
-        .btn-delete {
-            background: #d9534f;
-        }
-
-        .btn-delete:hover {
-            background: #c9302c;
-        }
-
-        form {
-            margin: 0;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Usuarios Dashboard</title>
+  <link rel="stylesheet" href="/css/admin.css">
 </head>
 <body>
 
-    <%- include('menu_top_admin') %>
+  <%- include('menu_top_admin') %>
 
-    <div class="container">
-        <div class="admin-title">
-          <h2>Usuarios</h2>
-          <a href="/add-user" class="button">+ Añadir Nuevo Usuario</a>
-        </div>
-        
-      
-        <table border="1" cellspacing="0" cellpadding="8" style="width: 100%; border-collapse: collapse;">
-          <thead>
-            <tr style="background-color: #1e3c72; color: white;">
-              <th>Nombre de Usuario</th>
-              <th>Email</th>
-              <th>Roles</th>
-              <th>Posts</th>
-              <th>Creado el</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% data.forEach(user => { %>
-              <tr>
-                <td><%= user.username %></td>
-                <td><%= user.email %></td>
-                <td>
-                  <% if (user.roles && user.roles.length > 0) { %>
-                    <% user.roles.forEach(role => { %>
-                      <span style="display:inline-block; background-color:#f1c40f; padding:3px 6px; border-radius:4px; margin-right:5px;"><%= role.name %></span>
-                    <% }) %>
-                  <% } else { %>
-                    <em>Sin roles</em>
-                  <% } %>
-                </td>
-                <td>
-                  <% if (user.posts && user.posts.length > 0) { %>
-                    <%= user.posts.length %> post(s)
-                  <% } else { %>
-                    <em>Sin posts</em>
-                  <% } %>
-                </td>
-                <td><%= new Date(user.createdAt).toLocaleString('es-ES') %></td>
-                <td>
-                  <a href="/dashboard/users/edit/<%= user._id %>" class="btn-edit btn">Editar</a>
-      
-                  <form action="/dashboard/users/delete/<%= user._id %>?_method=DELETE" method="POST" style="display:inline;">
-                    <button type="submit" class="btn-delete btn" onclick="return confirm('¿Seguro que deseas eliminar este usuario?');">
-                      Eliminar
-                    </button>
-                  </form>
-                </td>
-              </tr>
-            <% }) %>
-          </tbody>
-        </table>
-      </div>
+  <div class="container">
+    <div class="admin-title">
+      <h2>Gestión de Usuarios</h2>
+      <a href="/dashboard/users/add-user" class="button">+ Añadir Nuevo Usuario</a>
+    </div>
+
+    <% if (successMessage) { %>
+      <div class="success-message"><%= successMessage %></div>
+    <% } %>
+
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Nombre de Usuario</th>
+          <th>Email</th>
+          <th>Roles</th>
+          <th>Posts</th>
+          <th>Fecha de Creación</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% data.forEach(user => { %>
+          <tr>
+            <td><%= user.username %></td>
+            <td><%= user.email %></td>
+            <td>
+              <% user.roles.forEach(role => { %>
+                <span class="role-badge"><%= role.name %></span>
+              <% }) %>
+            </td>
+            <td><%= user.posts ? user.posts.length : 0 %></td>
+            <td><%= new Date(user.createdAt).toLocaleDateString() %></td>
+            <td>
+              <a href="/dashboard/users/edit-user/<%= user._id %>" class="btn btn-edit">Editar</a>
+              <form action="/dashboard/users/delete-user/<%= user._id %>" method="POST" style="display:inline;">
+                <button type="submit" class="btn btn-delete" onclick="return confirm('¿Estás seguro de eliminar este usuario?');">Eliminar</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
 
 </body>
 </html>
