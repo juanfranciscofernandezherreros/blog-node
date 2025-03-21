@@ -2,9 +2,42 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Usuarios Dashboard</title>
+  <title>Comentarios Dashboard</title>
   <link rel="stylesheet" href="/css/admin.css">
+  <style>
+    .pagination {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+      gap: 5px;
+    }
+
+    .pagination a, .pagination span {
+      display: inline-block;
+      padding: 8px 12px;
+      background-color: #1e3c72;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 4px;
+      transition: background-color 0.3s ease;
+    }
+
+    .pagination a:hover {
+      background-color: #163c5a;
+    }
+
+    .pagination .active {
+      background-color: #f1c40f;
+      color: #333;
+      cursor: default;
+    }
+
+    .pagination .disabled {
+      background-color: #ccc;
+      color: #666;
+      cursor: not-allowed;
+    }
+  </style>
 </head>
 <body>
 
@@ -12,47 +45,86 @@
 
   <div class="container">
     <div class="admin-title">
-      <h2>Gestión de Usuarios</h2>
-      <a href="/dashboard/users/add-user" class="button">+ Añadir Nuevo Usuario</a>
+      <h2>Comentarios</h2>
     </div>
 
     <% if (successMessage) { %>
-      <div class="success-message"><%= successMessage %></div>
+      <div class="alert success"><%= successMessage %></div>
     <% } %>
+
+    <% if (errorMessage) { %>
+      <div class="alert error"><%= errorMessage %></div>
+    <% } %>
+
+    <!-- Select para elegir cantidad por página -->
+    <form method="GET" action="/dashboard/comments" style="margin-bottom: 20px;">
+      <label for="limit">Mostrar:</label>
+      <select name="limit" id="limit" onchange="this.form.submit()">
+        <option value="5" <%= limit == 5 ? 'selected' : '' %>>5</option>
+        <option value="10" <%= limit == 10 ? 'selected' : '' %>>10</option>
+        <option value="20" <%= limit == 20 ? 'selected' : '' %>>20</option>
+      </select> comentarios por página.
+      <input type="hidden" name="page" value="<%= page %>">
+    </form>
 
     <table class="admin-table">
       <thead>
         <tr>
-          <th>Nombre de Usuario</th>
-          <th>Email</th>
-          <th>Roles</th>
-          <th>Posts</th>
-          <th>Fecha de Creación</th>
+          <th>Autor</th>
+          <th>Comentario</th>
+          <th>Post</th>
+          <th>Tipo</th>
+          <th>Creado el</th>
           <th>Acciones</th>
         </tr>
       </thead>
       <tbody>
-        <% data.forEach(user => { %>
+        <% data.forEach(comment => { %>
           <tr>
-            <td><%= user.username %></td>
-            <td><%= user.email %></td>
+            <td><%= comment.author %></td>
+            <td><%= comment.body %></td>
+            <td><%= comment.postId ? comment.postId.title : 'Sin post' %></td>
             <td>
-              <% user.roles.forEach(role => { %>
-                <span class="role-badge"><%= role.name %></span>
-              <% }) %>
+              <% if (comment.parentId) { %>
+                <span class="role-badge">Respuesta</span>
+              <% } else { %>
+                <span class="role-badge">Comentario Principal</span>
+              <% } %>
             </td>
-            <td><%= user.posts ? user.posts.length : 0 %></td>
-            <td><%= new Date(user.createdAt).toLocaleDateString() %></td>
+            <td><%= new Date(comment.createdAt).toLocaleString() %></td>
             <td>
-              <a href="/dashboard/users/edit-user/<%= user._id %>" class="btn btn-edit">Editar</a>
-              <form action="/dashboard/users/delete-user/<%= user._id %>" method="POST" style="display:inline;">
-                <button type="submit" class="btn btn-delete" onclick="return confirm('¿Estás seguro de eliminar este usuario?');">Eliminar</button>
+              <form action="/dashboard/comments/delete/<%= comment._id %>" method="POST" style="display:inline;">
+                <button type="submit" class="btn btn-delete" onclick="return confirm('¿Eliminar comentario?')">Eliminar</button>
               </form>
             </td>
           </tr>
         <% }) %>
       </tbody>
     </table>
+
+    <!-- PAGINACIÓN NUMERADA -->
+    <div class="pagination">
+      <% if (page > 1) { %>
+        <a href="/dashboard/comments?page=<%= page - 1 %>&limit=<%= limit %>">&laquo; Anterior</a>
+      <% } else { %>
+        <span class="disabled">&laquo; Anterior</span>
+      <% } %>
+
+      <% for (let i = 1; i <= totalPages; i++) { %>
+        <% if (i === page) { %>
+          <span class="active"><%= i %></span>
+        <% } else { %>
+          <a href="/dashboard/comments?page=<%= i %>&limit=<%= limit %>"><%= i %></a>
+        <% } %>
+      <% } %>
+
+      <% if (page < totalPages) { %>
+        <a href="/dashboard/comments?page=<%= page + 1 %>&limit=<%= limit %>">Siguiente &raquo;</a>
+      <% } else { %>
+        <span class="disabled">Siguiente &raquo;</span>
+      <% } %>
+    </div>
+
   </div>
 
 </body>

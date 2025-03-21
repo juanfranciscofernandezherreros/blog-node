@@ -10,7 +10,7 @@ const CommentSchema = new Schema({
   parentId: {
     type: Schema.Types.ObjectId,
     ref: 'Comment',
-    default: null // Si es null, significa que es un comentario principal
+    default: null
   },
   author: {
     type: String,
@@ -20,10 +20,19 @@ const CommentSchema = new Schema({
     type: String,
     required: true
   },
+  isReported: {
+    type: Boolean,
+    default: false
+  },
+  isVisible: {
+    type: Boolean,
+    default: true
+  },
   createdAt: {
     type: Date,
     default: Date.now
   }
 });
+
 
 module.exports = mongoose.model('Comment', CommentSchema);
