@@ -3,13 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
+    <title>Admin Dashboard - Posts</title>
+
+    <!-- CSS Principal -->
     <link rel="stylesheet" href="/css/admin.css">
+
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+
 </head>
 <body>
 
     <%- include('menu_top_admin') %>
-
 
     <!-- Contenido principal -->
     <div class="container">
@@ -18,24 +24,91 @@
             <a href="/dashboard/add-post" class="button">+ Add New</a>
         </div>
 
-        <ul class="admin-posts">
-            <% data.forEach(post => { %>
-                <li>
-                    <a href="/post/<%= post._id %>">
-                        <%= post.title %> &nearr;
-                    </a>
-                    <div class="admin-post-controls">
-                        <a href="/dashboard/edit-post/<%= post._id %>" class="btn-edit btn" style="color:white;">Edit</a>
-                        
-                        <form action="/dashboard/delete-post/<%= post._id %>" method="POST" onsubmit="return confirm('¿Estás seguro de eliminar este artículo?');">
-                            <input type="submit" value="Eliminar" class="btn-delete btn">
-                          </form>
-                          
-                    </div>
-                </li>
-            <% }) %>
-        </ul>  
+        <!-- Tabla DataTable de Posts -->
+        <table id="postsTable" class="table table-striped table-bordered">
+            <thead>
+                <tr>
+                    <th>Título</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% data.forEach(post => { %>
+                    <tr>
+                        <td>
+                            <a href="/post/<%= post._id %>">
+                                <%= post.title %> &nearr;
+                            </a>
+                        </td>
+                        <td>
+                            <div class="admin-post-controls">
+                                <a href="/dashboard/edit-post/<%= post._id %>" class="btn-edit btn" style="color:white;">Editar</a>
+                                
+                                <form action="/dashboard/delete-post/<%= post._id %>" method="POST" onsubmit="return confirm('¿Estás seguro de eliminar este artículo?');" style="display:inline;">
+                                    <input type="submit" value="Eliminar" class="btn-delete btn">
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>  
     </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+
+    <!-- Configuración DataTable -->
+    <script>
+        $(document).ready(function() {
+            $('#postsTable').DataTable({
+                responsive: true,
+                dom: 'Bfrtip',
+                buttons: [
+                    {
+                        extend: 'excelHtml5',
+                        text: 'Exportar a Excel',
+                        titleAttr: 'Exportar a Excel'
+                    },
+                    {
+                        extend: 'pdfHtml5',
+                        text: 'Exportar a PDF',
+                        titleAttr: 'Exportar a PDF'
+                    },
+                    {
+                        extend: 'print',
+                        text: 'Imprimir',
+                        titleAttr: 'Imprimir'
+                    }
+                ],
+                language: {
+                    url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+                },
+                initComplete: function () {
+                    this.api().columns().every(function () {
+                        var column = this;
+                        var input = $('<input type="text" placeholder="Filtrar..." class="form-control form-control-sm"/>')
+                            .appendTo($(column.header()).empty())
+                            .on('keyup change clear', function () {
+                                if (column.search() !== this.value) {
+                                    column.search(this.value).draw();
+                                }
+                            });
+                    });
+                }
+            });
+        });
+    </script>
 
 </body>
 </html>
