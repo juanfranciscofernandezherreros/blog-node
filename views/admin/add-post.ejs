@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Crear Nuevo Post - Avanzado con HTML</title>
+  <title>Crear Nuevo Post - Avanzado con HTML e Imagen</title>
 
   <!-- CSS Personalizado -->
   <link rel="stylesheet" href="/css/admin.css">
@@ -59,6 +60,7 @@
 
     input[type="text"],
     input[type="date"],
+    input[type="file"],
     select,
     textarea {
       width: 100%;
@@ -68,6 +70,13 @@
       border: 1px solid #ccc;
       border-radius: 4px;
     }
+
+    #imagePreview {
+      margin-top: 10px;
+      max-width: 300px;
+      max-height: 300px;
+      display: none;
+    }
   </style>
 </head>
 
@@ -76,9 +85,9 @@
   <%- include('menu_top_admin') %>
 
   <div class="container">
-    <h2>Crear Nuevo Post con Soporte HTML</h2>
+    <h2>Crear Nuevo Post con Soporte HTML + Imagen</h2>
 
-    <form id="createPostForm" action="/dashboard/add-post" method="POST" novalidate>
+    <form id="createPostForm" action="/dashboard/add-post" method="POST" enctype="multipart/form-data" novalidate>
 
       <label for="title">Título:</label>
       <input type="text" name="title" id="title">
@@ -121,6 +130,11 @@
       <input type="date" name="publishDate" id="publishDate">
       <div id="publishDateError" class="error-message">La fecha de publicación es obligatoria.</div>
 
+      <!-- Imagen destacada -->
+      <label for="featuredImage">Imagen destacada del post:</label>
+      <input type="file" name="featuredImage" id="featuredImage" accept="image/*">
+      <img id="imagePreview" src="#" alt="Vista previa de la imagen">
+
       <p>Estás creando un post como: <strong><%= user.username %></strong></p>
 
       <button type="submit" class="btn">Crear Post</button>
@@ -129,10 +143,11 @@
     <a href="/dashboard" class="back-link">← Volver al Dashboard</a>
   </div>
 
-  <!-- CKEditor Full Config -->
+  <!-- JavaScript del formulario -->
   <script>
     let editorBody;
 
+    // Inicializa CKEditor
     ClassicEditor
       .create(document.querySelector('#body'), {
         toolbar: {
@@ -158,57 +173,60 @@
           previewsInData: true
         },
         simpleUpload: {
-          uploadUrl: '', // Cambia esto si tienes un backend de imágenes
-          withCredentials: false
+          uploadUrl: '/dashboard/upload-image',
+          headers: {
+            // 'Authorization': 'Bearer <token>'
+          }
         },
         language: 'es',
-
-        // Soporte para etiquetas HTML personalizadas
         htmlSupport: {
           allow: [
             {
-              name: /.*/,        // Permitir TODAS las etiquetas
-              attributes: true,  // Permitir TODOS los atributos
-              classes: true,     // Permitir TODAS las clases
-              styles: true       // Permitir TODOS los estilos en línea
+              name: /.*/,
+              attributes: true,
+              classes: true,
+              styles: true
             }
           ]
         },
-
         htmlEmbed: {
           showPreviews: true
         }
-
       })
       .then(editor => {
         editorBody = editor;
-        console.log('✅ CKEditor Avanzado con soporte HTML cargado');
+        console.log('✅ CKEditor cargado correctamente');
       })
       .catch(error => {
-        console.error('❌ Error al cargar CKEditor Avanzado:', error);
+        console.error('❌ Error al cargar CKEditor:', error);
       });
 
     // Validación del formulario
     const form = document.getElementById('createPostForm');
 
     form.addEventListener('submit', function (e) {
-      let hasErrors = false;
       clearErrors();
 
-      const title = document.getElementById('title');
-      if (!title.value.trim()) {
-        showError(title, 'titleError');
-        hasErrors = true;
-      }
+      const requiredFields = [
+        { id: 'title', errorId: 'titleError' },
+        { id: 'summary', errorId: 'summaryError' },
+        { id: 'category', errorId: 'categoryError' },
+        { id: 'status', errorId: 'statusError' },
+        { id: 'publishDate', errorId: 'publishDateError' }
+      ];
 
-      const summary = document.getElementById('summary');
-      if (!summary.value.trim()) {
-        showError(summary, 'summaryError');
-        hasErrors = true;
-      }
+      let hasErrors = false;
 
+      requiredFields.forEach(field => {
+        const element = document.getElementById(field.id);
+        if (!element.value.trim()) {
+          showError(element, field.errorId);
+          hasErrors = true;
+        }
+      });
+
+      const editorData = editorBody?.getData().trim() || '';
       const bodyTextarea = document.getElementById('body');
-      const editorData = editorBody ? editorBody.getData().trim() : '';
 
       if (!editorData) {
         showError(bodyTextarea, 'bodyError');
@@ -217,25 +235,8 @@
         bodyTextarea.value = editorData;
       }
 
-      const category = document.getElementById('category');
-      if (!category.value) {
-        showError(category, 'categoryError');
-        hasErrors = true;
-      }
-
-      const status = document.getElementById('status');
-      if (!status.value) {
-        showError(status, 'statusError');
-        hasErrors = true;
-      }
-
-      const publishDate = document.getElementById('publishDate');
-      if (!publishDate.value) {
-        showError(publishDate, 'publishDateError');
-        hasErrors = true;
-      }
-
       if (hasErrors) {
+        console.warn('❗ Hay errores en el formulario');
         e.preventDefault();
       }
     });
@@ -253,7 +254,26 @@
       const errorMessages = document.querySelectorAll('.error-message');
       errorMessages.forEach(msg => msg.style.display = 'none');
     }
+
+    // Vista previa imagen destacada
+    const featuredImageInput = document.getElementById('featuredImage');
+    const imagePreview = document.getElementById('imagePreview');
+
+    featuredImageInput.addEventListener('change', function () {
+      const file = this.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          imagePreview.src = e.target.result;
+          imagePreview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      } else {
+        imagePreview.style.display = 'none';
+      }
+    });
   </script>
 
 </body>
+
 </html>

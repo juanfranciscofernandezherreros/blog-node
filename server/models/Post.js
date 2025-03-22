@@ -50,6 +50,10 @@ const PostSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  images: {
+    type: String, // ✅ Así se guarda el nombre del archivo (ej: 'post-12345678.png')
+    required: false // o true, según tu lógica
+  },  
 
   // ✅ FECHAS CLARAS
   generatedAt: {
