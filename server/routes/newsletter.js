@@ -2,320 +2,146 @@ const express = require('express');
 const router = express.Router();
 const Newsletter = require('../models/Newsletter');
 const { authenticateToken, authorizeRoles } = require('../middlewares/authMiddleware');
+
 const adminLayout = '../views/layouts/admin';
 
 /**
- * GET /dashboard/newsletter - Mostrar todos los suscriptores
+ * GET /dashboard/newsletter
+ * Listar suscriptores con paginación y mensajes
  */
+// GET /dashboard/newsletter
 router.get('/', authenticateToken, authorizeRoles(['admin']), async (req, res) => {
   try {
-    const data = await Newsletter.find();
-    res.render('admin/dashboard-newsletter', { title: 'Dashboard - Newsletter', data, layout: adminLayout });
-  } catch (error) {
-    console.error(error);
-  }
-});
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
 
-/**
- * POST /dashboard/newsletter/add - Añadir un nuevo suscriptor
- */
-router.post('/newsletter/add', authenticateToken, authorizeRoles(['admin']), async (req, res) => {
-  try {
-    const email = req.body.email.trim().toLowerCase();
-    if (!email) return res.status(400).send('El email es obligatorio');
+    const totalSubscribers = await Newsletter.countDocuments();
+    const totalPages = Math.ceil(totalSubscribers / limit);
+    const skip = (page - 1) * limit;
 
-    if (await Newsletter.findOne({ email })) return res.status(400).send('Este email ya está suscrito');
+    const data = await Newsletter.find()
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
-    await Newsletter.create({ email });
-
-    res.redirect('/dashboard/newsletter');
-  } catch (error) {
-    console.error('Error al agregar suscriptor:', error);
-    res.status(500).send('Error interno del servidor');
-  }
-});
-
-/**
- * DELETE /dashboard/newsletter/:id - Eliminar suscriptor
- */
-router.delete('/newsletter/:id', authenticateToken, authorizeRoles(['admin']), async (req, res) => {
-  try {
-    await Newsletter.findByIdAndDelete(req.params.id);
-    res.redirect('/newsletter');
-  } catch (error) {
-    console.error('Error al eliminar suscriptor:', error);
-    res.status(500).json({ success: false, message: 'Error interno del servidor' });
-  }
-});
-
-/**
- * GET /dashboard/newsletter
- * Mostrar todos los suscriptores
- */
-router.get('/newsletter',  authenticateToken, authorizeRoles(['admin']), async (req, res) => {
-  try {
-    const locals = {
-      title: 'Dashboard - Newsletter',
-      description: 'Manage your blog categories.'
-    }
-
-    // Obtener todas las categorías de la base de datos
-    const data = await Newsletter.find();
+    const pagination = {
+      page,
+      limit,
+      totalPages,
+      totalItems: totalSubscribers
+    };
 
     res.render('admin/dashboard-newsletter', {
-      locals,
+      title: 'Dashboard - Newsletter',
       data,
-      layout: adminLayout
+      pagination,   // 👈 Esto es la clave para el EJS
+      layout: adminLayout,
+      successMessage: req.query.success || null,
+      errorMessage: req.query.error || null
     });
 
   } catch (error) {
-    console.log(error);
+    console.error('Error cargando newsletters:', error);
+    res.redirect('/dashboard/newsletter?error=Error cargando los newsletters');
   }
 });
 
+
 /**
- * POST /dashboard/newsletter/add
- * Añadir un nuevo suscriptor
+ * GET /dashboard/newsletter/add-newsletter
+ * Formulario para añadir suscriptor
  */
-router.post('/newsletter/add', authenticateToken, authorizeRoles(['admin']), async (req, res) => {
+router.get('/add-newsletter', authenticateToken, authorizeRoles(['admin']), (req, res) => {
+  res.render('admin/add-newsletter', {
+    title: 'Añadir Newsletter',
+    layout: adminLayout
+  });
+});
+
+/**
+ * POST /dashboard/newsletter/add-newsletter
+ * Añadir nuevo suscriptor
+ */
+router.post('/add-newsletter', authenticateToken, authorizeRoles(['admin']), async (req, res) => {
   try {
     const { email } = req.body;
 
     if (!email) {
-      return res.status(400).send('El email es obligatorio');
+      return res.redirect('/dashboard/newsletter?error=El email es obligatorio');
     }
 
-    // Evitar duplicados
-    const exists = await Newsletter.findOne({ email });
-    if (exists) {
-      return res.status(400).send('Este email ya está suscrito');
+    const existing = await Newsletter.findOne({ email: email.trim().toLowerCase() });
+
+    if (existing) {
+      return res.redirect('/dashboard/newsletter?error=Este email ya está suscrito');
     }
 
-    await Newsletter.create({ email });
+    await Newsletter.create({ email: email.trim().toLowerCase() });
 
-    res.redirect('/dashboard/newsletter');
-
+    res.redirect('/dashboard/newsletter?success=Suscriptor añadido correctamente');
   } catch (error) {
     console.error('Error al agregar suscriptor:', error);
-    res.status(500).send('Error interno del servidor');
+    res.redirect('/dashboard/newsletter?error=Error interno al agregar suscriptor');
   }
 });
 
 /**
- * GET /dashboard/newsletter
- * Mostrar todos los suscriptores
+ * GET /dashboard/newsletter/edit-newsletter/:id
+ * Formulario para editar suscriptor
  */
-router.get('/newsletter',  authenticateToken, authorizeRoles(['admin']), async (req, res) => {
-  try {
-    const data = await Newsletter.find();
-    res.render('admin/dashboard-newsletter', { title: 'Users dashboard', data, layout: adminLayout });
-  } catch (error) {
-    console.log(error);
-  }
-});
-
-/**
- * POST /dashboard/newsletter/add
- * Añadir un nuevo suscriptor
- */
-router.post('/newsletter/add',  authenticateToken, authorizeRoles(['admin']), async (req, res) => {
-  try {
-    const { email } = req.body;
-    if (!email) return res.status(400).send('El email es obligatorio');
-    if (await Newsletter.findOne({ email })) return res.status(400).send('Este email ya está suscrito');
-    await Newsletter.create({ email });
-    res.redirect('/dashboard/newsletter');
-  } catch (error) {
-    console.error('Error al agregar suscriptor:', error);
-    res.status(500).send('Error interno del servidor');
-  }
-});
-
-/**
- * GET /dashboard/newsletter/edit/:id
- * Obtener un suscriptor para editar
- */
-router.get('/newsletter/edit/:id',  authenticateToken, authorizeRoles(['admin']), async (req, res) => {
-  try {
-    const subscriber = await Newsletter.findById(req.params.id);
-    if (!subscriber) return res.status(404).send('Suscriptor no encontrado');
-    res.render('admin/edit-newsletter', { subscriber, layout: adminLayout });
-  } catch (error) {
-    console.error('Error al obtener suscriptor:', error);
-    res.status(500).send('Error interno del servidor');
-  }
-});
-
-/**
- * PUT /dashboard/newsletter/update/:id
- * Actualizar un suscriptor
- */
-router.put('/newsletter/update/:id',  authenticateToken, authorizeRoles(['admin']), async (req, res) => {
-  try {
-    const { email } = req.body;
-    if (!email) return res.status(400).send('El email es obligatorio');
-    await Newsletter.findByIdAndUpdate(req.params.id, { email });
-    res.redirect('/dashboard/newsletter');
-  } catch (error) {
-    console.error('Error al actualizar suscriptor:', error);
-    res.status(500).send('Error interno del servidor');
-  }
-});
-
-/**
- * DELETE /delete-newsletter/:email
- * Eliminar suscriptor
- */
-router.delete('/delete-newsletter/:email',  authenticateToken, authorizeRoles(['admin']), async (req, res) => {
-  try {
-    const email = req.params.email.trim().toLowerCase();
-    if (!email) return res.status(400).json({ success: false, message: 'El email es obligatorio' });
-    const deletedSubscriber = await Newsletter.findOneAndDelete({ email });
-    if (!deletedSubscriber) return res.status(404).json({ success: false, message: 'Suscriptor no encontrado' });
-    res.redirect('/dashboard/newsletter');
-  } catch (error) {
-    console.error('Error al eliminar suscriptor:', error);
-    res.status(500).json({ success: false, message: 'Error interno del servidor' });
-  }
-});
-
-
-/**
- * GET /dashboard/newsletter/edit/:id
- * Obtener un suscriptor para editar
- */
-router.get('/newsletter/edit/:id', authenticateToken, authorizeRoles(['admin']) , async (req, res) => {
+router.get('/edit-newsletter/:id', authenticateToken, authorizeRoles(['admin']), async (req, res) => {
   try {
     const subscriber = await Newsletter.findById(req.params.id);
 
     if (!subscriber) {
-      return res.status(404).send('Suscriptor no encontrado');
+      return res.redirect('/dashboard/newsletter?error=Suscriptor no encontrado');
     }
 
-    res.render('admin/edit-newsletter', { subscriber });
-
+    res.render('admin/edit-newsletter', {
+      title: 'Editar Newsletter',
+      layout: adminLayout,
+      subscriber
+    });
   } catch (error) {
     console.error('Error al obtener suscriptor:', error);
-    res.status(500).send('Error interno del servidor');
+    res.redirect('/dashboard/newsletter?error=Error al cargar el suscriptor');
   }
 });
 
 /**
- * POST /dashboard/newsletter/update/:id
- * Actualizar un suscriptor
+ * POST /dashboard/newsletter/update-newsletter/:id
+ * Actualizar suscriptor
  */
-router.post('/newsletter/update/:id',  authenticateToken, authorizeRoles(['admin']) , async (req, res) => {
+router.post('/update-newsletter/:id', authenticateToken, authorizeRoles(['admin']), async (req, res) => {
   try {
     const { email } = req.body;
 
     if (!email) {
-      return res.status(400).send('El email es obligatorio');
+      return res.redirect(`/dashboard/newsletter/edit-newsletter/${req.params.id}?error=El email es obligatorio`);
     }
 
-    await Newsletter.findByIdAndUpdate(req.params.id, { email });
+    await Newsletter.findByIdAndUpdate(req.params.id, { email: email.trim().toLowerCase() });
 
-    res.redirect('/dashboard/newsletter');
-
+    res.redirect('/dashboard/newsletter?success=Suscriptor actualizado correctamente');
   } catch (error) {
     console.error('Error al actualizar suscriptor:', error);
-    res.status(500).send('Error interno del servidor');
+    res.redirect('/dashboard/newsletter?error=Error al actualizar el suscriptor');
   }
 });
 
 /**
- * DELETE /dashboard/newsletter/:id
+ * POST /dashboard/newsletter/delete-newsletter/:id
  * Eliminar suscriptor
  */
-router.delete('/newsletter/:id',  authenticateToken, authorizeRoles(['admin']) , async (req, res) => {
+router.post('/delete-newsletter/:id', authenticateToken, authorizeRoles(['admin']), async (req, res) => {
   try {
     await Newsletter.findByIdAndDelete(req.params.id);
-    res.json({ success: true, message: 'Suscriptor eliminado correctamente' });
 
+    res.redirect('/dashboard/newsletter?success=Suscriptor eliminado correctamente');
   } catch (error) {
     console.error('Error al eliminar suscriptor:', error);
-    res.status(500).json({ success: false, message: 'Error interno del servidor' });
+    res.redirect('/dashboard/newsletter?error=Error al eliminar el suscriptor');
   }
 });
-
-/**
- * DELETE /dashboard/newsletter/:id
- * Eliminar suscriptor del Newsletter
- */
-router.delete('/newsletter/:id',  authenticateToken, authorizeRoles(['admin']) , async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const subscriber = await Newsletter.findByIdAndDelete(id);
-
-    if (!subscriber) {
-      return res.status(404).json({ success: false, message: 'Suscriptor no encontrado' });
-    }
-
-    res.json({ success: true, message: 'Suscriptor eliminado correctamente' });
-
-  } catch (error) {
-    console.error('Error al eliminar suscriptor:', error);
-    res.status(500).json({ success: false, message: 'Error interno del servidor' });
-  }
-});
-
-/**
- * GET /add-newsletter
- * Admin - Formulario para añadir una nueva etiqueta
- */
-router.get('/add-newsletter',  authenticateToken, authorizeRoles(['admin']) , async (req, res) => {
-  try {
-    res.render('admin/add-newsletter', { title: 'Añadir Newsletter', layout: adminLayout });
-  } catch (error) {
-    console.log(error);
-  }
-});
-
-router.post('/add-newsletter',  authenticateToken, authorizeRoles(['admin']) , async (req, res) => {
-  try {
-    const { email } = req.body;
-    if (!email) {
-      return res.status(400).send('El email es obligatorio');
-    }
-
-    const existingSubscriber = await Newsletter.findOne({ email: email.trim() });
-    if (existingSubscriber) {
-      return res.status(400).send('Este email ya está suscrito');
-    }
-
-    await Newsletter.create({ email: email.trim() });
-
-    res.redirect('/dashboard/newsletter');
-  } catch (error) {
-    console.error('Error agregando suscriptor:', error);
-    if (error.code === 11000) {
-      return res.status(400).send('Este email ya está suscrito');
-    }
-    res.status(500).send('Error interno del servidor');
-  }
-});
-
-router.delete('/delete-newsletter/:email',  authenticateToken, authorizeRoles(['admin']) , async (req, res) => {
-  try {
-    const email = req.params.email.trim().toLowerCase();
-
-    if (!email) {
-      return res.status(400).json({ success: false, message: 'El email es obligatorio' });
-    }
-
-    const deletedSubscriber = await Newsletter.findOneAndDelete({ email });
-
-    if (!deletedSubscriber) {
-      return res.status(404).json({ success: false, message: 'Suscriptor no encontrado' });
-    }
-
-    res.redirect('/dashboard/newsletter');
-
-  } catch (error) {
-    console.error('Error al eliminar suscriptor:', error);
-    res.status(500).json({ success: false, message: 'Error interno del servidor' });
-  }
-});
-
 
 module.exports = router;
