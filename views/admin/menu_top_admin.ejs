@@ -1,17 +1,33 @@
-<nav class="menu-top">
-    <div class="logo">
-      <ul class="menu">
-      <li><a href="/dashboard"><i class="fas fa-cogs"></i> AdminPanel</a></li>
-      </ul>
-    </div>
-    <ul class="menu">
-      <li><a href="/dashboard"><i class="fas fa-home"></i> Inicio</a></li>
-      <li><a href="/dashboard/categories"><i class="fas fa-comments"></i> Categorias</a></li>
-      <li><a href="/dashboard/tags"><i class="fas fa-comments"></i> Tags</a></li>
-      <li><a href="/dashboard/newsletter"><i class="fas fa-comments"></i> Newsletter</a></li>
-      <li><a href="/dashboard/comments"><i class="fas fa-comments"></i> Comentarios</a></li>
-      <li><a href="/dashboard/users"><i class="fas fa-users"></i> Usuarios</a></li>
-      <li><a href="/logout" class="logout"><i class="fas fa-sign-out-alt"></i> Salir</a></li>
-    </ul>
+<header class="menu-top">
+  <div class="logo">
+    <a href="/dashboard" class="logo-text">Admin Panel</a>
+  </div>
+
+  <nav class="nav-links" id="navLinks">
+    <a href="/dashboard">Inicio</a>
+    <a href="/dashboard/categories">Categorías</a>
+    <a href="/dashboard/tags">Etiquetas</a>
+    <a href="/dashboard/users">Usuarios</a>
+    <a href="/dashboard/newsletter">Newsletter</a>
+    <a href="/logout">Cerrar sesión</a>
   </nav>
-  
+
+  <!-- Botón hamburguesa -->
+  <div class="menu-toggle" id="menuToggle">
+    <div class="bar"></div>
+    <div class="bar"></div>
+    <div class="bar"></div>
+  </div>
+</header>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const menuToggle = document.getElementById('menuToggle');
+    const navLinks = document.getElementById('navLinks');
+
+    menuToggle.addEventListener('click', () => {
+      navLinks.classList.toggle('active');
+      // Alternar animación en el ícono
+      menuToggle.classList.toggle('open');
+    });
+  });
+</script>
