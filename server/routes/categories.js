@@ -133,13 +133,11 @@ router.get('/add-category',  authenticateToken, authorizeRoles(['admin']) , asyn
 
     // Obtener todas las categorías y tags de la base de datos
     const categories = await Category.find(); // Busca todas las categorías
-    const tags = await Tag.find(); // Busca todos los tags
 
     res.render('admin/add-category', {
       locals,
       layout: adminLayout,
       categories,  // Pasamos las categorías a la vista
-      tags         // Pasamos los tags a la vista
     });
 
   } catch (error) {
