@@ -3,119 +3,223 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Usuarios Dashboard</title>
+  <title><%= title %></title>
 
-  <!-- Estilos personalizados -->
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="/css/admin.css">
 
   <!-- DataTables CSS -->
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
   <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+
+  <style>
+    .pagination-container {
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+    .pagination-container a {
+      margin: 0 5px;
+      padding: 8px 12px;
+      background-color: #f2f2f2;
+      color: #333;
+      text-decoration: none;
+      border-radius: 5px;
+    }
+    .pagination-container a.active {
+      background-color: #007bff;
+      color: #fff;
+    }
+    .pagination-container a.disabled {
+      pointer-events: none;
+      opacity: 0.5;
+    }
+    #usersTable thead input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 4px;
+      margin-top: 5px;
+    }
+  </style>
 </head>
 
 <body>
 
-  <%- include('menu_top_admin') %>
+<%- include('menu_top_admin') %>
 
-  <div class="container">
-    <div class="admin-title">
-      <h2>Gestión de Usuarios</h2>
-      <a href="/dashboard/users/add-user" class="button">+ Añadir Nuevo Usuario</a>
+<div class="container">
+
+  <!-- ✅ Mensajes de éxito y error -->
+  <% if (successMessage) { %>
+    <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+      <%= successMessage %>
+      <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
+        <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
+  <% } %>
+
+  <% if (errorMessage) { %>
+    <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+      <%= errorMessage %>
+      <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
+        <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
+  <% } %>
+
+  <!-- ✅ Título y botón de añadir usuario -->
+  <div class="admin-title my-4 d-flex justify-content-between align-items-center">
+    <h2>Gestión de Usuarios</h2>
+    <a href="/dashboard/users/add-user" class="btn btn-primary">+ Añadir Nuevo Usuario</a>
+  </div>
+
+  <!-- ✅ Filtros -->
+  <div class="row mb-4">
+    <div class="col-12 col-md-3 mb-2">
+      <label for="usernameFilter">Buscar por Usuario</label>
+      <form id="filterForm" method="GET" action="/dashboard/users">
+        <input id="usernameFilter" name="username" type="text"
+               value="<%= query && query.username ? query.username : '' %>"
+               class="form-control" placeholder="Nombre de Usuario">
+      </form>
     </div>
 
-    <% if (successMessage) { %>
-      <div class="alert alert-success"><%= successMessage %></div>
-    <% } %>
+    <div class="col-12 col-md-3 mb-2">
+      <label for="limitSelect">Mostrar</label>
+      <form id="limitForm" method="GET" action="/dashboard/users">
+        <select id="limitSelect" name="limit" class="form-control" onchange="document.getElementById('limitForm').submit();">
+          <option value="3" <%= pagination.limit == 3 ? 'selected' : '' %>>3</option>
+          <option value="5" <%= pagination.limit == 5 ? 'selected' : '' %>>5</option>
+          <option value="10" <%= pagination.limit == 10 ? 'selected' : '' %>>10</option>
+          <option value="25" <%= pagination.limit == 25 ? 'selected' : '' %>>25</option>
+        </select>
+        <input type="hidden" name="page" value="<%= pagination.page %>">
+      </form>
+    </div>
+  </div>
 
-    <table id="usersTable" class="display table table-striped table-bordered" style="width:100%;">
-      <thead>
+  <!-- ✅ Tabla de usuarios -->
+  <table id="usersTable" class="table table-striped table-bordered">
+    <thead>
+      <tr>
+        <th>Nombre de Usuario</th>
+        <th>Email</th>
+        <th>Roles</th>
+        <th>Posts</th>
+        <th>Fecha de Creación</th>
+        <th>Acciones</th>
+      </tr>
+      <tr>
+        <th><input type="text" placeholder="Buscar Usuario" /></th>
+        <th><input type="text" placeholder="Buscar Email" /></th>
+        <th><input type="text" placeholder="Buscar Rol" /></th>
+        <th><input type="text" placeholder="Buscar Posts" /></th>
+        <th><input type="text" placeholder="Buscar Fecha" /></th>
+        <th></th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <% if (data.length === 0) { %>
         <tr>
-          <th>Nombre de Usuario</th>
-          <th>Email</th>
-          <th>Roles</th>
-          <th>Posts</th>
-          <th>Fecha de Creación</th>
-          <th>Acciones</th>
+          <td colspan="6" class="text-center">No hay usuarios para mostrar</td>
         </tr>
-      </thead>
-      <tbody>
+      <% } else { %>
         <% data.forEach(user => { %>
           <tr>
             <td><%= user.username %></td>
             <td><%= user.email %></td>
             <td>
               <% user.roles.forEach(role => { %>
-                <span class="role-badge"><%= role.name %></span>
+                <span class="badge badge-info"><%= role.name %></span>
               <% }) %>
             </td>
             <td><%= user.posts ? user.posts.length : 0 %></td>
             <td><%= new Date(user.createdAt).toLocaleDateString() %></td>
             <td>
-              <a href="/dashboard/users/edit-user/<%= user._id %>" class="btn btn-edit">Editar</a>
+              <a href="/dashboard/users/edit-user/<%= user._id %>" class="btn btn-sm btn-warning mb-1">Editar</a>
               <form action="/dashboard/users/delete-user/<%= user._id %>" method="POST" style="display:inline;">
-                <button type="submit" class="btn btn-delete" onclick="return confirm('¿Estás seguro de eliminar este usuario?');">Eliminar</button>
+                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Estás seguro de eliminar este usuario?');">Eliminar</button>
               </form>
             </td>
           </tr>
         <% }) %>
-      </tbody>
-    </table>
+      <% } %>
+    </tbody>
+  </table>
+
+  <!-- ✅ Paginación -->
+  <div class="pagination-container">
+    <% const previousPage = pagination.page - 1; %>
+    <% const nextPage = pagination.page + 1; %>
+
+    <a href="/dashboard/users?page=<%= previousPage %>&limit=<%= pagination.limit %>" class="<%= pagination.page === 1 ? 'disabled' : '' %>">
+      ‹ Anterior
+    </a>
+
+    <% for (let i = 1; i <= pagination.totalPages; i++) { %>
+      <a href="/dashboard/users?page=<%= i %>&limit=<%= pagination.limit %>" class="<%= i === pagination.page ? 'active' : '' %>">
+        <%= i %>
+      </a>
+    <% } %>
+
+    <a href="/dashboard/users?page=<%= nextPage %>&limit=<%= pagination.limit %>" class="<%= pagination.page === pagination.totalPages ? 'disabled' : '' %>">
+      Siguiente ›
+    </a>
   </div>
 
-  <!-- Scripts -->
-  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</div>
 
-  <!-- DataTables JS -->
-  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-  <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
-  <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
-  <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
 
-  <!-- Configuración de DataTables -->
-  <script>
-    $(document).ready(function() {
-      $('#usersTable').DataTable({
-        responsive: true,
-        dom: 'Bfrtip',
-        buttons: [
-          {
-            extend: 'excelHtml5',
-            text: 'Exportar a Excel',
-            titleAttr: 'Exportar a Excel'
-          },
-          {
-            extend: 'pdfHtml5',
-            text: 'Exportar a PDF',
-            titleAttr: 'Exportar a PDF'
-          },
-          {
-            extend: 'print',
-            text: 'Imprimir',
-            titleAttr: 'Imprimir'
-          }
-        ],
-        language: {
-          url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
-        },
-        initComplete: function () {
-          this.api().columns().every(function () {
-            const column = this;
-            const input = $('<input type="text" placeholder="Filtrar..." class="form-control form-control-sm" />')
-              .appendTo($(column.header()).empty())
-              .on('keyup change clear', function () {
-                if (column.search() !== this.value) {
-                  column.search(this.value).draw();
-                }
-              });
-          });
+<script>
+  $(document).ready(function() {
+    const table = $('#usersTable').DataTable({
+      responsive: true,
+      paging: false,
+      info: false,
+      dom: 'Bfrtip',
+      buttons: [
+        { extend: 'excelHtml5', text: 'Exportar a Excel', title: 'Listado de Usuarios' },
+        { extend: 'pdfHtml5', text: 'Exportar a PDF', title: 'Listado de Usuarios', orientation: 'landscape', pageSize: 'A4' },
+        { extend: 'print', text: 'Imprimir', title: 'Listado de Usuarios' }
+      ],
+      language: {
+        url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+      }
+    });
+
+    // Filtros individuales por columna
+    $('#usersTable thead tr:eq(1) th').each(function(i) {
+      $('input', this).on('keyup change', function() {
+        if (table.column(i).search() !== this.value) {
+          table.column(i).search(this.value).draw();
         }
       });
     });
-  </script>
+
+    // Filtro externo por username
+    $('#usernameFilter').on('keyup', function() {
+      clearTimeout(window.usernameFilterTimer);
+      window.usernameFilterTimer = setTimeout(() => {
+        document.getElementById('filterForm').submit();
+      }, 500);
+    });
+  });
+</script>
 
 </body>
 </html>

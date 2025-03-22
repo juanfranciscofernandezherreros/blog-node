@@ -8,26 +8,61 @@ const { authenticateToken, authorizeRoles } = require('../middlewares/authMiddle
 
 const adminLayout = '../views/layouts/admin';
 
-// ✅ Listar todos los usuarios
+/**
+ * ✅ Listar todos los usuarios con paginación y filtro por nombre
+ */
 router.get('/', authenticateToken, authorizeRoles(['admin']), async (req, res) => {
   try {
-    const users = await User.find().populate('roles');
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const usernameFilter = req.query.username || '';
+
+    const query = {};
+    if (usernameFilter) {
+      query.username = { $regex: usernameFilter, $options: 'i' };
+    }
+
+    const totalUsers = await User.countDocuments(query);
+    const totalPages = Math.ceil(totalUsers / limit);
+    const skip = (page - 1) * limit;
+
+    const users = await User.find(query)
+      .populate('roles')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const pagination = {
+      page,
+      limit,
+      totalPages,
+      totalItems: totalUsers
+    };
+
     res.render('admin/dashboard-users', {
       title: 'Dashboard - Usuarios',
       data: users,
+      pagination,
+      query: { username: usernameFilter },
       layout: adminLayout,
-      successMessage: null
+      successMessage: req.query.success || null,
+      errorMessage: req.query.error || null
     });
+
   } catch (error) {
     console.error('Error listando usuarios:', error);
-    res.status(500).send('Error interno del servidor');
+
+    res.redirect('/dashboard/users?error=Ocurrió un error cargando los usuarios. Inténtalo de nuevo.');
   }
 });
 
-// ✅ Formulario para añadir usuario
+/**
+ * ✅ Formulario para añadir usuario
+ */
 router.get('/add-user', authenticateToken, authorizeRoles(['admin']), async (req, res) => {
   try {
     const roles = await Role.find();
+
     res.render('admin/add-user', {
       title: 'Añadir Usuario',
       layout: adminLayout,
@@ -36,8 +71,10 @@ router.get('/add-user', authenticateToken, authorizeRoles(['admin']), async (req
       successMessage: null,
       oldData: {}
     });
+
   } catch (error) {
     console.error('Error cargando formulario add-user:', error);
+
     res.render('admin/add-user', {
       title: 'Añadir Usuario',
       layout: adminLayout,
@@ -49,24 +86,29 @@ router.get('/add-user', authenticateToken, authorizeRoles(['admin']), async (req
   }
 });
 
-// ✅ Procesar creación de usuario
+/**
+ * ✅ Procesar creación de usuario
+ */
 router.post('/add-user', authenticateToken, authorizeRoles(['admin']), async (req, res) => {
   try {
-    const roles = await Role.find();
     const { username, email, password, roles: selectedRoles } = req.body;
+    const roles = await Role.find();
 
     const existingUser = await User.findOne({ email });
+
     if (existingUser) {
       return res.render('admin/add-user', {
         title: 'Añadir Usuario',
         layout: adminLayout,
         availableRoles: roles,
         errors: [{ msg: 'El correo ya está registrado' }],
+        successMessage: null,
         oldData: req.body
       });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+
     const user = new User({
       username,
       email,
@@ -77,27 +119,83 @@ router.post('/add-user', authenticateToken, authorizeRoles(['admin']), async (re
 
     await user.save();
 
-    const users = await User.find().populate('roles');
+    // 🔧 Busca los usuarios actualizados y calcula paginación
+    const query = {};
+    const totalUsers = await User.countDocuments(query);
+    const page = 1;
+    const limit = 5;
+    const totalPages = Math.ceil(totalUsers / limit);
+    const skip = (page - 1) * limit;
+
+    const users = await User.find(query)
+      .populate('roles')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const pagination = {
+      page,
+      limit,
+      totalPages,
+      totalItems: totalUsers
+    };
+
     res.render('admin/dashboard-users', {
       title: 'Dashboard - Usuarios',
       data: users,
+      pagination,        // ✅ importante
+      query: {},         // ✅ importante
       layout: adminLayout,
-      successMessage: 'Usuario creado correctamente'
+      successMessage: 'Usuario creado correctamente',
+      errorMessage: null
     });
+
   } catch (error) {
     console.error('Error creando usuario:', error);
-    res.status(500).send('Error interno del servidor');
+
+    const query = {};
+    const totalUsers = await User.countDocuments(query);
+    const page = 1;
+    const limit = 5;
+    const totalPages = Math.ceil(totalUsers / limit);
+    const skip = (page - 1) * limit;
+
+    const users = await User.find(query)
+      .populate('roles')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const pagination = {
+      page,
+      limit,
+      totalPages,
+      totalItems: totalUsers
+    };
+
+    res.render('admin/dashboard-users', {
+      title: 'Dashboard - Usuarios',
+      data: users,
+      pagination,        // ✅ importante
+      query: {},         // ✅ importante
+      layout: adminLayout,
+      successMessage: null,
+      errorMessage: 'Error creando el usuario. Inténtalo de nuevo.'
+    });
   }
 });
 
-// ✅ Formulario editar usuario
+
+/**
+ * ✅ Formulario para editar usuario
+ */
 router.get('/edit-user/:id', authenticateToken, authorizeRoles(['admin']), async (req, res) => {
   try {
     const user = await User.findById(req.params.id).populate('roles');
     const roles = await Role.find();
 
     if (!user) {
-      return res.redirect('/dashboard/users');
+      return res.redirect('/dashboard/users?error=Usuario no encontrado');
     }
 
     res.render('admin/edit-user', {
@@ -105,15 +203,23 @@ router.get('/edit-user/:id', authenticateToken, authorizeRoles(['admin']), async
       layout: adminLayout,
       user,
       availableRoles: roles,
-      errors: []
+      errors: [],
+      successMessage: null
     });
+
   } catch (error) {
     console.error('Error cargando formulario editar usuario:', error);
-    res.status(500).send('Error interno del servidor');
+
+    res.redirect('/dashboard/users?error=Error cargando formulario de edición');
   }
 });
 
-// ✅ Procesar actualización usuario
+/**
+ * ✅ Procesar actualización usuario
+ */
+/**
+ * ✅ Procesar actualización usuario
+ */
 router.post('/update-user/:id', authenticateToken, authorizeRoles(['admin']), async (req, res) => {
   try {
     const { username, email, password, roles: selectedRoles } = req.body;
@@ -130,34 +236,105 @@ router.post('/update-user/:id', authenticateToken, authorizeRoles(['admin']), as
 
     await User.findByIdAndUpdate(req.params.id, updateData);
 
-    const users = await User.find().populate('roles');
+    // 🔧 Buscamos usuarios actualizados con paginación (opcionalmente podrías usar query filters si deseas)
+    const query = {};
+    const page = 1;
+    const limit = 5;
+    const totalUsers = await User.countDocuments(query);
+    const totalPages = Math.ceil(totalUsers / limit);
+    const skip = (page - 1) * limit;
+
+    const users = await User.find(query)
+      .populate('roles')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const pagination = {
+      page,
+      limit,
+      totalPages,
+      totalItems: totalUsers
+    };
+
+    // ✅ Renderiza la vista con el mensaje de éxito
     res.render('admin/dashboard-users', {
       title: 'Dashboard - Usuarios',
       data: users,
+      pagination,        // ✅ requerido en el EJS
+      query,             // ✅ requerido en el EJS
       layout: adminLayout,
-      successMessage: 'Usuario actualizado correctamente'
+      successMessage: 'Usuario actualizado correctamente',
+      errorMessage: null
     });
+
   } catch (error) {
     console.error('Error actualizando usuario:', error);
-    res.status(500).send('Error interno del servidor');
+
+    // Si hubo un error, volvemos a consultar para renderizar el dashboard
+    const query = {};
+    const page = 1;
+    const limit = 5;
+    const totalUsers = await User.countDocuments(query);
+    const totalPages = Math.ceil(totalUsers / limit);
+    const skip = (page - 1) * limit;
+
+    const users = await User.find(query)
+      .populate('roles')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const pagination = {
+      page,
+      limit,
+      totalPages,
+      totalItems: totalUsers
+    };
+
+    // ✅ Renderiza la vista con el mensaje de error
+    res.render('admin/dashboard-users', {
+      title: 'Dashboard - Usuarios',
+      data: users,
+      pagination,
+      query,
+      layout: adminLayout,
+      successMessage: null,
+      errorMessage: 'Error actualizando el usuario. Inténtalo de nuevo.'
+    });
   }
 });
 
-// ✅ Eliminar usuario
+
+/**
+ * ✅ Eliminar usuario
+ */
 router.post('/delete-user/:id', authenticateToken, authorizeRoles(['admin']), async (req, res) => {
   try {
     await User.findByIdAndDelete(req.params.id);
 
     const users = await User.find().populate('roles');
+
     res.render('admin/dashboard-users', {
       title: 'Dashboard - Usuarios',
       data: users,
       layout: adminLayout,
-      successMessage: 'Usuario eliminado correctamente'
+      successMessage: 'Usuario eliminado correctamente',
+      errorMessage: null
     });
+
   } catch (error) {
     console.error('Error eliminando usuario:', error);
-    res.status(500).send('Error interno del servidor');
+
+    const users = await User.find().populate('roles');
+
+    res.render('admin/dashboard-users', {
+      title: 'Dashboard - Usuarios',
+      data: users,
+      layout: adminLayout,
+      successMessage: null,
+      errorMessage: 'Error eliminando el usuario. Inténtalo de nuevo.'
+    });
   }
 });
 
