@@ -3,37 +3,97 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Crear Nuevo Post</title>
+  <title>Crear Nuevo Post - Avanzado con HTML</title>
+
+  <!-- CSS Personalizado -->
   <link rel="stylesheet" href="/css/admin.css">
-  <!-- ✅ CKEditor 5 CDN -->
+
+  <!-- CKEditor 5 Classic FULL BUILD -->
   <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
+
+  <style>
+    .ck-editor__editable_inline {
+      min-height: 500px;
+    }
+
+    .error-message {
+      display: none;
+      color: #dc3545;
+      font-size: 0.9rem;
+      margin-top: 5px;
+    }
+
+    .input-error {
+      border-color: #dc3545;
+    }
+
+    .btn {
+      background-color: #007bff;
+      color: #fff;
+      padding: 10px 15px;
+      border: none;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    .btn:hover {
+      background-color: #0056b3;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-top: 15px;
+      color: #007bff;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    label {
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    input[type="text"],
+    input[type="date"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 8px;
+      margin-top: 4px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+  </style>
 </head>
 
 <body>
 
-  <!-- ✅ Aquí va el menú fijo -->
   <%- include('menu_top_admin') %>
 
-  <!-- ✅ Contenido principal -->
   <div class="container">
-    <h2>Crear Nuevo Post</h2>
+    <h2>Crear Nuevo Post con Soporte HTML</h2>
 
     <form id="createPostForm" action="/dashboard/add-post" method="POST" novalidate>
 
       <label for="title">Título:</label>
-      <input type="text" name="title" id="title" required>
+      <input type="text" name="title" id="title">
       <div id="titleError" class="error-message">El título es obligatorio.</div>
 
       <label for="summary">Resumen:</label>
-      <textarea name="summary" id="summary" required></textarea>
+      <textarea name="summary" id="summary"></textarea>
       <div id="summaryError" class="error-message">El resumen es obligatorio.</div>
 
-      <label for="body">Contenido:</label>
+      <label for="body">Contenido del artículo (HTML permitido):</label>
       <textarea name="body" id="body"></textarea>
       <div id="bodyError" class="error-message">El contenido es obligatorio.</div>
 
       <label for="category">Categoría:</label>
-      <select name="category" id="category" required>
+      <select name="category" id="category">
         <option value="">Selecciona una categoría</option>
         <% categories.forEach(category => { %>
           <option value="<%= category._id %>"><%= category.name %></option>
@@ -48,16 +108,17 @@
         <% }) %>
       </select>
 
-      <label for="status">Tipo de Artículo:</label>
-      <select name="status" id="status" required>
-        <option value="draft" selected>Borrador</option>
+      <label for="status">Estado:</label>
+      <select name="status" id="status">
+        <option value="">Selecciona el estado del artículo</option>
+        <option value="draft">Borrador</option>
         <option value="published">Publicado</option>
         <option value="review">En Revisión</option>
       </select>
       <div id="statusError" class="error-message">Selecciona el estado del artículo.</div>
 
       <label for="publishDate">Fecha de Publicación:</label>
-      <input type="date" name="publishDate" id="publishDate" required>
+      <input type="date" name="publishDate" id="publishDate">
       <div id="publishDateError" class="error-message">La fecha de publicación es obligatoria.</div>
 
       <p>Estás creando un post como: <strong><%= user.username %></strong></p>
@@ -68,43 +129,84 @@
     <a href="/dashboard" class="back-link">← Volver al Dashboard</a>
   </div>
 
-  <!-- ✅ Inicialización de CKEditor -->
+  <!-- CKEditor Full Config -->
   <script>
     let editorBody;
 
     ClassicEditor
-      .create(document.querySelector('#body'))
+      .create(document.querySelector('#body'), {
+        toolbar: {
+          items: [
+            'undo', 'redo', '|',
+            'heading', '|',
+            'bold', 'italic', 'underline', 'strikethrough', '|',
+            'bulletedList', 'numberedList', '|',
+            'link', 'insertTable', 'blockQuote', 'mediaEmbed', '|',
+            'codeBlock', 'htmlEmbed', '|',
+            'imageUpload'
+          ]
+        },
+        image: {
+          toolbar: [
+            'imageTextAlternative', 'imageStyle:full', 'imageStyle:side'
+          ]
+        },
+        table: {
+          contentToolbar: ['tableColumn', 'tableRow', 'mergeTableCells']
+        },
+        mediaEmbed: {
+          previewsInData: true
+        },
+        simpleUpload: {
+          uploadUrl: '', // Cambia esto si tienes un backend de imágenes
+          withCredentials: false
+        },
+        language: 'es',
+
+        // Soporte para etiquetas HTML personalizadas
+        htmlSupport: {
+          allow: [
+            {
+              name: /.*/,        // Permitir TODAS las etiquetas
+              attributes: true,  // Permitir TODOS los atributos
+              classes: true,     // Permitir TODAS las clases
+              styles: true       // Permitir TODOS los estilos en línea
+            }
+          ]
+        },
+
+        htmlEmbed: {
+          showPreviews: true
+        }
+
+      })
       .then(editor => {
         editorBody = editor;
-        console.log('Editor de contenido cargado');
+        console.log('✅ CKEditor Avanzado con soporte HTML cargado');
       })
       .catch(error => {
-        console.error('❌ Error al cargar CKEditor:', error);
+        console.error('❌ Error al cargar CKEditor Avanzado:', error);
       });
 
+    // Validación del formulario
     const form = document.getElementById('createPostForm');
 
     form.addEventListener('submit', function (e) {
       let hasErrors = false;
-
-      // Limpiamos estilos previos
       clearErrors();
 
-      // Validar Título
       const title = document.getElementById('title');
       if (!title.value.trim()) {
         showError(title, 'titleError');
         hasErrors = true;
       }
 
-      // Validar Resumen
       const summary = document.getElementById('summary');
       if (!summary.value.trim()) {
         showError(summary, 'summaryError');
         hasErrors = true;
       }
 
-      // Validar Contenido (Editor)
       const bodyTextarea = document.getElementById('body');
       const editorData = editorBody ? editorBody.getData().trim() : '';
 
@@ -112,24 +214,21 @@
         showError(bodyTextarea, 'bodyError');
         hasErrors = true;
       } else {
-        bodyTextarea.value = editorData; // Pasamos el contenido al textarea oculto
+        bodyTextarea.value = editorData;
       }
 
-      // Validar Categoría
       const category = document.getElementById('category');
       if (!category.value) {
         showError(category, 'categoryError');
         hasErrors = true;
       }
 
-      // Validar Status
       const status = document.getElementById('status');
       if (!status.value) {
         showError(status, 'statusError');
         hasErrors = true;
       }
 
-      // Validar Fecha de Publicación
       const publishDate = document.getElementById('publishDate');
       if (!publishDate.value) {
         showError(publishDate, 'publishDateError');
@@ -137,7 +236,7 @@
       }
 
       if (hasErrors) {
-        e.preventDefault(); // Evitamos el envío del formulario si hay errores
+        e.preventDefault();
       }
     });
 

@@ -1,114 +1,247 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Posts</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Posts</title>
 
-    <!-- CSS Principal -->
-    <link rel="stylesheet" href="/css/admin.css">
+  <!-- Bootstrap CSS (opcional si usas Bootstrap en todo el admin) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
 
-    <!-- DataTables CSS -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+  <!-- CSS Personalizado -->
+  <link rel="stylesheet" href="/css/admin.css">
 
+  <!-- DataTables CSS -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+
+  <style>
+    .pagination-container {
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+    .pagination-container a {
+      margin: 0 5px;
+      padding: 8px 12px;
+      background-color: #f2f2f2;
+      color: #333;
+      text-decoration: none;
+      border-radius: 5px;
+    }
+    .pagination-container a.active {
+      background-color: #007bff;
+      color: #fff;
+    }
+    .pagination-container a.disabled {
+      pointer-events: none;
+      opacity: 0.5;
+    }
+    /* Inputs de búsqueda en columnas */
+    #postsTable thead input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 4px;
+      margin-top: 5px;
+    }
+  </style>
 </head>
+
 <body>
 
-    <%- include('menu_top_admin') %>
+<%- include('menu_top_admin') %>
 
-    <!-- Contenido principal -->
-    <div class="container">
-        <div class="admin-title">
-            <h2>Posts</h2>
-            <a href="/dashboard/add-post" class="button">+ Add New</a>
-        </div>
+<div class="container">
 
-        <!-- Tabla DataTable de Posts -->
-        <table id="postsTable" class="table table-striped table-bordered">
-            <thead>
-                <tr>
-                    <th>Título</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                <% data.forEach(post => { %>
-                    <tr>
-                        <td>
-                            <a href="/post/<%= post._id %>">
-                                <%= post.title %> &nearr;
-                            </a>
-                        </td>
-                        <td>
-                            <div class="admin-post-controls">
-                                <a href="/dashboard/edit-post/<%= post._id %>" class="btn-edit btn" style="color:white;">Editar</a>
-                                
-                                <form action="/dashboard/delete-post/<%= post._id %>" method="POST" onsubmit="return confirm('¿Estás seguro de eliminar este artículo?');" style="display:inline;">
-                                    <input type="submit" value="Eliminar" class="btn-delete btn">
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                <% }) %>
-            </tbody>
-        </table>  
+  <div class="admin-title my-4 d-flex justify-content-between align-items-center">
+    <h2>Gestión de Posts</h2>
+    <a href="/dashboard/add-post" class="btn btn-primary">+ Añadir Nuevo</a>
+  </div>
+
+  <!-- Filtros en Grid Bootstrap -->
+  <div class="row mb-4">
+
+    <!-- Filtro Estado -->
+    <div class="col-12 col-md-3 mb-2">
+      <label for="statusFilter">Estado</label>
+      <select id="statusFilter" class="form-control">
+        <option value="">-- Filtrar por Estado --</option>
+        <option value="draft">Borrador</option>
+        <option value="published">Publicado</option>
+        <option value="review">Revisión</option>
+      </select>
     </div>
 
-    <!-- Scripts -->
-    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Filtro Categoría -->
+    <div class="col-12 col-md-3 mb-2">
+      <label for="categoryFilter">Categoría</label>
+      <select id="categoryFilter" class="form-control">
+        <option value="">-- Filtrar por Categoría --</option>
+        <% categories.forEach(category => { %>
+          <option value="<%= category.name %>"><%= category.name %></option>
+        <% }) %>
+      </select>
+    </div>
 
-    <!-- DataTables JS -->
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <!-- Filtro Tag -->
+    <div class="col-12 col-md-3 mb-2">
+      <label for="tagFilter">Tag</label>
+      <select id="tagFilter" class="form-control">
+        <option value="">-- Filtrar por Tag --</option>
+        <% tags.forEach(tag => { %>
+          <option value="<%= tag.name %>"><%= tag.name %></option>
+        <% }) %>
+      </select>
+    </div>
 
-    <!-- Configuración DataTable -->
-    <script>
-        $(document).ready(function() {
-            $('#postsTable').DataTable({
-                responsive: true,
-                dom: 'Bfrtip',
-                buttons: [
-                    {
-                        extend: 'excelHtml5',
-                        text: 'Exportar a Excel',
-                        titleAttr: 'Exportar a Excel'
-                    },
-                    {
-                        extend: 'pdfHtml5',
-                        text: 'Exportar a PDF',
-                        titleAttr: 'Exportar a PDF'
-                    },
-                    {
-                        extend: 'print',
-                        text: 'Imprimir',
-                        titleAttr: 'Imprimir'
-                    }
-                ],
-                language: {
-                    url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
-                },
-                initComplete: function () {
-                    this.api().columns().every(function () {
-                        var column = this;
-                        var input = $('<input type="text" placeholder="Filtrar..." class="form-control form-control-sm"/>')
-                            .appendTo($(column.header()).empty())
-                            .on('keyup change clear', function () {
-                                if (column.search() !== this.value) {
-                                    column.search(this.value).draw();
-                                }
-                            });
-                    });
-                }
-            });
-        });
-    </script>
+    <!-- Selector Cantidad -->
+    <div class="col-12 col-md-3 mb-2">
+      <label for="limitSelect">Mostrar</label>
+      <form id="limitForm" method="GET" action="/dashboard">
+        <select id="limitSelect" name="limit" class="form-control" onchange="document.getElementById('limitForm').submit();">
+          <option value="3" <%= pagination.limit == 3 ? 'selected' : '' %>>3</option>
+          <option value="5" <%= pagination.limit == 5 ? 'selected' : '' %>>5</option>
+          <option value="10" <%= pagination.limit == 10 ? 'selected' : '' %>>10</option>
+          <option value="25" <%= pagination.limit == 25 ? 'selected' : '' %>>25</option>
+        </select>
+        <input type="hidden" name="page" value="<%= pagination.page %>">
+      </form>
+    </div>
+
+  </div> <!-- /.row -->
+
+  <!-- Tabla -->
+  <table id="postsTable" class="table table-striped table-bordered">
+    <thead>
+      <tr>
+        <th>Título</th>
+        <th>Autor</th>
+        <th>Categoría</th>
+        <th>Estado</th>
+        <th>Likes</th>
+        <th>Favoritos</th>
+        <th>Fecha Creación</th>
+        <th>Tags</th>
+        <th>Acciones</th>
+      </tr>
+      <tr>
+        <!-- Filtros de búsqueda por columna -->
+        <th><input type="text" placeholder="Buscar Título" /></th>
+        <th><input type="text" placeholder="Buscar Autor" /></th>
+        <th><input type="text" placeholder="Buscar Categoría" /></th>
+        <th><input type="text" placeholder="Buscar Estado" /></th>
+        <th><input type="text" placeholder="Buscar Likes" /></th>
+        <th><input type="text" placeholder="Buscar Favoritos" /></th>
+        <th><input type="text" placeholder="Buscar Fecha" /></th>
+        <th><input type="text" placeholder="Buscar Tags" /></th>
+        <th></th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <% if (data.length === 0) { %>
+        <tr>
+          <td colspan="9" style="text-align: center;">No hay posts para mostrar</td>
+        </tr>
+      <% } else { %>
+        <% data.forEach(post => { %>
+          <tr>
+            <td><%= post.title %></td>
+            <td><%= post.author ? post.author.username : 'Sin autor' %></td>
+            <td><%= post.category ? post.category.name : 'Sin categoría' %></td>
+            <td><%= post.status %></td>
+            <td><%= post.likes.length %></td>
+            <td><%= post.favoritedBy.length %></td>
+            <td><%= new Date(post.createdAt).toLocaleDateString() %></td>
+            <td><%= post.tags && post.tags.length ? post.tags.map(tag => tag.name).join(', ') : 'Sin tags' %></td>
+            <td>
+              <a href="/dashboard/edit-post/<%= post._id %>" class="btn btn-sm btn-warning mb-1">Editar</a>
+              <form action="/dashboard/delete-post/<%= post._id %>" method="POST" style="display:inline;">
+                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Estás seguro de eliminar este post?');">Eliminar</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      <% } %>
+    </tbody>
+  </table>
+
+  <!-- Paginación -->
+  <div class="pagination-container">
+    <% const previousPage = pagination.page - 1; %>
+    <% const nextPage = pagination.page + 1; %>
+
+    <a href="/dashboard?page=<%= previousPage %>&limit=<%= pagination.limit %>" class="<%= pagination.page === 1 ? 'disabled' : '' %>">
+      ‹ Anterior
+    </a>
+
+    <% for (let i = 1; i <= pagination.totalPages; i++) { %>
+      <a href="/dashboard?page=<%= i %>&limit=<%= pagination.limit %>" class="<%= i === pagination.page ? 'active' : '' %>">
+        <%= i %>
+      </a>
+    <% } %>
+
+    <a href="/dashboard?page=<%= nextPage %>&limit=<%= pagination.limit %>" class="<%= pagination.page === pagination.totalPages ? 'disabled' : '' %>">
+      Siguiente ›
+    </a>
+  </div>
+
+</div> <!-- /.container -->
+
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+
+<script>
+  $(document).ready(function() {
+    const table = $('#postsTable').DataTable({
+      responsive: true,
+      paging: false,  // La paginación la manejamos con el backend
+      info: false,
+      dom: 'Bfrtip',
+      buttons: [
+        { extend: 'excelHtml5', text: 'Exportar a Excel', title: 'Listado de Posts' },
+        { extend: 'pdfHtml5', text: 'Exportar a PDF', title: 'Listado de Posts', orientation: 'landscape', pageSize: 'A4' },
+        { extend: 'print', text: 'Imprimir', title: 'Listado de Posts' }
+      ],
+      language: {
+        url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+      }
+    });
+
+    // Filtros por select externos
+    $('#statusFilter').on('change', function() {
+      table.column(3).search(this.value).draw();
+    });
+
+    $('#categoryFilter').on('change', function() {
+      table.column(2).search(this.value).draw();
+    });
+
+    $('#tagFilter').on('change', function() {
+      table.column(7).search(this.value).draw();
+    });
+
+    // Filtros individuales por columna
+    $('#postsTable thead tr:eq(1) th').each(function(i) {
+      $('input', this).on('keyup change', function() {
+        if (table.column(i).search() !== this.value) {
+          table.column(i).search(this.value).draw();
+        }
+      });
+    });
+  });
+</script>
 
 </body>
 </html>

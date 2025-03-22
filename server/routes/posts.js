@@ -8,17 +8,47 @@ const { authenticateToken, authorizeRoles } = require('../middlewares/authMiddle
 
 const adminLayout = '../views/layouts/admin';
 
+
 /**
- * GET /dashboard - Mostrar todas los artículos
+ * GET /dashboard - Mostrar todos los artículos
  */
 router.get('/', authenticateToken, authorizeRoles(['admin']), async (req, res) => {
-  try { 
-    const data = await Post.find();
-    res.render('admin/dashboard', { title: 'Dashboard - Articles', data, layout: adminLayout });
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 3; // por defecto, 3 artículos
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      Post.find()
+        .populate('author', 'username')
+        .populate('category', 'name')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Post.countDocuments()
+    ]);
+
+    const categories = await Category.find().lean();
+
+    res.render('admin/dashboard', {
+      title: 'Dashboard - Articles',
+      data,
+      categories,
+      layout: adminLayout,
+      pagination: {
+        page,
+        totalPages: Math.ceil(total / limit),
+        limit,
+        total
+      }
+    });
   } catch (error) {
     console.error(error);
+    res.redirect('/dashboard');
   }
 });
+
 
 /**
  * GET /
@@ -95,7 +125,7 @@ router.post('/add-post', authenticateToken, authorizeRoles(['admin']), async (re
 
     await newPost.save();
 
-    res.redirect('/'); // O la ruta que consideres adecuada
+    res.redirect('/dashboard'); // O la ruta que consideres adecuada
   } catch (error) {
     console.error('Error creando post:', error);
     res.status(500).send('Error al crear el post');
@@ -177,7 +207,7 @@ router.post('/edit-post/:id', authenticateToken, authorizeRoles(['admin']), asyn
 
     await postToUpdate.save();
 
-    res.redirect('/');
+    res.redirect('/dashboard');
   } catch (error) {
     console.error('Error actualizando post:', error);
     res.status(500).send('Error actualizando el post');
