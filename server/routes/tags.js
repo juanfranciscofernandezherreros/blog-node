@@ -7,14 +7,59 @@ const adminLayout = '../views/layouts/admin';
 /**
  * GET /dashboard/tags - Mostrar todas las etiquetas
  */
+/**
+ * GET /dashboard/tags - Mostrar todas las etiquetas
+ */
 router.get('/', authenticateToken, authorizeRoles(['admin']), async (req, res) => {
   try {
-    const data = await Tag.find();
-    res.render('admin/dashboard-tags', { title: 'Dashboard - Tags', data, layout: adminLayout });
+    // Parámetros de query para paginación y búsqueda
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const nameFilter = req.query.name || '';
+
+    // Filtro por nombre de la etiqueta
+    const query = {};
+    if (nameFilter) {
+      query.name = { $regex: nameFilter, $options: 'i' }; // Búsqueda insensible a mayúsculas
+    }
+
+    // Contar el total de resultados para calcular la paginación
+    const totalTags = await Tag.countDocuments(query);
+    const totalPages = Math.ceil(totalTags / limit);
+    const skip = (page - 1) * limit;
+
+    // Buscar etiquetas con paginación y ordenadas (opcional)
+    const tags = await Tag.find(query)
+      .sort({ createdAt: -1 }) // Orden por fecha de creación (opcional)
+      .skip(skip)
+      .limit(limit);
+
+    // Datos para la paginación en la vista
+    const pagination = {
+      page,
+      limit,
+      totalPages,
+      totalItems: totalTags,
+    };
+
+    // Renderizar la vista de etiquetas con paginación y filtros
+    res.render('admin/dashboard-tags', {
+      title: 'Dashboard - Tags',
+      tags,
+      pagination,
+      query: { name: nameFilter },
+      layout: adminLayout
+    });
+
   } catch (error) {
-    console.error(error);
+    console.error('Error al obtener las etiquetas:', error);
+    res.status(500).render('error', {
+      message: 'Error al cargar las etiquetas',
+      error
+    });
   }
 });
+
 
 /**
  * GET /dashboard/tags
