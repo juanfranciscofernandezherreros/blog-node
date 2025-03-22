@@ -2,130 +2,167 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Comentarios Dashboard</title>
+  <title>Adminator - Comentarios</title>
+
+  <!-- Bootstrap y Adminator CSS -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
   <link rel="stylesheet" href="/css/admin.css">
+
   <style>
-    .pagination {
-      display: flex;
-      justify-content: center;
-      margin-top: 20px;
-      gap: 5px;
+    /* Estilos adicionales opcionales */
+    body {
+      background-color: #f5f5f5;
+      margin: 0;
+      padding: 0;
     }
 
-    .pagination a, .pagination span {
-      display: inline-block;
-      padding: 8px 12px;
+    .menu-top {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
       background-color: #1e3c72;
-      color: #fff;
-      text-decoration: none;
-      border-radius: 4px;
-      transition: background-color 0.3s ease;
+      color: white;
+      height: 60px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
 
-    .pagination a:hover {
-      background-color: #163c5a;
-    }
-
-    .pagination .active {
-      background-color: #f1c40f;
-      color: #333;
-      cursor: default;
-    }
-
-    .pagination .disabled {
-      background-color: #ccc;
-      color: #666;
-      cursor: not-allowed;
+    .page-container {
+      padding-top: 60px; /* Ajusta si cambias el height del menú */
     }
   </style>
 </head>
-<body>
 
-  <%- include('menu_top_admin') %>
+<body class="app">
 
-  <div class="container">
-    <div class="admin-title">
-      <h2>Comentarios</h2>
-    </div>
-
-    <% if (successMessage) { %>
-      <div class="alert success"><%= successMessage %></div>
-    <% } %>
-
-    <% if (errorMessage) { %>
-      <div class="alert error"><%= errorMessage %></div>
-    <% } %>
-
-    <!-- Select para elegir cantidad por página -->
-    <form method="GET" action="/dashboard/comments" style="margin-bottom: 20px;">
-      <label for="limit">Mostrar:</label>
-      <select name="limit" id="limit" onchange="this.form.submit()">
-        <option value="5" <%= limit == 5 ? 'selected' : '' %>>5</option>
-        <option value="10" <%= limit == 10 ? 'selected' : '' %>>10</option>
-        <option value="20" <%= limit == 20 ? 'selected' : '' %>>20</option>
-      </select> comentarios por página.
-      <input type="hidden" name="page" value="<%= page %>">
-    </form>
-
-    <table class="admin-table">
-      <thead>
-        <tr>
-          <th>Autor</th>
-          <th>Comentario</th>
-          <th>Post</th>
-          <th>Tipo</th>
-          <th>Creado el</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% data.forEach(comment => { %>
-          <tr>
-            <td><%= comment.author %></td>
-            <td><%= comment.body %></td>
-            <td><%= comment.postId ? comment.postId.title : 'Sin post' %></td>
-            <td>
-              <% if (comment.parentId) { %>
-                <span class="role-badge">Respuesta</span>
-              <% } else { %>
-                <span class="role-badge">Comentario Principal</span>
-              <% } %>
-            </td>
-            <td><%= new Date(comment.createdAt).toLocaleString() %></td>
-            <td>
-              <form action="/dashboard/comments/delete/<%= comment._id %>" method="POST" style="display:inline;">
-                <button type="submit" class="btn btn-delete" onclick="return confirm('¿Eliminar comentario?')">Eliminar</button>
-              </form>
-            </td>
-          </tr>
-        <% }) %>
-      </tbody>
-    </table>
-
-    <!-- PAGINACIÓN NUMERADA -->
-    <div class="pagination">
-      <% if (page > 1) { %>
-        <a href="/dashboard/comments?page=<%= page - 1 %>&limit=<%= limit %>">&laquo; Anterior</a>
-      <% } else { %>
-        <span class="disabled">&laquo; Anterior</span>
-      <% } %>
-
-      <% for (let i = 1; i <= totalPages; i++) { %>
-        <% if (i === page) { %>
-          <span class="active"><%= i %></span>
-        <% } else { %>
-          <a href="/dashboard/comments?page=<%= i %>&limit=<%= limit %>"><%= i %></a>
-        <% } %>
-      <% } %>
-
-      <% if (page < totalPages) { %>
-        <a href="/dashboard/comments?page=<%= page + 1 %>&limit=<%= limit %>">Siguiente &raquo;</a>
-      <% } else { %>
-        <span class="disabled">Siguiente &raquo;</span>
-      <% } %>
-    </div>
-
+  <!-- Menú Top Fijo -->
+  <div class="menu-top">
+    <%- include('menu_top_admin') %>
   </div>
+
+  <!-- Contenido Principal -->
+  <div class="page-container">
+    <div class="main-content">
+      <div class="container-fluid">
+        <div class="row gap-20 masonry pos-r">
+
+          <!-- Panel de Comentarios -->
+          <div class="col-12">
+            <div class="bgc-white p-20 bd">
+
+              <h4 class="c-grey-900 mB-20">Gestión de Comentarios</h4>
+
+              <% if (successMessage) { %>
+                <div class="alert alert-success" role="alert"><%= successMessage %></div>
+              <% } %>
+
+              <% if (errorMessage) { %>
+                <div class="alert alert-danger" role="alert"><%= errorMessage %></div>
+              <% } %>
+
+              <table id="commentsTable" class="table table-striped table-bordered">
+                <thead>
+                  <tr>
+                    <th>Autor</th>
+                    <th>Comentario</th>
+                    <th>Post</th>
+                    <th>¿Es respuesta?</th>
+                    <th>Fecha de Creación</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% data.forEach(comment => { %>
+                    <tr>
+                      <td><%= comment.author %></td>
+                      <td><%= comment.body %></td>
+                      <td><%= comment.postId ? comment.postId.title : 'Sin post' %></td>
+                      <td>
+                        <% if (comment.parentId) { %>
+                          <span class="badge badge-info">Respuesta</span>
+                        <% } else { %>
+                          <span class="badge badge-success">Principal</span>
+                        <% } %>
+                      </td>
+                      <td><%= new Date(comment.createdAt).toLocaleDateString() %></td>
+                      <td>
+                        <form action="/dashboard/comments/delete/<%= comment._id %>" method="POST" class="d-inline">
+                          <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('¿Eliminar este comentario?')">Eliminar</button>
+                        </form>
+                      </td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts de dependencias -->
+  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- DataTables JS -->
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+
+  <!-- Configuración de DataTable -->
+  <script>
+    $(document).ready(function() {
+      $('#commentsTable').DataTable({
+        responsive: true,
+        dom: 'Bfrtip',
+        buttons: [
+          {
+            extend: 'excelHtml5',
+            text: 'Exportar a Excel',
+            titleAttr: 'Exportar a Excel'
+          },
+          {
+            extend: 'pdfHtml5',
+            text: 'Exportar a PDF',
+            titleAttr: 'Exportar a PDF'
+          },
+          {
+            extend: 'print',
+            text: 'Imprimir',
+            titleAttr: 'Imprimir'
+          }
+        ],
+        language: {
+          url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+        },
+        initComplete: function () {
+          this.api().columns().every(function () {
+            var column = this;
+            var input = $('<input type="text" placeholder="Filtrar..." class="form-control form-control-sm"/>')
+              .appendTo($(column.header()).empty())
+              .on('keyup change clear', function () {
+                if (column.search() !== this.value) {
+                  column.search(this.value).draw();
+                }
+              });
+          });
+        }
+      });
+    });
+  </script>
 
 </body>
 </html>

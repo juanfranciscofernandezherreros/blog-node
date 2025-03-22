@@ -1,0 +1,50 @@
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f4f4;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .container {
+    max-width: 1100px;
+    margin: 50px auto;
+    background: #fff;
+    padding: 20px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+  }
+  
+  .admin-title h2 {
+    margin: 0 0 20px 0;
+  }
+  
+  .alert {
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+  }
+  
+  .alert.success {
+    background-color: #dff0d8;
+    color: #3c763d;
+  }
+  
+  .alert.error {
+    background-color: #f2dede;
+    color: #a94442;
+  }
+  
+  .btn {
+    padding: 5px 10px;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .btn-delete {
+    background-color: #d9534f;
+    color: #fff;
+  }
+  
+  .btn-delete:hover {
+    background-color: #c9302c;
+  }
+  
