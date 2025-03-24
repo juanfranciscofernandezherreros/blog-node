@@ -7,12 +7,54 @@ const adminLayout = '../views/layouts/admin';
 /**
  * GET /dashboard/categories - Mostrar todas las categorías
  */
+/**
+ * GET /dashboard/categories - Mostrar todas las categorías
+ */
 router.get('/', authenticateToken, authorizeRoles(['admin']), async (req, res) => {
   try {
-    const data = await Category.find();
-    res.render('admin/dashboard-categories', { title: 'Dashboard - Categories', data, layout: adminLayout });
+    // Parámetros de query
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const nameFilter = req.query.name || '';
+
+    // Filtro básico
+    const query = {};
+    if (nameFilter) {
+      query.name = { $regex: nameFilter, $options: 'i' }; // Búsqueda insensible a mayúsculas
+    }
+
+    // Contar total de resultados
+    const totalCategories = await Category.countDocuments(query);
+
+    // Calcular paginación
+    const totalPages = Math.ceil(totalCategories / limit);
+    const skip = (page - 1) * limit;
+
+    // Traer los datos paginados
+    const data = await Category.find(query)
+      .sort({ createdAt: -1 }) // Orden por fecha de creación (opcional)
+      .skip(skip)
+      .limit(limit);
+
+    // Datos para la paginación
+    const pagination = {
+      page,
+      limit,
+      totalPages,
+      totalItems: totalCategories,
+    };
+
+    // Renderizado de la vista
+    res.render('admin/dashboard-categories', {
+      title: 'Dashboard - Categorías',
+      data,
+      pagination,
+      layout: adminLayout,
+    });
+
   } catch (error) {
-    console.error(error);
+    console.error('Error al obtener las categorías:', error);
+    res.status(500).render('error', { message: 'Error al cargar las categorías', error });
   }
 });
 
@@ -91,13 +133,11 @@ router.get('/add-category',  authenticateToken, authorizeRoles(['admin']) , asyn
 
     // Obtener todas las categorías y tags de la base de datos
     const categories = await Category.find(); // Busca todas las categorías
-    const tags = await Tag.find(); // Busca todos los tags
 
     res.render('admin/add-category', {
       locals,
       layout: adminLayout,
       categories,  // Pasamos las categorías a la vista
-      tags         // Pasamos los tags a la vista
     });
 
   } catch (error) {

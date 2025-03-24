@@ -1,184 +1,201 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Categories Dashboard</title>
-    <style>
-        /* Estilos globales */
-        body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(to right, #1e3c72, #2a5298);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            flex-direction: column;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title || 'Dashboard - Newsletter' %></title>
 
-        /* Estilos para el menú */
-        nav {
-            width: 100%;
-            background: #1e3c72;
-            padding: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: absolute;
-            top: 0;
-            left: 0;
-            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
-        }
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/css/admin.css">
 
-        .menu {
-            display: flex;
-            gap: 20px;
-        }
+  <!-- DataTables CSS -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
 
-        .menu a {
-            color: white;
-            text-decoration: none;
-            font-size: 16px;
-            transition: color 0.3s ease;
-        }
+  <style>
+    .pagination-container {
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
 
-        .menu a:hover {
-            color: #f1c40f;
-        }
+    .pagination-container a {
+      margin: 0 5px;
+      padding: 8px 12px;
+      background-color: #f2f2f2;
+      color: #333;
+      text-decoration: none;
+      border-radius: 5px;
+    }
 
-        .logo {
-            font-size: 20px;
-            font-weight: bold;
-            color: white;
-        }
+    .pagination-container a.active {
+      background-color: #007bff;
+      color: #fff;
+    }
 
-        .container {
-            background: #ffffff;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
-            width: 100%;
-            max-width: 80%;
-            text-align: center;
-            margin-top: 80px; /* Ajuste para que no quede oculto bajo el menú */
-        }
+    .pagination-container a.disabled {
+      pointer-events: none;
+      opacity: 0.5;
+    }
 
-        .admin-title {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .admin-title h2 {
-            color: #333;
-            margin: 0;
-        }
-
-        .button {
-            background: #1e3c72;
-            color: white;
-            padding: 8px 12px;
-            text-decoration: none;
-            border-radius: 5px;
-            transition: background 0.3s ease;
-            font-size: 14px;
-        }
-
-        .button:hover {
-            background: #163c5a;
-        }
-
-        .admin-posts {
-            list-style: none;
-            padding: 0;
-        }
-
-        .admin-posts li {
-            background: #f9f9f9;
-            padding: 15px;
-            margin-bottom: 10px;
-            border-radius: 5px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: transform 0.2s ease;
-        }
-
-        .admin-posts li:hover {
-            transform: translateX(5px);
-        }
-
-        .admin-posts a {
-            text-decoration: none;
-            color: #1e3c72;
-            font-weight: bold;
-        }
-
-        .admin-post-controls {
-            display: flex;
-            gap: 10px;
-        }
-
-        .btn {
-            background: #1e3c72;
-            color: white;
-            padding: 6px 12px;
-            border: none;
-            border-radius: 5px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: background 0.3s ease;
-            text-decoration: none;
-        }
-
-        .btn:hover {
-            background: #163c5a;
-        }
-
-        .btn-delete {
-            background: #d9534f;
-        }
-
-        .btn-delete:hover {
-            background: #c9302c;
-        }
-
-        form {
-            margin: 0;
-        }
-    </style>
+    #newslettersTable thead input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 4px;
+      margin-top: 5px;
+    }
+  </style>
 </head>
+
 <body>
 
-    <%- include('menu_top_admin') %>
+<%- include('menu_top_admin') %>
 
+<div class="container">
 
-    <!-- Contenido principal -->
-    <div class="container">
-        <div class="admin-title">
-            <h2>Newsletters</h2>
-            <a href="/dashboard/newsletter/add-newsletter" class="button">+ Añadir Nueva</a>
-        </div>
+  <!-- ✅ Mensajes de éxito y error -->
+  <% if (successMessage) { %>
+    <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+      <%= successMessage %>
+      <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
+        <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
+  <% } %>
 
-        <ul class="admin-posts">
-            <% data.forEach(newsletter => { %>
-                <li>
-                    <%= newsletter.email %>
-                    <div class="admin-post-controls">
-                        <a href="/dashboard/newsletter/edit/<%= newsletter._id %>" class="btn-edit btn" style="color:white;">Editar</a>
+  <% if (errorMessage) { %>
+    <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+      <%= errorMessage %>
+      <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
+        <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
+  <% } %>
 
-                        <form action="/dashboard/newsletter/delete-newsletter/<%= newsletter.email %>?_method=DELETE" method="POST">
-                            <input type="submit" value="Eliminar" class="btn-delete btn">
-                        </form>
-                    </div>
-                </li>
-            <% }) %>
-        </ul>
-        
-        
-    </div>  
+  <!-- ✅ Título y controles -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Gestión de Newsletters</h2>
+
+    <div class="d-flex align-items-center">
+      <label for="limitSelect" class="mr-2 mb-0">Mostrar:</label>
+      <select id="limitSelect" class="form-control w-auto">
+        <% [5, 10, 20, 50].forEach(option => { %>
+          <option value="<%= option %>" <%= option === pagination.limit ? 'selected' : '' %>><%= option %> por página</option>
+        <% }) %>
+      </select>
+    </div>
+
+    <a href="/dashboard/newsletter/add-newsletter" class="btn btn-primary ml-3">+ Añadir Nuevo Newsletter</a>
+  </div>
+
+  <!-- ✅ Tabla de newsletters -->
+  <table id="newslettersTable" class="table table-striped table-bordered">
+    <thead>
+      <tr>
+        <th>Email</th>
+        <th>Acciones</th>
+      </tr>
+      <tr>
+        <th><input type="text" placeholder="Buscar Email" /></th>
+        <th></th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <% if (data.length === 0) { %>
+        <tr>
+          <td colspan="2" class="text-center">No hay suscriptores para mostrar</td>
+        </tr>
+      <% } else { %>
+        <% data.forEach(subscriber => { %>
+          <tr>
+            <td><%= subscriber.email %></td>
+            <td>
+              <a href="/dashboard/newsletter/edit-newsletter/<%= subscriber._id %>" class="btn btn-sm btn-warning mb-1">Editar</a>
+              <form action="/dashboard/newsletter/delete-newsletter/<%= subscriber._id %>" method="POST" style="display:inline;" onsubmit="return confirm('¿Estás seguro de eliminar este suscriptor?');">
+                <button type="submit" class="btn btn-sm btn-danger">Eliminar</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      <% } %>
+    </tbody>
+  </table>
+
+  <!-- ✅ Paginación -->
+  <% if (pagination && pagination.totalPages > 1) { %>
+    <div class="pagination-container">
+      <% const previousPage = pagination.page - 1; %>
+      <% const nextPage = pagination.page + 1; %>
+
+      <a href="/dashboard/newsletter?page=<%= previousPage %>&limit=<%= pagination.limit %>" class="<%= pagination.page === 1 ? 'disabled' : '' %>">
+        ‹ Anterior
+      </a>
+
+      <% for (let i = 1; i <= pagination.totalPages; i++) { %>
+        <a href="/dashboard/newsletter?page=<%= i %>&limit=<%= pagination.limit %>" class="<%= i === pagination.page ? 'active' : '' %>">
+          <%= i %>
+        </a>
+      <% } %>
+
+      <a href="/dashboard/newsletter?page=<%= nextPage %>&limit=<%= pagination.limit %>" class="<%= pagination.page === pagination.totalPages ? 'disabled' : '' %>">
+        Siguiente ›
+      </a>
+    </div>
+  <% } %>
+
+</div> <!-- /.container -->
+
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+
+<script>
+  $(document).ready(function() {
+    // ✅ Inicializa la DataTable
+    const table = $('#newslettersTable').DataTable({
+      responsive: true,
+      paging: false, // Desactivamos paginación frontend porque la llevamos desde backend
+      info: false,
+      dom: 'Bfrtip',
+      buttons: [
+        { extend: 'excelHtml5', text: 'Exportar a Excel', title: 'Listado de Newsletters' },
+        { extend: 'pdfHtml5', text: 'Exportar a PDF', title: 'Listado de Newsletters', orientation: 'landscape', pageSize: 'A4' },
+        { extend: 'print', text: 'Imprimir', title: 'Listado de Newsletters' }
+      ],
+      language: {
+        url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+      }
+    });
+
+    // ✅ Filtros individuales por columna
+    $('#newslettersTable thead tr:eq(1) th').each(function(i) {
+      $('input', this).on('keyup change', function() {
+        if (table.column(i).search() !== this.value) {
+          table.column(i).search(this.value).draw();
+        }
+      });
+    });
+
+    // ✅ Manejar el cambio del número de registros por página
+    $('#limitSelect').on('change', function() {
+      const selectedLimit = $(this).val();
+      // Redirige con el nuevo limit y siempre empieza en page=1
+      window.location.href = `/dashboard/newsletter?page=1&limit=${selectedLimit}`;
+    });
+  });
+</script>
 
 </body>
 </html>

@@ -1,13 +1,33 @@
- <!-- Menú de navegación -->
- <nav>
-    <div class="logo"><a href="/dashboard" style="color:white;">Admin Panel</a></div>
-    <div class="menu">
-        <a href="/dashboard">Inicio</a>
-        <a href="/dashboard/categories">Categorías</a>
-        <a href="/dashboard/tags">Tags</a>
-        <a href="/dashboard/newsletter">Newsletter</a>
-        <a href="/dashboard/users">Users</a>
-        <a href="/dashboard/comments">Comments</a>
-        <a href="/dashboard/logout">Logout</a>
-    </div>
-</nav>
+<header class="menu-top">
+  <div class="logo">
+    <a href="/dashboard" class="logo-text">Admin Panel</a>
+  </div>
+
+  <nav class="nav-links" id="navLinks">
+    <a href="/dashboard">Inicio</a>
+    <a href="/dashboard/categories">Categorías</a>
+    <a href="/dashboard/tags">Etiquetas</a>
+    <a href="/dashboard/users">Usuarios</a>
+    <a href="/dashboard/newsletter">Newsletter</a>
+    <a href="/profile/logout">Cerrar sesión</a>
+  </nav>
+
+  <!-- Botón hamburguesa -->
+  <div class="menu-toggle" id="menuToggle">
+    <div class="bar"></div>
+    <div class="bar"></div>
+    <div class="bar"></div>
+  </div>
+</header>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const menuToggle = document.getElementById('menuToggle');
+    const navLinks = document.getElementById('navLinks');
+
+    menuToggle.addEventListener('click', () => {
+      navLinks.classList.toggle('active');
+      // Alternar animación en el ícono
+      menuToggle.classList.toggle('open');
+    });
+  });
+</script>

@@ -4,112 +4,76 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Editar Post</title>
+
+  <!-- Estilos personalizados -->
+  <link rel="stylesheet" href="/css/admin.css">
+
+  <!-- CKEditor 5 Full Build -->
+  <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
+
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: linear-gradient(to right, #1e3c72, #2a5298);
-      margin: 0;
-      min-height: 100vh;
-      padding-top: 70px;
+    .error-message {
+      display: none;
+      color: #dc3545;
+      font-size: 0.9rem;
+      margin-top: 5px;
     }
 
-    nav {
-      background: #1e3c72;
-      color: white;
-      padding: 15px 30px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      height: 70px;
-      z-index: 1000;
+    .input-error {
+      border-color: #dc3545;
     }
 
-    nav .logo { font-size: 20px; font-weight: bold; }
-
-    nav .menu {
-      display: flex;
-      gap: 15px;
+    .btn {
+      background-color: #007bff;
+      color: #fff;
+      padding: 10px 15px;
+      border: none;
+      cursor: pointer;
+      border-radius: 4px;
     }
 
-    nav .menu a {
-      color: white;
-      text-decoration: none;
-      font-size: 14px;
+    .btn:hover {
+      background-color: #0056b3;
     }
 
-    nav .menu a:hover { color: #f1c40f; }
+    .back-link {
+      display: inline-block;
+      margin-top: 15px;
+      color: #007bff;
+    }
 
     .container {
-      background: #fff;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-      max-width: 800px;
-      margin: 40px auto;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
     }
 
     label {
-      display: block;
-      margin-top: 20px;
-      margin-bottom: 5px;
-      color: #333;
-      text-align: left;
+      font-weight: bold;
+      margin-top: 10px;
     }
 
     input[type="text"],
     input[type="date"],
-    textarea,
-    select {
+    select,
+    textarea {
       width: 100%;
-      padding: 10px;
-      border-radius: 5px;
+      padding: 8px;
+      margin-top: 4px;
+      margin-bottom: 10px;
       border: 1px solid #ccc;
-      margin-bottom: 10px;
-      transition: border 0.3s;
+      border-radius: 4px;
     }
 
-    .input-error { border-color: red; }
-
-    .error-message {
-      color: red;
-      font-size: 13px;
-      margin-top: -5px;
-      margin-bottom: 10px;
-      display: none;
+    .ck-editor__editable_inline {
+      min-height: 500px;
     }
-
-    .btn {
-      background: #1e3c72;
-      color: white;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 16px;
-    }
-
-    .btn:hover { background: #163c5a; }
-
-    .back-link {
-      display: inline-block;
-      margin-top: 20px;
-      color: #1e3c72;
-      text-decoration: none;
-      font-size: 14px;
-    }
-
-    .back-link:hover { text-decoration: underline; }
   </style>
-
-  <!-- ✅ CKEditor 5 CDN -->
-  <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
 </head>
 
 <body>
 
-  <!-- ✅ Menú Fijo -->
+  <!-- Menú Fijo -->
   <%- include('menu_top_admin') %>
 
   <div class="container">
@@ -117,49 +81,59 @@
 
     <form id="editPostForm" action="/dashboard/edit-post/<%= data._id %>" method="POST" novalidate>
 
+      <!-- Título -->
       <label for="title">Título:</label>
-      <input type="text" name="title" id="title" value="<%= data.title %>" required>
+      <input type="text" name="title" id="title" value="<%= data.title %>">
       <div id="titleError" class="error-message">El título es obligatorio.</div>
 
+      <!-- Resumen -->
       <label for="summary">Resumen:</label>
-      <textarea name="summary" id="summary" required><%= data.summary %></textarea>
+      <textarea name="summary" id="summary"><%= data.summary %></textarea>
       <div id="summaryError" class="error-message">El resumen es obligatorio.</div>
 
+      <!-- Contenido -->
       <label for="body">Contenido:</label>
       <textarea name="body" id="body"><%= data.body %></textarea>
       <div id="bodyError" class="error-message">El contenido es obligatorio.</div>
 
+      <!-- Categoría -->
       <label for="category">Categoría:</label>
-      <select name="category" id="category" required>
+      <select name="category" id="category">
         <option value="">Selecciona una categoría</option>
         <% categories.forEach(category => { %>
-          <option value="<%= category._id %>" <%= data.category == category._id ? 'selected' : '' %>>
+          <option value="<%= category._id.toString() %>"
+            <%= data.category && data.category.toString() === category._id.toString() ? 'selected' : '' %>>
             <%= category.name %>
           </option>
         <% }) %>
       </select>
       <div id="categoryError" class="error-message">Selecciona una categoría.</div>
 
+      <!-- Etiquetas -->
       <label for="tags">Etiquetas:</label>
       <select name="tags" id="tags" multiple>
         <% tags.forEach(tag => { %>
-          <option value="<%= tag._id %>" <%= selectedTags.includes(tag._id.toString()) ? 'selected' : '' %>>
+          <option value="<%= tag._id.toString() %>"
+            <%= selectedTags.includes(tag._id.toString()) ? 'selected' : '' %>>
             <%= tag.name %>
           </option>
         <% }) %>
       </select>
 
+      <!-- Estado -->
       <label for="status">Tipo de Artículo:</label>
-      <select name="status" id="status" required>
+      <select name="status" id="status">
+        <option value="">Selecciona el estado del artículo</option>
         <option value="draft" <%= data.status === 'draft' ? 'selected' : '' %>>Borrador</option>
         <option value="published" <%= data.status === 'published' ? 'selected' : '' %>>Publicado</option>
         <option value="review" <%= data.status === 'review' ? 'selected' : '' %>>En Revisión</option>
       </select>
       <div id="statusError" class="error-message">Selecciona el estado del artículo.</div>
 
+      <!-- Fecha Publicación -->
       <label for="publishDate">Fecha de Publicación:</label>
       <input type="date" name="publishDate" id="publishDate"
-             value="<%= data.publishDate ? data.publishDate.toISOString().split('T')[0] : '' %>" required>
+        value="<%= data.publishDate ? data.publishDate.toISOString().split('T')[0] : '' %>">
       <div id="publishDateError" class="error-message">La fecha de publicación es obligatoria.</div>
 
       <p>Editando como: <strong><%= user.username %></strong></p>
@@ -170,19 +144,60 @@
     <a href="/dashboard" class="back-link">← Volver al Dashboard</a>
   </div>
 
+  <!-- CKEditor y Validación -->
   <script>
     let editorBody;
 
     ClassicEditor
-      .create(document.querySelector('#body'))
+      .create(document.querySelector('#body'), {
+        toolbar: {
+          items: [
+            'undo', 'redo', '|',
+            'heading', '|',
+            'bold', 'italic', 'underline', 'strikethrough', '|',
+            'bulletedList', 'numberedList', '|',
+            'link', 'insertTable', 'blockQuote', 'mediaEmbed', '|',
+            'codeBlock', 'htmlEmbed', '|',
+            'imageUpload'
+          ]
+        },
+        image: {
+          toolbar: ['imageTextAlternative', 'imageStyle:full', 'imageStyle:side']
+        },
+        table: {
+          contentToolbar: ['tableColumn', 'tableRow', 'mergeTableCells']
+        },
+        mediaEmbed: {
+          previewsInData: true
+        },
+        simpleUpload: {
+          uploadUrl: '', // Cambia si tienes backend de imágenes
+          withCredentials: false
+        },
+        language: 'es',
+        htmlSupport: {
+          allow: [
+            {
+              name: /.*/,
+              attributes: true,
+              classes: true,
+              styles: true
+            }
+          ]
+        },
+        htmlEmbed: {
+          showPreviews: true
+        }
+      })
       .then(editor => {
         editorBody = editor;
-        console.log('Editor cargado en edición');
+        console.log('✅ CKEditor cargado en edición');
       })
       .catch(error => {
         console.error('❌ Error al cargar CKEditor:', error);
       });
 
+    // Validación
     const form = document.getElementById('editPostForm');
 
     form.addEventListener('submit', function (e) {
@@ -203,7 +218,6 @@
 
       const bodyTextarea = document.getElementById('body');
       const editorData = editorBody ? editorBody.getData().trim() : '';
-
       if (!editorData) {
         showError(bodyTextarea, 'bodyError');
         hasErrors = true;
@@ -229,7 +243,9 @@
         hasErrors = true;
       }
 
-      if (hasErrors) e.preventDefault();
+      if (hasErrors) {
+        e.preventDefault();
+      }
     });
 
     function showError(element, errorId) {

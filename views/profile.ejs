@@ -41,13 +41,15 @@
               <h5 class="card-title">
                 <a href="/post/<%= post._id %>"><%= post.title %></a>
               </h5>
-              <p class="card-text">
-                Categoría: <%= post.category ? post.category.name : 'Sin categoría' %><br>
-                Autor:
-                <a href="/users_articles/<%= post.author ? post.author.username : 'anonimo' %>">
-                  <%= post.author ? post.author.username : 'Anónimo' %>
-                </a>
-              </p>
+              <% if (data.category) { %>
+                <p class="mb-3">
+                  <span class="fw-bold">📂 Categoría:</span>
+                  <a href="/articles/category/<%= data.category._id %>" class="badge bg-primary fs-6 text-decoration-none">
+                    <%= data.category.name %>
+                  </a>
+                </p>
+              <% } %>
+              
 
               <form action="/post/<%= post._id %>/unlike" method="POST" onsubmit="return confirm('¿Quitar Like de este artículo?');">
                 <button type="submit" class="btn btn-danger btn-sm mt-2">Quitar Like ❤️</button>

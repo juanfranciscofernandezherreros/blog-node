@@ -207,6 +207,7 @@ router.get('/', async (req, res) => {
         $project: {
           title: 1,
           summary: 1, // ✅ Incluimos el resumen del post
+          images: 1, // ✅ Aquí se incluye el campo
           publishDate: 1,
           "category.name": 1,
           "author.username": 1,
@@ -502,7 +503,11 @@ router.get('/post/:id', async (req, res) => {
       return res.status(400).render('404', { title: "ID inválido" });
     }
 
-    const post = await getPostByRole(postId, req.user);
+    const post = await Post.findById(postId)
+      .populate('author', 'username')
+      .populate('category', 'name')
+      .populate('tags', 'name');
+
     if (!post) return res.status(404).render('404', { title: "Artículo no encontrado" });
 
     const comments = await getNestedComments(postId);
@@ -532,6 +537,7 @@ router.get('/post/:id', async (req, res) => {
     res.status(500).render('500', { title: "Error del servidor" });
   }
 });
+
 
 /**
  * GET /

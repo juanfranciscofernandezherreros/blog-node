@@ -1,152 +1,50 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Añadir Usuario</title>
-    <style>
-        /* Estilos globales */
-        body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(to right, #1e3c72, #2a5298);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            flex-direction: column;
-        }
-
-        /* Estilos para el menú */
-        nav {
-            width: 100%;
-            background: #1e3c72;
-            padding: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: absolute;
-            top: 0;
-            left: 0;
-            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
-        }
-
-        .menu {
-            display: flex;
-            gap: 20px;
-        }
-
-        .menu a {
-            color: white;
-            text-decoration: none;
-            font-size: 16px;
-            transition: color 0.3s ease;
-        }
-
-        .menu a:hover {
-            color: #f1c40f;
-        }
-
-        .container {
-            background: #ffffff;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
-            width: 100%;
-            max-width: 80%;
-            text-align: left;
-        }
-
-        h2 {
-            text-align: center;
-            color: #333;
-        }
-
-        form {
-            display: flex;
-            flex-direction: column;
-        }
-
-        label {
-            font-weight: bold;
-            margin-top: 10px;
-            text-align: left;
-        }
-
-        input, textarea, select {
-            padding: 10px;
-            margin-top: 5px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            width: 100%;
-        }
-
-        textarea {
-            resize: vertical;
-            min-height: 100px;
-        }
-
-        input:focus, textarea:focus, select:focus {
-            border-color: #1e3c72;
-            outline: none;
-            box-shadow: 0px 0px 5px rgba(30, 60, 114, 0.5);
-        }
-
-        .btn {
-            background: #1e3c72;
-            color: white;
-            padding: 10px;
-            margin-top: 15px;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background 0.3s ease;
-            text-align: center;
-        }
-
-        .btn:hover {
-            background: #163c5a;
-        }
-
-        .back-link {
-            display: block;
-            text-align: center;
-            margin-top: 15px;
-            color: #1e3c72;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        .back-link:hover {
-            text-decoration: underline;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Añadir Usuario</title>
+  <link rel="stylesheet" href="/css/admin.css">
 </head>
 <body>
 
-    <%- include('menu_top_admin') %>
+  <%- include('menu_top_admin') %>
 
-    <div class="container">
-        <h2>Añadir Nuevo Usuario</h2>
+  <div class="container">
+    <h2>Añadir Nuevo Usuario</h2>
 
-        <form action="/dashboard/users/add" method="POST">
-            <label for="username">Nombre de Usuario:</label>
-            <input type="text" id="username" name="username" required>
+    <% if (errors && errors.length > 0) { %>
+      <div class="error">
+        <ul>
+          <% errors.forEach(err => { %>
+            <li><%= err.msg %></li>
+          <% }) %>
+        </ul>
+      </div>
+    <% } %>
 
-            <label for="email">Correo Electrónico:</label>
-            <input type="email" id="email" name="email" required>
+    <form action="/dashboard/users/add-user" method="POST">
+      <label for="username">Nombre de Usuario</label>
+      <input type="text" id="username" name="username" value="<%= oldData.username || '' %>" required>
 
-            <label for="password">Contraseña:</label>
-            <input type="password" id="password" name="password" required>
+      <label for="email">Correo Electrónico</label>
+      <input type="email" id="email" name="email" value="<%= oldData.email || '' %>" required>
 
-            <button type="submit" class="btn">Crear Usuario</button>
-        </form>
+      <label for="password">Contraseña</label>
+      <input type="password" id="password" name="password" required>
 
-        <a href="/dashboard/users" class="back-link">← Volver a Usuarios</a>
-    </div>
+      <label for="roles">Asignar Roles</label>
+      <select name="roles" id="roles" multiple required>
+        <% availableRoles.forEach(role => { %>
+          <option value="<%= role._id %>" <%= oldData.roles && oldData.roles.includes(role._id.toString()) ? 'selected' : '' %>><%= role.name %></option>
+        <% }) %>
+      </select>
+
+      <button type="submit" class="btn">Crear Usuario</button>
+    </form>
+
+    <a href="/dashboard/users" class="back-link">← Volver</a>
+  </div>
 
 </body>
 </html>

@@ -28,37 +28,51 @@ const PostSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  
   // ✅ Estado del artículo
   status: {
     type: String,
-    enum: ['draft', 'published', 'review'],  // ✅ añadido 'review'
+    enum: ['draft', 'published', 'review'],
     default: 'draft'
   },
   
-  // 👍 Lista de usuarios que dieron like
   likes: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }],
-  // ⭐ Lista de usuarios que guardaron en favoritos
+  
   favoritedBy: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }],
+  
   isVisible: {
     type: Boolean,
     default: true
   },
-  publishDate: {
-    type: Date
+  images: {
+    type: String, // ✅ Así se guarda el nombre del archivo (ej: 'post-12345678.png')
+    required: false // o true, según tu lógica
+  },  
+
+  // ✅ FECHAS CLARAS
+  generatedAt: {
+    type: Date,
+    default: Date.now // Cuando se genera el contenido (IA o manual)
   },
+  
+  publishDate: {
+    type: Date // Cuando pasa a publicado
+  },
+  
   createdAt: {
     type: Date,
-    default: Date.now
+    default: Date.now // Creación del documento en MongoDB (cualquier estado)
   },
+  
   updatedAt: {
     type: Date,
-    default: Date.now
+    default: Date.now // Modificado manualmente o automático en middleware
   }
 });
 
