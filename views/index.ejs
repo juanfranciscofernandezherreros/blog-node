@@ -10,13 +10,12 @@
             <div class="col-md-6 mb-4">
               <div class="blog-entry blog-entry-search-item align-items-start">
 
-                <!-- 🔹 Miniatura encima del título -->
-                <% const imgSrc = post.coverImage || 'https://i.ytimg.com/vi/DM2XmidUt7A/maxresdefault.jpg'; %>
-                <div class="text-center mb-2">
-                  <a href="/post/<%= post._id %>">
-                    <img src="<%= imgSrc %>" alt="Miniatura de <%= post.title %>" class="img-thumbnail" style="width: 100%; height: 150px; object-fit: cover;">
-                  </a>
-                </div>
+                <!-- 🔹 Imagen principal del artículo -->
+                <% if (post.images) { %>
+                  <img src="/uploads/<%= post.images %>" alt="Imagen del post" class="img-thumbnail mb-2" style="width: 350px; height: 150px; object-fit: cover;" />
+                <% } else { %>
+                  <img src="/images/default.jpg" alt="Sin imagen" class="img-thumbnail mb-2" style="width: 350px; height: 150px; object-fit: cover;" />
+                <% } %>                
 
                 <div class="p-2">
                   <span class="date text-muted d-block mb-2">

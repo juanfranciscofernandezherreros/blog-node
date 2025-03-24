@@ -7,15 +7,21 @@
       <!-- 🔹 Imagen principal del artículo -->
       <% if (data.coverImage) { %>
         <div class="mb-4 text-center">
-          <img src="<%= data.coverImage %>" alt="Imagen del artículo" class="img-fluid rounded shadow-sm" style="max-height: 500px; object-fit: cover;">
+          <img src="<%= data.coverImage %>" alt="Imagen del artículo"
+               class="img-fluid rounded shadow-sm w-100"
+               style="max-height: 600px; object-fit: cover;">
         </div>
       <% } else if (data.images) { %>
         <div class="mb-4 text-center">
-          <img src="/uploads/<%= data.images %>" alt="Imagen destacada del artículo" class="img-fluid rounded shadow-sm" style="max-height: 500px; object-fit: cover;">
+          <img src="/uploads/<%= data.images %>" alt="Imagen destacada del artículo"
+               class="img-fluid rounded shadow-sm w-100"
+               style="max-height: 600px; object-fit: cover;">
         </div>
       <% } else { %>
         <div class="mb-4 text-center">
-          <img src="https://i.ytimg.com/vi/DM2XmidUt7A/maxresdefault.jpg" alt="Imagen por defecto del artículo" class="img-fluid rounded shadow-sm" style="max-height: 500px; object-fit: cover;">
+          <img src="https://i.ytimg.com/vi/DM2XmidUt7A/maxresdefault.jpg" alt="Imagen por defecto"
+               class="img-fluid rounded shadow-sm w-100"
+               style="max-height: 600px; object-fit: cover;">
         </div>
       <% } %>
 
@@ -31,7 +37,7 @@
         </a>
       </p>
 
-      <!-- ✅ Categoría del artículo (solo el nombre) -->
+      <!-- ✅ Categoría del artículo -->
       <% if (data.category) { %>
         <p class="mb-3">
           <span class="fw-bold">📂 Categoría:</span>

@@ -1,108 +1,90 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
   <meta charset="UTF-8">
+  <title>Crear Nuevo Post</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Crear Nuevo Post - Avanzado con HTML e Imagen</title>
-
-  <!-- CSS Personalizado -->
+  
   <link rel="stylesheet" href="/css/admin.css">
 
-  <!-- CKEditor 5 Classic FULL BUILD -->
-  <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
+  <!-- CKEditor 4 Full -->
+  <script src="https://cdn.ckeditor.com/4.22.1/full/ckeditor.js"></script>
 
   <style>
-    .ck-editor__editable_inline {
-      min-height: 500px;
+    .container {
+      max-width: 900px;
+      margin: auto;
+      padding: 20px;
     }
 
-    .error-message {
-      display: none;
-      color: #dc3545;
-      font-size: 0.9rem;
-      margin-top: 5px;
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 10px;
     }
 
-    .input-error {
-      border-color: #dc3545;
+    input[type="text"], input[type="date"], input[type="file"], select, textarea {
+      width: 100%;
+      padding: 8px;
+      margin-top: 4px;
+      margin-bottom: 10px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
     }
 
     .btn {
       background-color: #007bff;
-      color: #fff;
-      padding: 10px 15px;
+      color: white;
+      padding: 10px 20px;
       border: none;
-      cursor: pointer;
       border-radius: 4px;
+      cursor: pointer;
     }
 
     .btn:hover {
       background-color: #0056b3;
     }
 
-    .back-link {
-      display: inline-block;
-      margin-top: 15px;
-      color: #007bff;
+    .error-message {
+      color: red;
+      display: none;
+      font-size: 0.9rem;
     }
 
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-
-    label {
-      font-weight: bold;
-      margin-top: 10px;
-    }
-
-    input[type="text"],
-    input[type="date"],
-    input[type="file"],
-    select,
-    textarea {
-      width: 100%;
-      padding: 8px;
-      margin-top: 4px;
-      margin-bottom: 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+    .input-error {
+      border-color: red;
     }
 
     #imagePreview {
+      display: none;
       margin-top: 10px;
       max-width: 300px;
-      max-height: 300px;
-      display: none;
     }
   </style>
 </head>
 
 <body>
-
   <%- include('menu_top_admin') %>
 
   <div class="container">
-    <h2>Crear Nuevo Post con Soporte HTML + Imagen</h2>
+    <h2>Crear Nuevo Post (con CKEditor 4 y HTML permitido)</h2>
 
     <form id="createPostForm" action="/dashboard/add-post" method="POST" enctype="multipart/form-data" novalidate>
-
+      
       <label for="title">Título:</label>
-      <input type="text" name="title" id="title">
+      <input type="text" id="title" name="title">
       <div id="titleError" class="error-message">El título es obligatorio.</div>
 
       <label for="summary">Resumen:</label>
-      <textarea name="summary" id="summary"></textarea>
+      <textarea id="summary" name="summary"></textarea>
       <div id="summaryError" class="error-message">El resumen es obligatorio.</div>
 
       <label for="body">Contenido del artículo (HTML permitido):</label>
-      <textarea name="body" id="body"></textarea>
+      <textarea id="body" name="body"></textarea>
       <div id="bodyError" class="error-message">El contenido es obligatorio.</div>
 
       <label for="category">Categoría:</label>
-      <select name="category" id="category">
+      <select id="category" name="category">
         <option value="">Selecciona una categoría</option>
         <% categories.forEach(category => { %>
           <option value="<%= category._id %>"><%= category.name %></option>
@@ -111,31 +93,30 @@
       <div id="categoryError" class="error-message">Selecciona una categoría.</div>
 
       <label for="tags">Etiquetas:</label>
-      <select name="tags" id="tags" multiple>
+      <select id="tags" name="tags" multiple>
         <% tags.forEach(tag => { %>
           <option value="<%= tag._id %>"><%= tag.name %></option>
         <% }) %>
       </select>
 
       <label for="status">Estado:</label>
-      <select name="status" id="status">
-        <option value="">Selecciona el estado del artículo</option>
+      <select id="status" name="status">
+        <option value="">Selecciona un estado</option>
         <option value="draft">Borrador</option>
         <option value="published">Publicado</option>
         <option value="review">En Revisión</option>
       </select>
       <div id="statusError" class="error-message">Selecciona el estado del artículo.</div>
 
-      <label for="publishDate">Fecha de Publicación:</label>
-      <input type="date" name="publishDate" id="publishDate">
+      <label for="publishDate">Fecha de publicación:</label>
+      <input type="date" id="publishDate" name="publishDate">
       <div id="publishDateError" class="error-message">La fecha de publicación es obligatoria.</div>
 
-      <!-- Imagen destacada -->
-      <label for="featuredImage">Imagen destacada del post:</label>
-      <input type="file" name="featuredImage" id="featuredImage" accept="image/*">
-      <img id="imagePreview" src="#" alt="Vista previa de la imagen">
+      <label for="featuredImage">Imagen destacada:</label>
+      <input type="file" id="featuredImage" name="featuredImage" accept="image/*">
+      <img id="imagePreview" src="#" alt="Vista previa de imagen">
 
-      <p>Estás creando un post como: <strong><%= user.username %></strong></p>
+      <p>Estás creando como: <strong><%= user.username %></strong></p>
 
       <button type="submit" class="btn">Crear Post</button>
     </form>
@@ -143,63 +124,14 @@
     <a href="/dashboard" class="back-link">← Volver al Dashboard</a>
   </div>
 
-  <!-- JavaScript del formulario -->
   <script>
-    let editorBody;
-
-    // Inicializa CKEditor
-    ClassicEditor
-      .create(document.querySelector('#body'), {
-        toolbar: {
-          items: [
-            'undo', 'redo', '|',
-            'heading', '|',
-            'bold', 'italic', 'underline', 'strikethrough', '|',
-            'bulletedList', 'numberedList', '|',
-            'link', 'insertTable', 'blockQuote', 'mediaEmbed', '|',
-            'codeBlock', 'htmlEmbed', '|',
-            'imageUpload'
-          ]
-        },
-        image: {
-          toolbar: [
-            'imageTextAlternative', 'imageStyle:full', 'imageStyle:side'
-          ]
-        },
-        table: {
-          contentToolbar: ['tableColumn', 'tableRow', 'mergeTableCells']
-        },
-        mediaEmbed: {
-          previewsInData: true
-        },
-        simpleUpload: {
-          uploadUrl: '/dashboard/upload-image',
-          headers: {
-            // 'Authorization': 'Bearer <token>'
-          }
-        },
-        language: 'es',
-        htmlSupport: {
-          allow: [
-            {
-              name: /.*/,
-              attributes: true,
-              classes: true,
-              styles: true
-            }
-          ]
-        },
-        htmlEmbed: {
-          showPreviews: true
-        }
-      })
-      .then(editor => {
-        editorBody = editor;
-        console.log('✅ CKEditor cargado correctamente');
-      })
-      .catch(error => {
-        console.error('❌ Error al cargar CKEditor:', error);
-      });
+    // CKEditor 4 inicialización
+    CKEDITOR.replace('body', {
+      language: 'es',
+      allowedContent: true, // IMPORTANTE: permite HTML personalizado
+      extraPlugins: 'htmlwriter',
+      height: 400
+    });
 
     // Validación del formulario
     const form = document.getElementById('createPostForm');
@@ -218,47 +150,40 @@
       let hasErrors = false;
 
       requiredFields.forEach(field => {
-        const element = document.getElementById(field.id);
-        if (!element.value.trim()) {
-          showError(element, field.errorId);
+        const el = document.getElementById(field.id);
+        if (!el.value.trim()) {
+          showError(el, field.errorId);
           hasErrors = true;
         }
       });
 
-      const editorData = editorBody?.getData().trim() || '';
-      const bodyTextarea = document.getElementById('body');
-
-      if (!editorData) {
-        showError(bodyTextarea, 'bodyError');
+      // Obtener contenido del CKEditor y pasarlo al textarea
+      const editorContent = CKEDITOR.instances.body.getData().trim();
+      if (!editorContent) {
+        showError(document.getElementById('body'), 'bodyError');
         hasErrors = true;
       } else {
-        bodyTextarea.value = editorData;
+        document.getElementById('body').value = editorContent;
       }
 
       if (hasErrors) {
-        console.warn('❗ Hay errores en el formulario');
         e.preventDefault();
       }
     });
 
-    function showError(element, errorId) {
-      element.classList.add('input-error');
-      const errorDiv = document.getElementById(errorId);
-      errorDiv.style.display = 'block';
+    function showError(el, errorId) {
+      el.classList.add('input-error');
+      document.getElementById(errorId).style.display = 'block';
     }
 
     function clearErrors() {
-      const errorInputs = document.querySelectorAll('.input-error');
-      errorInputs.forEach(input => input.classList.remove('input-error'));
-
-      const errorMessages = document.querySelectorAll('.error-message');
-      errorMessages.forEach(msg => msg.style.display = 'none');
+      document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
+      document.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
     }
 
     // Vista previa imagen destacada
     const featuredImageInput = document.getElementById('featuredImage');
     const imagePreview = document.getElementById('imagePreview');
-
     featuredImageInput.addEventListener('change', function () {
       const file = this.files[0];
       if (file) {
@@ -273,7 +198,5 @@
       }
     });
   </script>
-
 </body>
-
 </html>
