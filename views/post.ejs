@@ -28,9 +28,13 @@
       <!-- 🔹 Info de fecha y autor -->
       <p class="text-muted mb-1">
         Publicado
-        <a href="/articles?date=<%= new Date(data.publishDate).toLocaleDateString('es-ES') %>">
-          <%= new Date(data.publishDate).toLocaleDateString('es-ES') %>
-        </a>
+        <%
+        const pubDate = new Date(data.publishDate);
+        const formattedDate = `${String(pubDate.getDate()).padStart(2, '0')}-${String(pubDate.getMonth() + 1).padStart(2, '0')}-${pubDate.getFullYear()}`;
+      %>
+      <a href="/articles?date=<%= formattedDate %>">
+        <%= formattedDate %>
+      </a>
         por el usuario
         <a href="/users_articles/<%= data.author ? data.author.username : 'anonimo' %>">
           <%= data.author ? data.author.username : 'Anónimo' %>
