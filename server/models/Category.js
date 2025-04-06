@@ -12,6 +12,10 @@ const CategorySchema = new mongoose.Schema({
     required: false,
     trim: true
   },
+  tags: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Tags'
+  }],
   createdAt: {
     type: Date,
     default: Date.now

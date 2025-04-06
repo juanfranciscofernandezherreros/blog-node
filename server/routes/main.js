@@ -212,7 +212,7 @@ router.get('/', async (req, res) => {
           "category.name": 1,
           "author.username": 1,
           formattedPublishDate: {
-            $dateToString: { format: "%Y-%m-%d", date: "$publishDate" }
+            $dateToString: { format: "%d-%m-%Y", date: "$publishDate" }
           }
         }
       },
@@ -247,19 +247,21 @@ router.get('/', async (req, res) => {
 router.get('/articles', async (req, res) => {
   try {
     const { date } = req.query;
-    if (!date || !/^\d{2}\/\d{2}\/\d{4}$/.test(date)) {
-      return res.status(400).json({ error: "❌ Debes proporcionar una fecha válida en formato DD/MM/YYYY" });
+
+    // ✅ Validar formato DD-MM-YYYY
+    if (!date || !/^\d{2}-\d{2}-\d{4}$/.test(date)) {
+      return res.status(400).json({ error: "❌ Debes proporcionar una fecha válida en formato DD-MM-YYYY" });
     }
 
-    const [day, month, year] = date.split('/').map(Number);
+    const [day, month, year] = date.split('-').map(Number);
     const startDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
     const endDate = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
 
-    const perPage = req.app.locals.perPage;
+    const perPage = req.app.locals.perPage || 10;
     const page = parseInt(req.query.page) || 1;
 
     const query = {
-      createdAt: { $gte: startDate, $lte: endDate },
+      publishDate: { $gte: startDate, $lte: endDate },
       ...publishedPostFilter
     };
 
@@ -293,6 +295,7 @@ router.get('/articles', async (req, res) => {
     res.status(500).json({ error: "❌ Error del servidor" });
   }
 });
+
 
 /**
  * POST /keyword/search
