@@ -84,13 +84,15 @@
               <h5 class="card-title">
                 <a href="/post/<%= post._id %>"><%= post.title %></a>
               </h5>
-              <p class="card-text">
-                Categoría: <%= post.category ? post.category.name : 'Sin categoría' %><br>
-                Autor:
-                <a href="/users_articles/<%= post.author ? post.author.username : 'anonimo' %>">
-                  <%= post.author ? post.author.username : 'Anónimo' %>
-                </a>
-              </p>             
+              
+              <% if (post.category) { %>
+                <p class="mb-3">
+                  <span class="fw-bold">📂 Categoría:</span>
+                  <a href="/category/<%= post.category.name %>" class="badge bg-primary fs-6 text-decoration-none">
+                    <%= post.category.name %>
+                  </a>
+                </p>
+              <% } %>         
 
               <form action="/post/<%= post._id %>/unfavorite" method="POST" onsubmit="return confirm('favoritos');">
                 <button type="submit" class="btn btn-warning btn-sm mt-2 w-100">Quitar Favorito ⭐</button>

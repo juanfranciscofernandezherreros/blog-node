@@ -299,4 +299,60 @@ router.post('/delete-post/:id', authenticateToken, authorizeRoles(['admin']), as
   }
 });
 
+// LIKE - toggle
+router.post('/post/:id/like', authenticateToken, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) return res.status(404).send('Post no encontrado');
+
+    await post.toggleLike(req.user._id);
+    res.redirect(req.headers.referer || '/');
+  } catch (error) {
+    console.error('❌ Error al hacer like:', error);
+    res.status(500).send('Error del servidor');
+  }
+});
+
+// FAVORITE - toggle
+router.post('/post/:id/favorite', authenticateToken, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) return res.status(404).send('Post no encontrado');
+
+    await post.toggleFavorite(req.user._id);
+    res.redirect(req.headers.referer || '/');
+  } catch (error) {
+    console.error('❌ Error al hacer favorito:', error);
+    res.status(500).send('Error del servidor');
+  }
+});
+
+// LIKE - toggle
+router.post('/:id/unlike', authenticateToken, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) return res.status(404).send('Post no encontrado');
+
+    await post.toggleLike(req.user._id);
+    res.redirect(req.headers.referer || '/');
+  } catch (error) {
+    console.error('❌ Error al hacer like:', error);
+    res.status(500).send('Error del servidor');
+  }
+});
+
+// FAVORITE - toggle
+router.post('/:id/unfavorite', authenticateToken, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) return res.status(404).send('Post no encontrado');
+
+    await post.toggleFavorite(req.user._id);
+    res.redirect(req.headers.referer || '/');
+  } catch (error) {
+    console.error('❌ Error al hacer favorito:', error);
+    res.status(500).send('Error del servidor');
+  }
+});
+
 module.exports = router;

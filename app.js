@@ -233,6 +233,7 @@ app.use('/auth', require('./server/routes/activate')); // ⬅️ Activa el usuar
 app.use('/auth', require('./server/routes/forgot-password')); // ⬅️ Activa el usuario
 app.use('/auth', require('./server/routes/resend-activation')); // ⬅️ Activa el usuario
 app.use('/auth', require('./server/routes/auth'));
+app.use('/post', require('./server/routes/posts'));
 
 // Middleware para manejar rutas no encontradas (404)
 app.use((req, res) => {
