@@ -1,48 +1,136 @@
-require('dotenv').config(); // 🔹 Cargar variables de entorno desde .env
+require('dotenv').config();
 const mongoose = require('mongoose');
-const Category = require('./server/models/Category'); // Importamos el modelo de Category
+const Category = require('./server/models/Category'); // Modelo Category
+const Tag = require('./server/models/Tags'); // Modelo Tag
 
-const MONGO_URI = process.env.MONGODB_URI; // 🔹 Obtener la URI de MongoDB desde .env
-const CATEGORIES_JSON = process.env.CATEGORIES_JSON; // 🔹 Obtener las categorías desde .env
+const MONGO_URI = process.env.MONGODB_URI;
 
-async function insertCategoryData() {
+const tags = [
+  { name: "Anotaciones en Spring Boot" },
+  { name: "Controladores REST" },
+  { name: "Swagger / OpenAPI" },
+  { name: "Manejo de Excepciones" },
+  { name: "Docker" },
+  { name: "Spring Boot Actuator" },
+  { name: "Spring Cloud" },
+  { name: "JWT" },
+  { name: "Spring Security" },
+  { name: "OAuth2" },
+  { name: "@ControllerAdvice" },
+  { name: "CI/CD con Jenkins" }
+];
+
+const categories = [
+  {
+    name: "Desarrollo de APIs REST con Spring Boot",
+    description: "Aprende a construir APIs REST seguras y bien documentadas"
+  },
+  {
+    name: "Introducción a Microservicios",
+    description: "Conceptos clave y herramientas para trabajar con microservicios"
+  },
+  {
+    name: "Seguridad en Aplicaciones Web",
+    description: "Autenticación, autorización y mejores prácticas de seguridad"
+  },
+  {
+    name: "DevOps y CI/CD",
+    description: "Automatización de despliegues, integración y entrega continua"
+  }
+];
+
+const RELACIONES = {
+  "Desarrollo de APIs REST con Spring Boot": [
+    "Anotaciones en Spring Boot",
+    "Controladores REST",
+    "Swagger / OpenAPI",
+    "Manejo de Excepciones"
+  ],
+  "Introducción a Microservicios": [
+    "Docker",
+    "Spring Boot Actuator",
+    "Spring Cloud"
+  ],
+  "Seguridad en Aplicaciones Web": [
+    "JWT",
+    "Spring Security",
+    "OAuth2",
+    "@ControllerAdvice"
+  ],
+  "DevOps y CI/CD": [
+    "Docker",
+    "CI/CD con Jenkins"
+  ]
+};
+
+// 🔹 Mostrar Categorías con Tags relacionados
+async function showCategoriesWithTags() {
   try {
-    if (!MONGO_URI) {
-      throw new Error("⚠️ No se ha encontrado la variable MONGODB_URI en el archivo .env");
+    const categories = await Category.find().populate('tags');
+
+    console.log("\n📂 Categorías y sus Tags relacionados:");
+    for (const category of categories) {
+      const tagNames = category.tags.map(tag => tag.name).join(', ');
+      console.log(`🔸 ${category.name}: [${tagNames}]`);
     }
+  } catch (err) {
+    console.error("❌ Error al mostrar categorías con tags:", err);
+  }
+}
 
-    if (!CATEGORIES_JSON) {
-      throw new Error("⚠️ No se han encontrado categorías en el archivo .env");
-    }
+async function insertDataAndRelateTags() {
+  try {
+    if (!MONGO_URI) throw new Error("❌ Falta MONGODB_URI en el archivo .env");
 
-    const categories = JSON.parse(CATEGORIES_JSON); // 🔹 Parsear el JSON de categorías
-
-    // 🔹 Conectar a la base de datos antes de ejecutar consultas
     await mongoose.connect(MONGO_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
-    console.log("✅ Conectado a la base de datos.");
+    console.log("✅ Conectado a MongoDB");
 
-    // Verificar si las categorías ya existen para evitar duplicados
-    const existingCategory = await Category.countDocuments();
-    
-    if (existingCategory > 0) {
-      console.log("🔹 Las categorías ya existen en la base de datos.");
-      return;
+    // 🔹 Insertar Tags
+    for (const tag of tags) {
+      const exists = await Tag.findOne({ name: tag.name });
+      if (!exists) {
+        await Tag.create(tag);
+        console.log(`🟢 Tag insertado: ${tag.name}`);
+      } else {
+        console.log(`🔹 Tag ya existe: ${tag.name}`);
+      }
     }
 
-    // Insertar categorías si no existen
-    await Category.insertMany(categories);
+    // 🔹 Insertar Categorías y Relacionar Tags
+    for (const category of categories) {
+      const existingCategory = await Category.findOne({ name: category.name });
 
-    console.log("✅ Categorías insertadas correctamente.");
-  } catch (error) {
-    console.error("❌ Error al insertar categorías:", error);
+      if (existingCategory) {
+        console.log(`🔹 Categoría ya existe: ${category.name}`);
+        continue;
+      }
+
+      const tagNames = RELACIONES[category.name] || [];
+      const tagDocs = await Tag.find({ name: { $in: tagNames } });
+      const tagIds = tagDocs.map(tag => tag._id);
+
+      await Category.create({
+        name: category.name,
+        description: category.description,
+        tags: tagIds
+      });
+
+      console.log(`🟢 Categoría insertada con ${tagIds.length} tags: ${category.name}`);
+    }
+
+    console.log("✅ Todo insertado y relacionado correctamente.");
+
+    await showCategoriesWithTags(); // Mostrar relaciones
+
+  } catch (err) {
+    console.error("❌ Error durante la inserción:", err);
   } finally {
-    // 🔹 Cierra la conexión después de la inserción
-    mongoose.connection.close();
+    await mongoose.connection.close();
+    console.log("🔌 Conexión a MongoDB cerrada.");
   }
 }
 
-// Ejecutar la función para insertar las categorías
-insertCategoryData();
+insertDataAndRelateTags();
