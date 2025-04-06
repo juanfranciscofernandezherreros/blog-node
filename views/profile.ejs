@@ -29,40 +29,46 @@
 
   <hr>
 
-  <!-- Likes -->
-  <h2 class="mt-4">Artículos que te gustaron ❤️</h2>
+<!-- Likes -->
+<h2 class="mt-4">Artículos que te gustaron ❤️</h2>
 
-  <% if (likedPosts.length > 0) { %>
-    <div class="row">
-      <% likedPosts.forEach(post => { %>
-        <div class="col-md-4 mb-4">
-          <div class="card shadow-sm h-100">
-            <div class="card-body">
+<% if (likedPosts.length > 0) { %>
+  <div class="row">
+    <% likedPosts.forEach(post => { %>
+      <div class="col-md-4 mb-4">
+        <div class="card shadow-sm h-100">
+          <% if (post.images) { %>
+            <img src="/uploads/<%= post.images %>" class="card-img-top" alt="Imagen del artículo" style="max-height: 200px; object-fit: cover;">
+          <% } else { %>
+            <img src="/images/default.png" class="card-img-top" alt="Imagen por defecto" style="max-height: 200px; object-fit: cover;">
+          <% } %>
+          <div class="card-body d-flex flex-column justify-content-between">
+            <div>
               <h5 class="card-title">
                 <a href="/post/<%= post._id %>"><%= post.title %></a>
               </h5>
-              <% if (data.category) { %>
+
+              <% if (post.category) { %>
                 <p class="mb-3">
                   <span class="fw-bold">📂 Categoría:</span>
-                  <a href="/articles/category/<%= data.category._id %>" class="badge bg-primary fs-6 text-decoration-none">
-                    <%= data.category.name %>
+                  <a href="/category/<%= post.category.name %>" class="badge bg-primary fs-6 text-decoration-none">
+                    <%= post.category.name %>
                   </a>
                 </p>
               <% } %>
-              
-
-              <form action="/post/<%= post._id %>/unlike" method="POST" onsubmit="return confirm('¿Quitar Like de este artículo?');">
-                <button type="submit" class="btn btn-danger btn-sm mt-2">Quitar Like ❤️</button>
-              </form>
-
             </div>
+
+            <form action="/post/<%= post._id %>/unlike" method="POST" onsubmit="return confirm('¿Quitar Like de este artículo?');">
+              <button type="submit" class="btn btn-danger btn-sm mt-2 w-100">Quitar Like ❤️</button>
+            </form>            
           </div>
         </div>
-      <% }); %>
-    </div>
-  <% } else { %>
-    <p>No has dado like a ningún artículo todavía.</p>
-  <% } %>
+      </div>
+    <% }); %>
+  </div>
+<% } else { %>
+  <p>No has dado like a ningún artículo todavía.</p>
+<% } %>
 
   <hr>
 
@@ -84,10 +90,10 @@
                 <a href="/users_articles/<%= post.author ? post.author.username : 'anonimo' %>">
                   <%= post.author ? post.author.username : 'Anónimo' %>
                 </a>
-              </p>
+              </p>             
 
-              <form action="/post/<%= post._id %>/unfavorite" method="POST" onsubmit="return confirm('¿Quitar de favoritos este artículo?');">
-                <button type="submit" class="btn btn-warning btn-sm mt-2">Quitar Favorito ⭐</button>
+              <form action="/post/<%= post._id %>/unfavorite" method="POST" onsubmit="return confirm('favoritos');">
+                <button type="submit" class="btn btn-warning btn-sm mt-2 w-100">Quitar Favorito ⭐</button>
               </form>
 
             </div>
