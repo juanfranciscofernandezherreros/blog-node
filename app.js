@@ -117,11 +117,15 @@ app.locals.perPage = 6; // Puedes cambiar este valor según sea necesario
 // ✅ Middleware para contar artículos publicados y visibles por categoría
 app.use(async (req, res, next) => {
   try {
+    const today = new Date();
+    today.setUTCHours(23, 59, 59, 999); // Fin del día actual (UTC)
+
     const categoryCounts = await Post.aggregate([
       {
         $match: {
-          ...req.queryFilter,           // Esto trae { isVisible: true }
-          status: 'published'            // Ahora filtramos solo los publicados
+          isVisible: true,
+          status: 'published',
+          publishDate: { $lte: today }
         }
       },
       {
@@ -150,6 +154,7 @@ app.use(async (req, res, next) => {
   }
   next();
 });
+
 
 
 // Middleware global para recuperar el usuario autenticado desde el JWT
