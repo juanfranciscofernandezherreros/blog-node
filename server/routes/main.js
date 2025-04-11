@@ -16,7 +16,14 @@ const { authenticateToken, authorizeRoles } = require('../middlewares/authMiddle
 const { createLog } = require('../middlewares/logger');
 
 // ✅ Filtros comunes para posts publicados y visibles
-const publishedPostFilter = { isVisible: true, status: 'published' };
+const today = new Date();
+today.setUTCHours(23, 59, 59, 999);
+
+const publishedPostFilter = {
+  isVisible: true,
+  status: 'published',
+  publishDate: { $lte: today }
+};
 
 // ✅ Helper: obtener publicaciones recientes
 const getRecentPosts = async (limit = 5) => {
