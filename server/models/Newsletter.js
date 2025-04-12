@@ -1,15 +1,27 @@
 const mongoose = require('mongoose');
 
-const Schema = mongoose.Schema;
-
-const NewsletterSchema = new Schema({
+const NewsletterSchema = new mongoose.Schema({
   email: {
     type: String,
     required: true,
-    unique: true, // Evita emails duplicados en la base de datos
+    unique: true,
     trim: true,
-    lowercase: true, // Guarda los emails en minúsculas
-  }
+    lowercase: true,
+  },
+  subscribedToUsers: [{ 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User'
+  }],
+  subscribedToCategories: [{
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Category'
+  }],
+  subscribedToTags: [{
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Tags'
+  }]
+}, {
+  timestamps: true
 });
 
 module.exports = mongoose.model('Newsletter', NewsletterSchema);

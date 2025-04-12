@@ -554,7 +554,13 @@ router.get('/post/:id', async (req, res) => {
  * contact
  */
 router.get('/contact', (req, res) => {
+  
+  const locals = {
+    title: "Formulario de Contacto",
+  };
+
   res.render('contact', {
+    locals,
     currentRoute: '/contact'
   });
 });

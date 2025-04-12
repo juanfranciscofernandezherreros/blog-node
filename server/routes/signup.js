@@ -11,11 +11,15 @@ const baseUrl = process.env.APP_BASE_URL || 'http://localhost:3001';
 
 // ✅ GET /register - Renderizar el formulario
 router.get('/register', (req, res) => {
+
+  const locals = {
+    title: "SignUp",
+  };
+
   const message = req.query.message;
 
   res.render('signup', {
-    pageTitle: 'Registro de Usuario',
-    description: 'Crea una cuenta nueva',
+    locals,
     success: message || null,
     error: null
   });

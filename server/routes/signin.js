@@ -14,7 +14,13 @@ const jwtSecret = process.env.JWT_SECRET;
 
 // ✅ GET /register - Renderiza el formulario de registro
 router.get('/signin', (req, res) => {
+
+  const locals = {
+    title: "SignIn",
+  };
+
   res.render('signin', {
+    locals,
     pageTitle: 'Iniciar sesion',  // Puedes enviar datos a la vista si quieres
     description: 'Iniciar sesion'
   });
