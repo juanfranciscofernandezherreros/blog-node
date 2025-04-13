@@ -1,6 +1,9 @@
 // GET /reset-password/:token
 router.get('/reset-password/:token', async (req, res) => {
-    const { token } = req.params;
+  const locals = {
+    title: "Reset password",
+  };
+  const { token } = req.params;
   
     try {
       const user = await User.findOne({
@@ -14,6 +17,7 @@ router.get('/reset-password/:token', async (req, res) => {
       }
   
       res.render('auth/reset-password', {
+        locals,
         pageTitle: 'Restablecer Contraseña',
         description: 'Ingresa una nueva contraseña',
         token

@@ -246,6 +246,35 @@ app.use((req, res) => {
   res.status(404).render('404');
 });
 
+// Ruta dinámica para el sitemap
+app.get('/sitemap.xml', (req, res) => {
+  res.header('Content-Type', 'application/xml');
+
+  const urls = [
+    { loc: 'https://tudominio.com/', lastmod: '2025-04-12', changefreq: 'daily', priority: '1.0' },
+    { loc: 'https://tudominio.com/contacto', lastmod: '2025-04-10', changefreq: 'monthly', priority: '0.8' },
+    { loc: 'https://tudominio.com/blog', lastmod: '2025-04-08', changefreq: 'weekly', priority: '0.9' }
+  ];
+
+  const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
+  <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    ${urls
+      .map(
+        url => `
+      <url>
+        <loc>${url.loc}</loc>
+        <lastmod>${url.lastmod}</lastmod>
+        <changefreq>${url.changefreq}</changefreq>
+        <priority>${url.priority}</priority>
+      </url>
+    `
+      )
+      .join('')}
+  </urlset>`;
+
+  res.send(sitemapXml);
+});
+
 // 🚀 Iniciar el servidor
 app.listen(PORT, () => {
   console.log(`✅ Servidor corriendo en el puerto ${PORT}`);

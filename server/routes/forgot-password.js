@@ -13,8 +13,11 @@ const baseUrl = process.env.APP_BASE_URL || 'http://localhost:3001';
 =========================== */
 router.get('/forgot-password', (req, res) => {
   const message = req.query.message;
-
+  const locals = {
+    title: "Reset password",
+  };
   res.render('auth/forgot-password', {
+    locals,
     pageTitle: 'Recuperar Contraseña',
     description: 'Introduce tu email para recuperar tu contraseña',
     success: message || null,
@@ -111,6 +114,8 @@ router.post('/forgot-password', async (req, res) => {
 =========================== */
 router.get('/reset-password/:token', async (req, res) => {
   const { token } = req.params;
+
+
 
   try {
     const user = await User.findOne({
