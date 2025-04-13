@@ -6892,7 +6892,7 @@ textarea.form-control-lg {
 
 .text-muted {
   --bs-text-opacity: 1;
-  color: #6c757d !important; }
+  color: black !important; }
 
 .text-black-50 {
   --bs-text-opacity: 1;

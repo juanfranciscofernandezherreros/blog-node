@@ -9,13 +9,18 @@ const CategorySchema = new mongoose.Schema({
   },
   description: {
     type: String,
-    required: false,
     trim: true
   },
   tags: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Tags'
   }],
+  slug: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true
+  },
   createdAt: {
     type: Date,
     default: Date.now

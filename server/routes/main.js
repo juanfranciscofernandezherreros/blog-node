@@ -463,10 +463,10 @@ router.get('/users_articles/:username', async (req, res) => {
 });
 
 // ✅ ARTÍCULOS POR CATEGORÍA
-router.get('/category/:name', async (req, res) => {
+router.get('/category/:slug', async (req, res) => {
   try {
-    const { name } = req.params;
-    const category = await Category.findOne({ name });
+    const { slug } = req.params;
+    const category = await Category.findOne({ slug });
     if (!category) return res.status(404).render('404', { title: "Categoría no encontrada" });
 
     const perPage = req.app.locals.perPage;
@@ -475,7 +475,7 @@ router.get('/category/:name', async (req, res) => {
     const query = { category: category._id, ...publishedPostFilter };
 
     const data = await Post.find(query)
-      .populate('category', 'name')
+      .populate('category', 'slug')
       .populate('author', 'username')
       .sort({ createdAt: -1 })
       .skip(perPage * (page - 1))
@@ -487,7 +487,7 @@ router.get('/category/:name', async (req, res) => {
 
     res.render('index', {
       locals: {
-        title: `Artículos por ${name}`,
+        title: `Artículos por ${slug}`,
         description: "Encuentra artículos relacionados en nuestro blog."
       },
       data,
@@ -496,7 +496,7 @@ router.get('/category/:name', async (req, res) => {
       totalPages,
       hasNextPage: page < totalPages,
       hasPrevPage: page > 1,
-      currentRoute: `/category/${name}`
+      currentRoute: `/category/${slug}`
     });
 
   } catch (error) {

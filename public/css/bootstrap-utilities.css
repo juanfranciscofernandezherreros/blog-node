@@ -804,7 +804,7 @@
   color: #16697a !important; }
 
 .text-secondary {
-  color: #6c757d !important; }
+  color: black !important; }
 
 .text-success {
   color: #198754 !important; }
@@ -831,7 +831,7 @@
   color: #212529 !important; }
 
 .text-muted {
-  color: #6c757d !important; }
+  color: black !important; }
 
 .text-black-50 {
   color: rgba(0, 0, 0, 0.5) !important; }

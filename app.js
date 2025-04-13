@@ -113,7 +113,6 @@ app.use(async (req, res, next) => {
 // Definir una variable global para perPage
 app.locals.perPage = 6; // Puedes cambiar este valor según sea necesario
 
-// ✅ Middleware para contar artículos visibles por categoría
 // ✅ Middleware para contar artículos publicados y visibles por categoría
 app.use(async (req, res, next) => {
   try {
@@ -145,6 +144,7 @@ app.use(async (req, res, next) => {
     res.locals.categories = categories.map(category => ({
       _id: category._id,
       name: category.name,
+      slug: category.slug, // 👈 AÑADIR AQUÍ
       count: categoryCountMap.get(category._id.toString()) || 0
     }));
 
@@ -244,35 +244,6 @@ app.use('/newsletter', require('./server/routes/newsleter'));
 // Middleware para manejar rutas no encontradas (404)
 app.use((req, res) => {
   res.status(404).render('404');
-});
-
-// Ruta dinámica para el sitemap
-app.get('/sitemap.xml', (req, res) => {
-  res.header('Content-Type', 'application/xml');
-
-  const urls = [
-    { loc: 'https://tudominio.com/', lastmod: '2025-04-12', changefreq: 'daily', priority: '1.0' },
-    { loc: 'https://tudominio.com/contacto', lastmod: '2025-04-10', changefreq: 'monthly', priority: '0.8' },
-    { loc: 'https://tudominio.com/blog', lastmod: '2025-04-08', changefreq: 'weekly', priority: '0.9' }
-  ];
-
-  const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
-  <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-    ${urls
-      .map(
-        url => `
-      <url>
-        <loc>${url.loc}</loc>
-        <lastmod>${url.lastmod}</lastmod>
-        <changefreq>${url.changefreq}</changefreq>
-        <priority>${url.priority}</priority>
-      </url>
-    `
-      )
-      .join('')}
-  </urlset>`;
-
-  res.send(sitemapXml);
 });
 
 // 🚀 Iniciar el servidor

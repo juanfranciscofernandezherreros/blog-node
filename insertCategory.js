@@ -112,12 +112,23 @@ async function insertDataAndRelateTags() {
       const tagDocs = await Tag.find({ name: { $in: tagNames } });
       const tagIds = tagDocs.map(tag => tag._id);
 
+      const slugify = (text) => {
+        return text
+          .toString()
+          .toLowerCase()
+          .trim()
+          .replace(/\s+/g, '-')        // reemplaza espacios por guiones
+          .replace(/[^\w\-]+/g, '')    // elimina caracteres especiales
+          .replace(/\-\-+/g, '-')      // evita guiones dobles
+          .replace(/^-+|-+$/g, '');    // elimina guiones al inicio o final
+      };
+      
       await Category.create({
         name: category.name,
         description: category.description,
-        tags: tagIds
+        tags: tagIds,
+        slug: slugify(category.name)
       });
-
       console.log(`🟢 Categoría insertada con ${tagIds.length} tags: ${category.name}`);
     }
 

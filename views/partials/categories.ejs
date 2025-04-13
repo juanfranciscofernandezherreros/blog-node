@@ -2,7 +2,7 @@
   <% if (categories.length > 0) { %>
     <% categories.forEach(category => { %>
       <li>
-        <a href="/category/<%= category.name %>">
+        <a href="/category/<%= category.slug %>">
           <%= category.name %> <span>(<%= category.count %>)</span>
         </a>
       </li>
