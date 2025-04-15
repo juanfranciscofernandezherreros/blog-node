@@ -3,7 +3,7 @@
     <% if (popularPosts.length > 0) { %>
       <% popularPosts.forEach(post => { %>
         <li>
-          <a href="/post/<%= post._id %>">
+          <a href="/post/<%= post.slug %>">
             <div class="text">
               <h4><%= post.title %></h4>
               <div class="post-meta">

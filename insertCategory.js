@@ -1,7 +1,7 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
-const Category = require('./server/models/Category'); // Modelo Category
-const Tag = require('./server/models/Tags'); // Modelo Tag
+const Category = require('./server/models/Category');
+const Tag = require('./server/models/Tags');
 
 const MONGO_URI = process.env.MONGODB_URI;
 
@@ -63,11 +63,20 @@ const RELACIONES = {
   ]
 };
 
-// 🔹 Mostrar Categorías con Tags relacionados
+const slugify = (text) => {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')        // reemplaza espacios por guiones
+    .replace(/[^\w\-]+/g, '')    // elimina caracteres especiales
+    .replace(/\-\-+/g, '-')      // evita guiones dobles
+    .replace(/^-+|-+$/g, '');    // elimina guiones al inicio o final
+};
+
 async function showCategoriesWithTags() {
   try {
     const categories = await Category.find().populate('tags');
-
     console.log("\n📂 Categorías y sus Tags relacionados:");
     for (const category of categories) {
       const tagNames = category.tags.map(tag => tag.name).join(', ');
@@ -92,7 +101,7 @@ async function insertDataAndRelateTags() {
     for (const tag of tags) {
       const exists = await Tag.findOne({ name: tag.name });
       if (!exists) {
-        await Tag.create(tag);
+        await Tag.create({ ...tag, slug: slugify(tag.name) });
         console.log(`🟢 Tag insertado: ${tag.name}`);
       } else {
         console.log(`🔹 Tag ya existe: ${tag.name}`);
@@ -112,30 +121,18 @@ async function insertDataAndRelateTags() {
       const tagDocs = await Tag.find({ name: { $in: tagNames } });
       const tagIds = tagDocs.map(tag => tag._id);
 
-      const slugify = (text) => {
-        return text
-          .toString()
-          .toLowerCase()
-          .trim()
-          .replace(/\s+/g, '-')        // reemplaza espacios por guiones
-          .replace(/[^\w\-]+/g, '')    // elimina caracteres especiales
-          .replace(/\-\-+/g, '-')      // evita guiones dobles
-          .replace(/^-+|-+$/g, '');    // elimina guiones al inicio o final
-      };
-      
       await Category.create({
         name: category.name,
         description: category.description,
         tags: tagIds,
         slug: slugify(category.name)
       });
+
       console.log(`🟢 Categoría insertada con ${tagIds.length} tags: ${category.name}`);
     }
 
     console.log("✅ Todo insertado y relacionado correctamente.");
-
-    await showCategoriesWithTags(); // Mostrar relaciones
-
+    await showCategoriesWithTags();
   } catch (err) {
     console.error("❌ Error durante la inserción:", err);
   } finally {

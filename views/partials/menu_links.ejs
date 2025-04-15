@@ -7,7 +7,7 @@
     <a href="#">Categorías</a>
     <ul class="dropdown">
       <% categories.forEach(category => { %>
-        <li><a href="/category/<%= category.name %>"><%= category.name %></a></li>
+        <li><a href="/category/<%= category.slug %>"><%= category.name %></a></li>
       <% }) %>
     </ul>
   </li>
@@ -17,7 +17,7 @@
     <a href="#">Tags</a>
     <ul class="dropdown">
       <% tags.forEach(tag => { %>
-        <li><a href="/articles/tags/<%= tag._id %>"><%= tag.name %></a></li>
+        <li><a href="/articles/tags/<%= tag.slug %>"><%= tag.name %></a></li>
       <% }) %>
     </ul>
   </li>

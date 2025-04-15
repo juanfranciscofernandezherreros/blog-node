@@ -1,9 +1,17 @@
 const mongoose = require('mongoose');
+const slugify = require('slugify');
 
 const PostSchema = new mongoose.Schema({
   title: {
     type: String,
     required: true,
+    trim: true
+  },
+  slug: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
     trim: true
   },
   summary: {
@@ -29,7 +37,6 @@ const PostSchema = new mongoose.Schema({
     required: true
   },
   
-  // ✅ Estado del artículo
   status: {
     type: String,
     enum: ['draft', 'published', 'review'],
@@ -51,62 +58,54 @@ const PostSchema = new mongoose.Schema({
     default: true
   },
   images: {
-    type: String, // ✅ Así se guarda el nombre del archivo (ej: 'post-12345678.png')
-    required: false // o true, según tu lógica
+    type: String,
+    required: false
   },  
 
-  // ✅ FECHAS CLARAS
   generatedAt: {
     type: Date,
-    default: Date.now // Cuando se genera el contenido (IA o manual)
+    default: Date.now
   },
   
   publishDate: {
-    type: Date // Cuando pasa a publicado
+    type: Date
   },
   
   createdAt: {
     type: Date,
-    default: Date.now // Creación del documento en MongoDB (cualquier estado)
+    default: Date.now
   },
   
   updatedAt: {
     type: Date,
-    default: Date.now // Modificado manualmente o automático en middleware
+    default: Date.now
   }
 });
 
 // 🔧 MÉTODOS PARA MANEJAR LIKES Y FAVORITOS
 
-// Método para dar like o quitar like
 PostSchema.methods.toggleLike = async function(userId) {
   const userIndex = this.likes.indexOf(userId);
   if (userIndex === -1) {
-    // Si no existe, lo agregamos (like)
     this.likes.push(userId);
   } else {
-    // Si ya existe, lo quitamos (unlike)
     this.likes.splice(userIndex, 1);
   }
   await this.save();
   return this;
 };
 
-// Método para agregar o quitar de favoritos
 PostSchema.methods.toggleFavorite = async function(userId) {
   const userIndex = this.favoritedBy.indexOf(userId);
   if (userIndex === -1) {
-    // Si no está en favoritos, lo agregamos
     this.favoritedBy.push(userId);
   } else {
-    // Si ya está, lo quitamos
     this.favoritedBy.splice(userIndex, 1);
   }
   await this.save();
   return this;
 };
 
-// Método para publicar el post
 PostSchema.methods.publish = async function() {
   this.status = 'published';
   this.publishDate = new Date();
@@ -114,11 +113,18 @@ PostSchema.methods.publish = async function() {
   return this;
 };
 
-// Método para volver a borrador
 PostSchema.methods.setDraft = async function() {
   this.status = 'draft';
   await this.save();
   return this;
 };
+
+// ✅ MIDDLEWARE PARA GENERAR SLUG AUTOMÁTICAMENTE
+PostSchema.pre('save', function(next) {
+  if (this.isModified('title')) {
+    this.slug = slugify(this.title, { lower: true, strict: true });
+  }
+  next();
+});
 
 module.exports = mongoose.model('Post', PostSchema);

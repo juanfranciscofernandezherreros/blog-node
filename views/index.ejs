@@ -43,7 +43,7 @@
                     </a> 
                     
                     <% if (post.category && post.category.name) { %>
-                      <a href="/category/<%= post.category.name %>" class="text-primary ms-2">
+                      <a href="/category/<%= post.category.slug %>" class="text-primary ms-2">
                         <%= post.category.name %>
                       </a>
                     <% } else { %>
@@ -53,7 +53,7 @@
 
                   <!-- 🔹 Título -->
                   <h2 class="h5 mb-2">
-                    <a href="/post/<%= post._id %>" class="text-dark fw-bold">
+                    <a href="/post/<%= post.slug %>" class="text-dark fw-bold">
                       <%= post.title %>
                     </a>
                   </h2>      
@@ -76,7 +76,7 @@
                   </p>
 
                   <!-- 🔹 Leer más -->
-                  <a href="/post/<%= post._id %>" class="btn btn-sm btn-outline-primary">Leer más</a>
+                  <a href="/post/<%= post.slug %>" class="btn btn-sm btn-outline-primary">Leer más</a>
 
                 </div>
               </div>

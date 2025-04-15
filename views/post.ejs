@@ -45,7 +45,7 @@
       <% if (data.category) { %>
         <p class="mb-3">
           <span class="fw-bold">📂 Categoría:</span>
-          <a href="/category/<%= encodeURIComponent(data.category.name) %>" class="badge bg-primary fs-6 text-decoration-none">
+          <a href="/category/<%= encodeURIComponent(data.category.slug) %>" class="badge bg-primary fs-6 text-decoration-none">
             <%= data.category.name %>
           </a>
         </p>

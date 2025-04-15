@@ -6,7 +6,7 @@ const methodOverride = require('method-override');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
-const jwt = require('jsonwebtoken'); // ⬅️ IMPORTANTE
+const jwt = require('jsonwebtoken');
 const connectDB = require('./server/config/db');
 const { isActiveRoute } = require('./server/helpers/routeHelpers');
 
@@ -84,22 +84,29 @@ app.use(async (req, res, next) => {
   next();
 });
 
-// ✅ Middleware para obtener 3 artículos aleatorios (solo visibles)
 // ✅ Middleware para obtener 3 artículos aleatorios (solo publicados y visibles)
 app.use(async (req, res, next) => {
   try {
     const randomPosts = await Post.aggregate([
       {
         $match: {
-          isVisible: true,      // 👈 Solo los que estén marcados como visibles
-          status: 'published'   // 👈 Solo los publicados
+          isVisible: true,
+          status: 'published'
         }
       },
       {
-        $sample: { size: 3 }    // 👈 Elegir 3 al azar
+        $sample: { size: 3 }
+      },
+      {
+        $project: {
+          title: 1,
+          slug: 1, // ✅ Asegúrate de incluirlo aquí
+          summary: 1,
+          images: 1,
+          publishDate: 1
+        }
       }
     ]);
-
     res.locals.randomPosts = randomPosts || [];
   } catch (error) {
     console.error("❌ Error al obtener artículos aleatorios:", error);
@@ -144,7 +151,7 @@ app.use(async (req, res, next) => {
     res.locals.categories = categories.map(category => ({
       _id: category._id,
       name: category.name,
-      slug: category.slug, // 👈 AÑADIR AQUÍ
+      slug: category.slug,
       count: categoryCountMap.get(category._id.toString()) || 0
     }));
 
