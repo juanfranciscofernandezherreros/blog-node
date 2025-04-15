@@ -213,6 +213,7 @@ router.get('/', async (req, res) => {
       {
         $project: {
           title: 1,
+          slug:1,
           summary: 1, // ✅ Incluimos el resumen del post
           images: 1, // ✅ Aquí se incluye el campo
           publishDate: 1,
