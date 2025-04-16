@@ -77,38 +77,38 @@
       </p>
 
      <!-- 🔥 Likes y Favoritos -->
-<div class="d-flex align-items-center mb-3">
-  <% if (user) { %>
-    <!-- Si está autenticado: mostrar botones reales -->
-    <form action="/post/<%= data._id %>/like" method="POST" class="me-3">
-      <button type="submit" class="btn btn-sm <%= isLiked ? 'btn-danger' : 'btn-outline-danger' %>">
-        <%= isLiked ? '💖 Quitar Like' : '🤍 Dar Like' %>
-      </button>
-      <span><%= likesCount %> Likes</span>
-    </form>
+    <div class="d-flex align-items-center mb-3">
+      <% if (user) { %>
+        <!-- Si está autenticado: mostrar botones reales -->
+        <form action="/post/<%= data._id %>/like" method="POST" class="me-3">
+          <button type="submit" class="btn btn-sm <%= isLiked ? 'btn-danger' : 'btn-outline-danger' %>">
+            <%= isLiked ? '💖 Quitar Like' : '🤍 Dar Like' %>
+          </button>
+          <span><%= likesCount %> Likes</span>
+        </form>
 
-    <form action="/post/<%= data.slug %>/favorite" method="POST">
-      <button type="submit" class="btn btn-sm <%= isFavorited ? 'btn-warning' : 'btn-outline-warning' %>">
-        <%= isFavorited ? '⭐ Quitar de Favoritos' : '☆ Guardar en Favoritos' %>
-      </button>          
-      <span><%= favoritesCount %> Favoritos</span>
-    </form>
-  <% } else { %>
-    <!-- Si NO está autenticado: botones desactivados o link -->
-    <div class="me-3">
-      <button type="button" class="btn btn-sm btn-outline-danger" disabled>🤍 Dar Like</button>
-      <span><%= likesCount %> Likes</span>
-    </div>
-    
-    <div>
-      <button type="button" class="btn btn-sm btn-outline-warning" disabled>☆ Guardar en Favoritos</button>
-      <span><%= favoritesCount %> Favoritos</span>
-    </div>
+        <form action="/post/<%= data.slug %>/favorite" method="POST">
+          <button type="submit" class="btn btn-sm <%= isFavorited ? 'btn-warning' : 'btn-outline-warning' %>">
+            <%= isFavorited ? '⭐ Quitar de Favoritos' : '☆ Guardar en Favoritos' %>
+          </button>          
+          <span><%= favoritesCount %> Favoritos</span>
+        </form>
+      <% } else { %>
+        <!-- Si NO está autenticado: botones desactivados o link -->
+        <div class="me-3">
+          <button type="button" class="btn btn-sm btn-outline-danger" disabled>🤍 Dar Like</button>
+          <span><%= likesCount %> Likes</span>
+        </div>
+        
+        <div>
+          <button type="button" class="btn btn-sm btn-outline-warning" disabled>☆ Guardar en Favoritos</button>
+          <span><%= favoritesCount %> Favoritos</span>
+        </div>
 
-    <!-- O también podrías poner un enlace: -->
-    <!-- <a href="/auth/signin" class="btn btn-sm btn-outline-primary ms-2">Inicia sesión para interactuar</a> -->
-  <% } %>
-</div>
+        <!-- O también podrías poner un enlace: -->
+        <!-- <a href="/auth/signin" class="btn btn-sm btn-outline-primary ms-2">Inicia sesión para interactuar</a> -->
+      <% } %>
+    </div>
 
 
       <!-- 🔹 Contenido del artículo -->
@@ -134,7 +134,7 @@
                 <button class="btn btn-sm btn-link text-primary" onclick="toggleReplyForm('<%= comment._id %>')">Responder</button>
 
                 <!-- 🔹 Formulario Respuesta -->
-                <form id="reply-form-<%= comment._id %>" action="/comments/post/<%= data._id %>" method="POST" class="mt-2 d-none">
+                <form id="reply-form-<%= comment._id %>" action="/comments/post/<%= data.slug %>" method="POST" class="mt-2 d-none">
                   <input type="hidden" name="parentId" value="<%= comment._id %>">
 
                   <div class="mb-2">
@@ -173,7 +173,7 @@
       <hr class="mt-4">
       <h4>Agregar un comentario</h4>
 
-      <form action="/comments/post/<%= data._id %>" method="POST" class="mb-4">
+      <form action="/comments/post/<%= data.slug %>" method="POST" class="mb-4">
         <div class="mb-3">
           <label for="author" class="form-label">Nombre</label>
           <% if (user) { %>

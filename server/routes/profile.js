@@ -25,8 +25,8 @@ router.get('/user', authenticateToken, async (req, res) => {
 
     // 🔹 Posts que el usuario ha marcado como favoritos
     const favoritedPosts = await Post.find({ favoritedBy: userId })
-      .populate('author', 'username slug')
-      .populate('category', 'name')
+      .populate('author', 'username')
+      .populate('category', 'name slug')
       .sort({ createdAt: -1 });
 
     // 🔹 Comentarios que el usuario ha dejado (solo los comentarios raíz)
@@ -34,7 +34,7 @@ router.get('/user', authenticateToken, async (req, res) => {
       author: req.user.username, 
       parentId: null 
     })
-      .populate('postId', 'title')
+      .populate('postId', 'title slug')
       .sort({ createdAt: -1 });
 
     // 🔹 Respuestas que el usuario ha dejado (hijos de otros comentarios)

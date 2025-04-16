@@ -2,15 +2,23 @@
 const express = require('express');
 const router = express.Router();
 const Comment = require('../models/Comment');
+const Post = require('../models/Post');
 
 // ⚠️ Ya no usamos authenticateToken aquí (para que sea libre)
-router.post('/post/:postId', async (req, res) => {
+router.post('/post/:slug', async (req, res) => {
   try {
     const { author, email, body, parentId } = req.body;
-    const { postId } = req.params;
+    const { slug } = req.params;
 
-    if (!body || !postId) {
+    if (!body || !slug) {
       return res.status(400).send('Faltan datos');
+    }
+
+    // 🔎 Buscar el post por slug para obtener su _id
+    const post = await Post.findOne({ slug });
+
+    if (!post) {
+      return res.status(404).send('Post no encontrado');
     }
 
     let commentAuthor = '';
@@ -18,7 +26,7 @@ router.post('/post/:postId', async (req, res) => {
 
     if (req.user && req.user.username) {
       commentAuthor = req.user.username;
-      commentEmail = req.user.email; // si tienes el email del usuario autenticado
+      commentEmail = req.user.email;
     } else {
       if (!author || !email) {
         return res.status(400).send('El nombre y el correo electrónico son requeridos');
@@ -27,7 +35,6 @@ router.post('/post/:postId', async (req, res) => {
       commentAuthor = author.trim();
       commentEmail = email.trim();
 
-      // Opcional: validación básica de email
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(commentEmail)) {
         return res.status(400).send('Correo electrónico inválido');
@@ -38,19 +45,18 @@ router.post('/post/:postId', async (req, res) => {
       author: commentAuthor,
       email: commentEmail,
       body,
-      postId,
+      postId: post._id,
       parentId: parentId || null
     });
 
     await newComment.save();
 
-    // 🔔 Aquí puedes meter lógica para enviar email cuando le respondan
-    res.redirect(`/post/${postId}#comments`);
-    
+    res.redirect(`/post/${slug}#comments`);
   } catch (error) {
     console.error('❌ Error al publicar comentario:', error);
     res.status(500).send('Error en el servidor');
   }
 });
+
 
 module.exports = router;
