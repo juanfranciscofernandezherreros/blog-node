@@ -66,13 +66,12 @@ app.use((req, res, next) => {
   res.locals.social = process.env.SOCIAL || 'Social Network';
   next();
 });
-
-// ✅ Middleware para cargar Tags y Categorías en todas las vistas
+// ✅ Middleware para cargar Tags aleatorios y Categorías ordenadas
 app.use(async (req, res, next) => {
   try {
     const [tags, categories] = await Promise.all([
-      Tag.find({}).sort({ name: 1 }),
-      Category.find({}).sort({ name: 1 })
+      Tag.aggregate([{ $sample: { size: 20 } }]), // 20 tags aleatorios
+      Category.find({}).sort({ name: 1 })         // categorías ordenadas
     ]);
 
     res.locals.tags = tags || [];
@@ -85,6 +84,7 @@ app.use(async (req, res, next) => {
   }
   next();
 });
+
 
 // ✅ Middleware para obtener 3 artículos aleatorios (solo publicados y visibles)
 app.use(async (req, res, next) => {
