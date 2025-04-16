@@ -398,6 +398,130 @@ router.post('/keyword/search', async (req, res) => {
   }
 });
 
+/**
+ * GET /articles/users/:username
+ * Lista los artículos publicados por un autor (usuario) específico
+ */
+/**
+ * GET /articles/users/:username
+ * Lista los artículos publicados por un autor (usuario) específico
+/**
+ * GET /articles/users/:username
+ * Lista los artículos publicados por un autor (usuario) específico
+ */
+router.get('/articles/users/:username', async (req, res) => {
+  try {
+    const { username } = req.params;
+    const perPage = req.app.locals.perPage || 10;
+    const page = parseInt(req.query.page) || 1;
+
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(404).render('404', { title: "Usuario no encontrado" });
+    }
+
+    const query = { author: user._id, ...publishedPostFilter };
+
+    const posts = await Post.find(query)
+      .populate('category', 'name slug')
+      .populate('author', 'username')
+      .populate('tags', 'name slug')
+      .sort({ createdAt: -1 })
+      .skip(perPage * (page - 1))
+      .limit(perPage)
+      .lean();
+
+    // Añadir fecha formateada a cada post (si es necesario)
+    posts.forEach(post => {
+      if (post.publishDate instanceof Date) {
+        const date = new Date(post.publishDate);
+        post.formattedPublishDate = date.toLocaleDateString('es-ES');
+      }
+    });
+
+    const count = await Post.countDocuments(query);
+    const totalPages = Math.ceil(count / perPage);
+    const recentPosts = await getRecentPosts();
+
+    res.render('index', {
+      locals: {
+        title: `Artículos de ${user.username}`,
+        description: `Lista de artículos escritos por ${user.username}.`
+      },
+      data: posts,
+      recentPosts,
+      currentPage: page,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
+      currentRoute: `/articles/users/${username}`
+    });
+
+  } catch (error) {
+    console.error("❌ Error al obtener artículos por usuario:", error);
+    res.status(500).render('500', { title: "Error del servidor" });
+  }
+});
+
+
+/**
+ * GET /articles/categories/:slug
+ * Lista los artículos publicados que pertenecen a una categoría específica
+ */
+router.get('/articles/categories/:slug', async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const perPage = req.app.locals.perPage || 10;
+    const page = parseInt(req.query.page) || 1;
+
+    const category = await Category.findOne({ slug });
+    if (!category) {
+      return res.status(404).render('404', { title: "Categoría no encontrada" });
+    }
+
+    const query = { category: category._id, ...publishedPostFilter };
+
+    const posts = await Post.find(query)
+      .populate('category', 'name slug')
+      .populate('author', 'username')
+      .populate('tags', 'name slug')
+      .sort({ createdAt: -1 })
+      .skip(perPage * (page - 1))
+      .limit(perPage)
+      .lean();
+
+    // Añadir fecha formateada a cada post (si no lo haces en el schema o con agregación)
+    posts.forEach(post => {
+      if (post.publishDate instanceof Date) {
+        const date = new Date(post.publishDate);
+        post.formattedPublishDate = date.toLocaleDateString('es-ES'); // o formato personalizado
+      }
+    });
+
+    const count = await Post.countDocuments(query);
+    const totalPages = Math.ceil(count / perPage);
+    const recentPosts = await getRecentPosts();
+
+    res.render('index', {
+      locals: {
+        title: `Artículos en la categoría: ${category.name}`,
+        description: `Lista de artículos clasificados bajo la categoría "${category.name}".`
+      },
+      data: posts,
+      recentPosts,
+      currentPage: page,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
+      currentRoute: `/articles/categories/${slug}`
+    });
+
+  } catch (error) {
+    console.error("❌ Error al obtener artículos por categoría (slug):", error);
+    res.status(500).json({ error: "❌ Error del servidor" });
+  }
+});
+
 
 // ✅ ARTÍCULOS POR TAG (usando slug)
 router.get('/articles/tags/:slug', async (req, res) => {

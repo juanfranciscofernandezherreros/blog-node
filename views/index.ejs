@@ -16,7 +16,7 @@
                       <%= post.formattedPublishDate %>
                     </a>
                     <% if (post.category && post.category.name) { %>
-                      <a href="/category/<%= post.category.slug %>" class="text-primary ms-2">
+                      <a href="/articles/categories/<%= post.category.slug %>" class="text-primary ms-2">
                         <%= post.category.name %>
                       </a>
                     <% } else { %>
@@ -35,7 +35,7 @@
                   <p class="text-muted small mb-1">
                     <strong>Autor:</strong>
                     <% if (post.author && post.author.username) { %>
-                      <a href="/users_articles/<%= post.author.username %>" class="text-primary">
+                      <a href="/articles/users/<%= post.author.username %>" class="text-primary">
                         <%= post.author.username %>
                       </a>
                     <% } else { %>
