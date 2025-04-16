@@ -9,6 +9,7 @@ const MongoStore = require('connect-mongo');
 const jwt = require('jsonwebtoken');
 const connectDB = require('./server/config/db');
 const { isActiveRoute } = require('./server/helpers/routeHelpers');
+const setUserIfExists = require('./server/middlewares/setUserIfExists');
 
 // Modelos
 const Tag = require('./server/models/Tags');
@@ -29,6 +30,7 @@ connectDB();
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
+app.use(setUserIfExists);
 app.use(methodOverride('_method'));
 
 // ✅ Configurar sesiones con MongoDB

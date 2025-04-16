@@ -45,7 +45,7 @@
           <div class="card-body d-flex flex-column justify-content-between">
             <div>
               <h5 class="card-title">
-                <a href="/post/<%= post._slug %>"><%= post.title %></a>
+                <a href="/post/<%= post.slug %>"><%= post.title %></a>
               </h5>
 
               <% if (post.category) { %>
@@ -82,7 +82,7 @@
           <div class="card shadow-sm h-100">
             <div class="card-body">
               <h5 class="card-title">
-                <a href="/post/<%= post._id %>"><%= post.title %></a>
+                <a href="/post/<%= post.slug %>"><%= post.title %></a>
               </h5>
               
               <% if (post.category) { %>

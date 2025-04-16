@@ -563,7 +563,7 @@ router.get('/articles/tags/:slug', async (req, res) => {
 });
 
 
-router.get('/post/:slug', authenticateToken, async (req, res) => {
+router.get('/post/:slug', async (req, res) => {
   try {
     const { slug } = req.params;
 
@@ -571,28 +571,23 @@ router.get('/post/:slug', authenticateToken, async (req, res) => {
       .populate('author', 'username')
       .populate('category', 'name slug')
       .populate('tags', 'name slug')
-      .populate('likes', '_id') // usuarios que dieron like
-      .populate('favoritedBy', '_id'); // usuarios que marcaron favorito
+      .populate('likes', '_id')
+      .populate('favoritedBy', '_id');
 
     if (!post) {
       return res.status(404).render('404', { title: "Artículo no encontrado" });
     }
 
     const postId = post._id.toString();
-
-    // Obtener comentarios anidados
-    const comments = await getNestedComments(postId);
-    const recentPosts = await getRecentPosts();
-
     const user = req.user;
     const userId = user?._id?.toString();
 
     const isLiked = userId ? post.likes.some(u => u._id.toString() === userId) : false;
     const isFavorited = userId ? post.favoritedBy.some(u => u._id.toString() === userId) : false;
-    console.log("🟡 Favoritos:", post.favoritedBy.map(u => u._id.toString()));
-    console.log("🟢 Usuario:", userId);
-    console.log("✅ ¿Es favorito?", isFavorited);
-    
+
+    const comments = await getNestedComments(postId);
+    const recentPosts = await getRecentPosts();
+
     res.render('post', {
       title: post.title,
       data: post,
@@ -603,14 +598,14 @@ router.get('/post/:slug', authenticateToken, async (req, res) => {
       isFavorited,
       likesCount: post.likes.length,
       favoritesCount: post.favoritedBy.length,
-      postStatus: post.status
+      user // <-- ¡ESTO ES CLAVE!
     });
-
   } catch (error) {
     console.error("❌ Error al obtener el post:", error);
     res.status(500).render('500', { title: "Error del servidor" });
   }
 });
+
 
 /**
  * GET /
