@@ -628,6 +628,22 @@ router.get('/contact', (req, res) => {
   });
 });
 
+/**
+ * GET /
+ * contact
+ */
+router.get('/newsletter', (req, res) => {
+  
+  const locals = {
+    title: "Newsletter",
+  };
+
+  res.render('newsletter', {
+    locals,
+    currentRoute: '/newsletter'
+  });
+});
+
 // ✅ FUNCIONES AUXILIARES
 async function getNestedComments(postId) {
   const comments = await Comment.find({ postId }).sort({ createdAt: 1 }).lean();

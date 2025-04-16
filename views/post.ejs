@@ -36,7 +36,7 @@
         <%= formattedDate %>
       </a>
         por el usuario
-        <a href="/users_articles/<%= data.author ? data.author.username : 'anonimo' %>">
+        <a href="/articles/users/<%= data.author ? data.author.username : 'anonimo' %>">
           <%= data.author ? data.author.username : 'Anónimo' %>
         </a>
       </p>
@@ -44,7 +44,7 @@
       <% if (data.category) { %>
         <p class="text-muted">
           📂 Categoría:
-          <a href="/category/<%= data.category.slug %>" class="text-decoration-none">
+          <a href="/articles/categories/<%= data.category.slug %>" class="text-decoration-none">
             <%= data.category.name %>
           </a>
         </p>

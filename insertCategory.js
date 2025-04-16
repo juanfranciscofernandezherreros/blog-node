@@ -6,60 +6,202 @@ const Tag = require('./server/models/Tags');
 const MONGO_URI = process.env.MONGODB_URI;
 
 const tags = [
-  { name: "Anotaciones en Spring Boot" },
+  { name: "Variables y Tipos de Datos" },
+  { name: "Operadores" },
+  { name: "Control de Flujo" },
+  { name: "Funciones y Métodos" },
+  { name: "Arrays y Colecciones" },
+  { name: "Programación Orientada a Objetos" },
+  { name: "Encapsulamiento" },
+  { name: "Herencia" },
+  { name: "Polimorfismo" },
+  { name: "Listas, Pilas y Colas" },
+  { name: "Árboles y Grafos" },
+  { name: "HashMap y HashSet" },
+  { name: "Algoritmos de Búsqueda y Ordenación" },
+  { name: "Recursividad" },
+  { name: "Big-O Notation" },
+  { name: "Generics" },
+  { name: "Streams y Lambda" },
+  { name: "Optional" },
+  { name: "Date and Time API" },
+  { name: "Enum y Anotaciones" },
+  { name: "Concurrencia y Multihilos" },
+  { name: "Java Memory Model" },
+  { name: "Garbage Collection" },
+  { name: "Servlets y JSP" },
+  { name: "Spring Boot" },
   { name: "Controladores REST" },
+  { name: "Spring Web MVC" },
+  { name: "Validación de Formularios" },
   { name: "Swagger / OpenAPI" },
-  { name: "Manejo de Excepciones" },
-  { name: "Docker" },
-  { name: "Spring Boot Actuator" },
-  { name: "Spring Cloud" },
-  { name: "JWT" },
   { name: "Spring Security" },
+  { name: "JWT" },
   { name: "OAuth2" },
   { name: "@ControllerAdvice" },
-  { name: "CI/CD con Jenkins" }
+  { name: "Spring Boot Actuator" },
+  { name: "Spring Cloud" },
+  { name: "Eureka y Feign" },
+  { name: "API Gateway" },
+  { name: "Docker" },
+  { name: "Jenkins y Pipelines" },
+  { name: "CI/CD" },
+  { name: "JUnit 5" },
+  { name: "Mockito" },
+  { name: "Spring Test" },
+  { name: "TDD" },
+  { name: "JDBC" },
+  { name: "JPA / Hibernate" },
+  { name: "Spring Data JPA" },
+  { name: "MongoDB con Spring Boot" },
+  { name: "Consumo de APIs REST" },
+  { name: "RestTemplate y WebClient" },
+  { name: "Jackson" },
+  { name: "JAXB" },
+  { name: "SOAP con JAX-WS" },
+  { name: "Clean Code" },
+  { name: "SOLID" },
+  { name: "Arquitectura Hexagonal" },
+  { name: "DDD" },
+  { name: "Patrones de Diseño" },
+  { name: "JavaFX" }
 ];
 
 const categories = [
   {
-    name: "Desarrollo de APIs REST con Spring Boot",
-    description: "Aprende a construir APIs REST seguras y bien documentadas"
+    name: "Fundamentos de Java",
+    description: "Aprende los conceptos básicos del lenguaje Java"
   },
   {
-    name: "Introducción a Microservicios",
-    description: "Conceptos clave y herramientas para trabajar con microservicios"
+    name: "Estructuras de Datos y Algoritmos",
+    description: "Domina estructuras de datos y algoritmos usando Java"
   },
   {
-    name: "Seguridad en Aplicaciones Web",
-    description: "Autenticación, autorización y mejores prácticas de seguridad"
+    name: "Java Avanzado",
+    description: "Temas más complejos para desarrolladores intermedios"
   },
   {
-    name: "DevOps y CI/CD",
-    description: "Automatización de despliegues, integración y entrega continua"
+    name: "Desarrollo Web con Java",
+    description: "Aprende a construir aplicaciones web usando Java"
+  },
+  {
+    name: "Seguridad en Java",
+    description: "Conceptos y herramientas para proteger tus aplicaciones Java"
+  },
+  {
+    name: "Microservicios con Java",
+    description: "Aprende a construir sistemas distribuidos con Java"
+  },
+  {
+    name: "DevOps con Java",
+    description: "Herramientas para integrar, desplegar y escalar aplicaciones Java"
+  },
+  {
+    name: "Pruebas en Java",
+    description: "Técnicas y frameworks para realizar pruebas automáticas"
+  },
+  {
+    name: "Persistencia de Datos con Java",
+    description: "Manejo de bases de datos en aplicaciones Java"
+  },
+  {
+    name: "Java y APIs Externas",
+    description: "Integraciones y consumo de servicios externos"
+  },
+  {
+    name: "Buenas Prácticas y Arquitectura",
+    description: "Mejora la calidad y mantenibilidad de tu código"
+  },
+  {
+    name: "Java para el Mundo Real",
+    description: "Aplicaciones empresariales, sistemas legacy y más"
   }
 ];
 
 const RELACIONES = {
-  "Desarrollo de APIs REST con Spring Boot": [
-    "Anotaciones en Spring Boot",
+  "Fundamentos de Java": [
+    "Variables y Tipos de Datos",
+    "Operadores",
+    "Control de Flujo",
+    "Funciones y Métodos",
+    "Arrays y Colecciones",
+    "Programación Orientada a Objetos",
+    "Encapsulamiento",
+    "Herencia",
+    "Polimorfismo"
+  ],
+  "Estructuras de Datos y Algoritmos": [
+    "Listas, Pilas y Colas",
+    "Árboles y Grafos",
+    "HashMap y HashSet",
+    "Algoritmos de Búsqueda y Ordenación",
+    "Recursividad",
+    "Big-O Notation"
+  ],
+  "Java Avanzado": [
+    "Generics",
+    "Streams y Lambda",
+    "Optional",
+    "Date and Time API",
+    "Enum y Anotaciones",
+    "Concurrencia y Multihilos",
+    "Java Memory Model",
+    "Garbage Collection"
+  ],
+  "Desarrollo Web con Java": [
+    "Servlets y JSP",
+    "Spring Boot",
     "Controladores REST",
-    "Swagger / OpenAPI",
-    "Manejo de Excepciones"
+    "Spring Web MVC",
+    "Validación de Formularios",
+    "Swagger / OpenAPI"
   ],
-  "Introducción a Microservicios": [
-    "Docker",
-    "Spring Boot Actuator",
-    "Spring Cloud"
-  ],
-  "Seguridad en Aplicaciones Web": [
-    "JWT",
+  "Seguridad en Java": [
     "Spring Security",
+    "JWT",
     "OAuth2",
     "@ControllerAdvice"
   ],
-  "DevOps y CI/CD": [
+  "Microservicios con Java": [
+    "Spring Boot",
+    "Spring Boot Actuator",
+    "Spring Cloud",
+    "Eureka y Feign",
+    "API Gateway"
+  ],
+  "DevOps con Java": [
     "Docker",
-    "CI/CD con Jenkins"
+    "Jenkins y Pipelines",
+    "CI/CD"
+  ],
+  "Pruebas en Java": [
+    "JUnit 5",
+    "Mockito",
+    "Spring Test",
+    "TDD"
+  ],
+  "Persistencia de Datos con Java": [
+    "JDBC",
+    "JPA / Hibernate",
+    "Spring Data JPA",
+    "MongoDB con Spring Boot"
+  ],
+  "Java y APIs Externas": [
+    "Consumo de APIs REST",
+    "RestTemplate y WebClient",
+    "Jackson",
+    "JAXB",
+    "SOAP con JAX-WS"
+  ],
+  "Buenas Prácticas y Arquitectura": [
+    "Clean Code",
+    "SOLID",
+    "Arquitectura Hexagonal",
+    "DDD",
+    "Patrones de Diseño"
+  ],
+  "Java para el Mundo Real": [
+    "JavaFX"
   ]
 };
 
@@ -68,10 +210,10 @@ const slugify = (text) => {
     .toString()
     .toLowerCase()
     .trim()
-    .replace(/\s+/g, '-')        // reemplaza espacios por guiones
-    .replace(/[^\w\-]+/g, '')    // elimina caracteres especiales
-    .replace(/\-\-+/g, '-')      // evita guiones dobles
-    .replace(/^-+|-+$/g, '');    // elimina guiones al inicio o final
+    .replace(/\s+/g, '-')
+    .replace(/[^\w\-]+/g, '')
+    .replace(/\-\-+/g, '-')
+    .replace(/^-+|-+$/g, '');
 };
 
 async function showCategoriesWithTags() {
@@ -97,7 +239,6 @@ async function insertDataAndRelateTags() {
     });
     console.log("✅ Conectado a MongoDB");
 
-    // 🔹 Insertar Tags
     for (const tag of tags) {
       const exists = await Tag.findOne({ name: tag.name });
       if (!exists) {
@@ -108,7 +249,6 @@ async function insertDataAndRelateTags() {
       }
     }
 
-    // 🔹 Insertar Categorías y Relacionar Tags
     for (const category of categories) {
       const existingCategory = await Category.findOne({ name: category.name });
 

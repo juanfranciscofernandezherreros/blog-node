@@ -9,19 +9,25 @@ const User = require('../models/User');
 router.get('/', async (req, res) => {
   try {
     const locals = {
-      title: "Suscripcion al newsletter",
+      title: "Suscripción al newsletter",
+      successMessage: req.session.successMessage || null,
+      errorMessage: req.session.errorMessage || null
     };
-    // Opcional: puedes cargar categorías, tags, usuarios, etc. desde la base de datos
-    const categories = await Category.find(); // asegúrate de importar este modelo si lo usas
-    const tags = await Tags.find();
-    const authors = await User.find(); // opcional
 
-    res.render('newsletter', {
+    // Limpiar mensajes después de usarlos
+    req.session.successMessage = null;
+    req.session.errorMessage = null;
+
+    const categories = await Category.find();
+    const tags = await Tags.find();
+    const authors = await User.find();
+
+    res.render('partials/newsletter', {
       locals,
       categories,
       tags,
       authors,
-      user: req.user || null // si usas autenticación
+      user: req.user || null
     });
   } catch (error) {
     console.error('Error al cargar la vista de newsletter:', error);
@@ -34,44 +40,29 @@ router.post('/subscribe', async (req, res) => {
   const { email, userIds = [], categoryIds = [], tagIds = [] } = req.body;
 
   try {
-    // Verificamos si ya existe una suscripción con ese email
     let subscription = await Newsletter.findOne({ email });
 
     if (!subscription) {
-      // Si no existe, la creamos
       subscription = new Newsletter({
         email,
         subscribedToUsers: userIds,
         subscribedToCategories: categoryIds,
         subscribedToTags: tagIds
       });
+
+      await subscription.save();
+
+      req.session.successMessage = "Suscripción exitosa.";
     } else {
-      // Si existe, actualizamos las suscripciones evitando duplicados
-      subscription.subscribedToUsers = Array.from(new Set([
-        ...subscription.subscribedToUsers.map(id => id.toString()),
-        ...userIds
-      ]));
-
-      subscription.subscribedToCategories = Array.from(new Set([
-        ...subscription.subscribedToCategories.map(id => id.toString()),
-        ...categoryIds
-      ]));
-
-      subscription.subscribedToTags = Array.from(new Set([
-        ...subscription.subscribedToTags.map(id => id.toString()),
-        ...tagIds
-      ]));
+      req.session.errorMessage = "Ya estás suscrito con este correo.";
     }
 
-    await subscription.save();
-
-    return res.status(200).json({ message: 'Suscripción actualizada correctamente', subscription });
+    return res.redirect('/newsletter/');
   } catch (error) {
     console.error('Error al suscribirse:', error);
-    return res.status(500).json({ message: 'Error interno al suscribirse' });
+    req.session.errorMessage = "Error interno al suscribirse.";
+    return res.redirect('/newsletter/');
   }
 });
-
-
 
 module.exports = router;
