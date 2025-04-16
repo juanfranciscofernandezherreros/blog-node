@@ -11,10 +11,6 @@ const { authenticateToken } = require('../middlewares/authMiddleware');
  * ✅ GET /user
  * Muestra el perfil del usuario autenticado (Solo autenticados pueden acceder)
  */
-/**
- * ✅ GET /user
- * Muestra el perfil del usuario autenticado (Solo autenticados pueden acceder)
- */
 router.get('/user', authenticateToken, async (req, res) => {
   try {
     console.log(`📌 Perfil solicitado por el usuario autenticado: ${req.user.username}`);
@@ -24,12 +20,12 @@ router.get('/user', authenticateToken, async (req, res) => {
     // 🔹 Posts que el usuario ha dado like
     const likedPosts = await Post.find({ likes: userId })
       .populate('author', 'username')
-      .populate('category', 'name')
+      .populate('category', 'name slug')
       .sort({ createdAt: -1 });
 
     // 🔹 Posts que el usuario ha marcado como favoritos
     const favoritedPosts = await Post.find({ favoritedBy: userId })
-      .populate('author', 'username')
+      .populate('author', 'username slug')
       .populate('category', 'name')
       .sort({ createdAt: -1 });
 

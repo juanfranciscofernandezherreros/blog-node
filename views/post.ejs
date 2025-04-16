@@ -85,12 +85,13 @@
           <span><%= likesCount %> Likes</span>
         </form>
 
-        <form action="/post/<%= data._id %>/favorite" method="POST">
+        <form action="/post/<%= data.slug %>/favorite" method="POST">
           <button type="submit" class="btn btn-sm <%= isFavorited ? 'btn-warning' : 'btn-outline-warning' %>">
             <%= isFavorited ? '⭐ Quitar de Favoritos' : '☆ Guardar en Favoritos' %>
-          </button>
+          </button>          
           <span><%= favoritesCount %> Favoritos</span>
         </form>
+        
       </div>
 
       <!-- 🔹 Contenido del artículo -->

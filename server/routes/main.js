@@ -13,7 +13,6 @@ const Comment = require('../models/Comment');
 const Category = require('../models/Category');
 const Tag = require('../models/Tags');
 const { authenticateToken, authorizeRoles } = require('../middlewares/authMiddleware');
-const { createLog } = require('../middlewares/logger');
 
 // ✅ Filtros comunes para posts publicados y visibles
 const today = new Date();
@@ -88,16 +87,16 @@ router.post('/contact', async (req, res) => {
 /**
  * POST /post/:id/favorite
  */
-router.post('/post/:id/favorite', authenticateToken, async (req, res) => {
+/**
+ * POST /post/:slug/favorite
+ */
+router.post('/post/:slug/favorite', authenticateToken, async (req, res) => {
   try {
-    const { id: postId } = req.params;
+    const { slug } = req.params;
     const userId = req.user._id;
 
-    if (!mongoose.Types.ObjectId.isValid(postId)) {
-      return res.status(400).render('404', { title: "ID de post inválido" });
-    }
+    const post = await Post.findOne({ slug });
 
-    const post = await Post.findById(postId);
     if (!post || (!post.isVisible || post.status !== 'published')) {
       return res.status(404).render('404', { title: "Post no encontrado" });
     }
@@ -112,8 +111,8 @@ router.post('/post/:id/favorite', authenticateToken, async (req, res) => {
 
     await post.save();
 
-    res.redirect(`/post/${postId}`); // Aquí redirige al detalle del post
-
+    // Redirigir usando el slug
+    res.redirect(`/post/${post.slug}`);
   } catch (error) {
     console.error("❌ Error al añadir a favoritos:", error);
     res.status(500).render('500', { title: "Error del servidor" });
@@ -147,7 +146,7 @@ router.post('/post/:id/like', authenticateToken, async (req, res) => {
 
     await post.save();
 
-    res.redirect(`/post/${postId}`); // Redirige al detalle del post
+    res.redirect(`/post/${post.slug}`);
 
   } catch (error) {
     console.error("❌ Error al dar like:", error);
@@ -402,13 +401,6 @@ router.post('/keyword/search', async (req, res) => {
  * GET /articles/users/:username
  * Lista los artículos publicados por un autor (usuario) específico
  */
-/**
- * GET /articles/users/:username
- * Lista los artículos publicados por un autor (usuario) específico
-/**
- * GET /articles/users/:username
- * Lista los artículos publicados por un autor (usuario) específico
- */
 router.get('/articles/users/:username', async (req, res) => {
   try {
     const { username } = req.params;
@@ -571,7 +563,7 @@ router.get('/articles/tags/:slug', async (req, res) => {
 });
 
 
-router.get('/post/:slug', async (req, res) => {
+router.get('/post/:slug', authenticateToken, async (req, res) => {
   try {
     const { slug } = req.params;
 
@@ -597,7 +589,10 @@ router.get('/post/:slug', async (req, res) => {
 
     const isLiked = userId ? post.likes.some(u => u._id.toString() === userId) : false;
     const isFavorited = userId ? post.favoritedBy.some(u => u._id.toString() === userId) : false;
-
+    console.log("🟡 Favoritos:", post.favoritedBy.map(u => u._id.toString()));
+    console.log("🟢 Usuario:", userId);
+    console.log("✅ ¿Es favorito?", isFavorited);
+    
     res.render('post', {
       title: post.title,
       data: post,
