@@ -42,7 +42,7 @@ router.get('/user', authenticateToken, async (req, res) => {
       author: req.user.username, 
       parentId: { $ne: null } 
     })
-      .populate('postId', 'title')
+      .populate('postId', 'title slug')
       .populate('parentId', 'body') // Trae el contenido del comentario padre
       .sort({ createdAt: -1 });
 

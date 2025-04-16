@@ -118,7 +118,7 @@
         <li class="list-group-item">
           <strong>En el post:</strong>
           <% if (comment.postId) { %>
-            <a href="/post/<%= comment.postId._id %>"><%= comment.postId.title %></a>
+            <a href="/post/<%= comment.postId.slug %>"><%= comment.postId.title %></a>
           <% } else { %>
             <em>Post eliminado</em>
           <% } %>
@@ -143,7 +143,7 @@
         <li class="list-group-item">
           <strong>En el post:</strong>
           <% if (reply.postId) { %>
-            <a href="/post/<%= reply.postId._id %>"><%= reply.postId.title %></a>
+            <a href="/post/<%= reply.postId.slug %>"><%= reply.postId.title %></a>
           <% } else { %>
             <em>Post eliminado</em>
           <% } %>
