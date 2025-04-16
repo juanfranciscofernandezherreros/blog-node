@@ -264,16 +264,13 @@ router.get('/articles', async (req, res) => {
   try {
     const { date } = req.query;
 
-    // ⚠️ Validar formato correcto
     if (!date || !/^\d{2}-\d{2}-\d{4}$/.test(date)) {
       return res.status(400).json({ error: "❌ Formato de fecha inválido. Usa DD-MM-YYYY" });
     }
 
-    // 📅 Convertir a Date en UTC sin hora
     const [day, month, year] = date.split('-').map(Number);
-    const filterDate = new Date(Date.UTC(year, month - 1, day)); // T00:00:00.000Z exacto
+    const filterDate = new Date(Date.UTC(year, month - 1, day));
 
-    // 🔎 Buscar artículos con publishDate exacto
     const perPage = req.app.locals.perPage || 10;
     const page = parseInt(req.query.page) || 1;
 
@@ -284,11 +281,13 @@ router.get('/articles', async (req, res) => {
     };
 
     const posts = await Post.find(query)
-      .populate('category', 'name')
-      .populate('author', 'username')
+      .populate('category', 'name slug')         // ✅ categoría con slug
+      .populate('author', 'username')            // ✅ autor
+      .populate('tags', 'name slug')             // ✅ tags con slug
       .sort({ createdAt: -1 })
       .skip(perPage * (page - 1))
-      .limit(perPage);
+      .limit(perPage)
+      .lean(); // opcional, si no necesitas métodos de mongoose
 
     const count = await Post.countDocuments(query);
     const totalPages = Math.ceil(count / perPage);
@@ -329,6 +328,7 @@ router.get('/articles', async (req, res) => {
     res.status(500).json({ error: "❌ Error del servidor" });
   }
 });
+
 
 /**
  * POST /keyword/search
@@ -406,21 +406,21 @@ router.get('/articles/tags/:slug', async (req, res) => {
     const perPage = req.app.locals.perPage;
     const page = parseInt(req.query.page) || 1;
 
-    // Buscar el tag por su slug
     const tag = await Tag.findOne({ slug });
-
     if (!tag) {
       return res.status(404).render('404', { title: "Tag no encontrado" });
     }
 
     const query = { tags: tag._id, ...publishedPostFilter };
 
-    const data = await Post.find(query)
-      .populate('category', 'name')
+    const posts = await Post.find(query)
+      .populate('category', 'name slug')
       .populate('author', 'username')
+      .populate('tags', 'name slug')
       .sort({ createdAt: -1 })
       .skip(perPage * (page - 1))
-      .limit(perPage);
+      .limit(perPage)
+      .lean();
 
     const count = await Post.countDocuments(query);
     const totalPages = Math.ceil(count / perPage);
@@ -431,7 +431,7 @@ router.get('/articles/tags/:slug', async (req, res) => {
         title: `Artículos con el tag: ${tag.name}`,
         description: `Lista de artículos etiquetados con ${tag.name}.`
       },
-      data,
+      data: posts,
       recentPosts,
       currentPage: page,
       totalPages,
@@ -446,91 +446,6 @@ router.get('/articles/tags/:slug', async (req, res) => {
   }
 });
 
-
-// ✅ ARTÍCULOS POR USUARIO
-router.get('/users_articles/:username', async (req, res) => {
-  try {
-    const { username } = req.params;
-    const user = await User.findOne({ username });
-    if (!user) return res.status(404).render('404', { title: "Usuario no encontrado" });
-
-    const perPage = req.app.locals.perPage;
-    const page = parseInt(req.query.page) || 1;
-
-    const query = { author: user._id, ...publishedPostFilter };
-
-    const data = await Post.find(query)
-      .populate('category', 'name')
-      .populate('author', 'username')
-      .sort({ createdAt: -1 })
-      .skip(perPage * (page - 1))
-      .limit(perPage);
-
-    const count = await Post.countDocuments(query);
-    const totalPages = Math.ceil(count / perPage);
-    const recentPosts = await getRecentPosts();
-
-    res.render('index', {
-      locals: {
-        title: `Artículos por ${username}`
-      },
-      data,
-      recentPosts,
-      currentPage: page,
-      totalPages,
-      hasNextPage: page < totalPages,
-      hasPrevPage: page > 1,
-      currentRoute: `/users/${username}`
-    });
-
-  } catch (error) {
-    console.error("❌ Error al obtener artículos del usuario:", error);
-    res.status(500).render('500', { title: "Error del servidor" });
-  }
-});
-
-// ✅ ARTÍCULOS POR CATEGORÍA
-router.get('/category/:slug', async (req, res) => {
-  try {
-    const { slug } = req.params;
-    const category = await Category.findOne({ slug });
-    if (!category) return res.status(404).render('404', { title: "Categoría no encontrada" });
-
-    const perPage = req.app.locals.perPage;
-    const page = parseInt(req.query.page) || 1;
-
-    const query = { category: category._id, ...publishedPostFilter };
-
-    const data = await Post.find(query)
-      .populate('category', 'slug')
-      .populate('author', 'username')
-      .sort({ createdAt: -1 })
-      .skip(perPage * (page - 1))
-      .limit(perPage);
-
-    const count = await Post.countDocuments(query);
-    const totalPages = Math.ceil(count / perPage);
-    const recentPosts = await getRecentPosts();
-
-    res.render('index', {
-      locals: {
-        title: `Artículos por ${slug}`,
-        description: "Encuentra artículos relacionados en nuestro blog."
-      },
-      data,
-      recentPosts,
-      currentPage: page,
-      totalPages,
-      hasNextPage: page < totalPages,
-      hasPrevPage: page > 1,
-      currentRoute: `/category/${slug}`
-    });
-
-  } catch (error) {
-    console.error("❌ Error al obtener artículos por categoría:", error);
-    res.status(500).render('500', { title: "Error del servidor" });
-  }
-});
 
 router.get('/post/:slug', async (req, res) => {
   try {
