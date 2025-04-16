@@ -34,18 +34,6 @@ const getRecentPosts = async (limit = 5) => {
     .populate('category', 'name');
 };
 
-// ✅ Helper: obtener post por ID considerando el rol del usuario
-const getPostByRole = async (postId, user) => {
-  const isAdmin = user?.roles?.includes('admin') || user?.roles?.includes('editor');
-  const filter = isAdmin
-    ? { _id: postId }
-    : { _id: postId, ...publishedPostFilter };
-
-  return await Post.findOne(filter)
-    .populate('author', 'username')
-    .populate('likes', 'username')
-    .populate('favoritedBy', 'username');
-};
 
 // ✅ Configurar el transporter de Nodemailer
 const transporter = nodemailer.createTransport({
@@ -182,48 +170,67 @@ router.get('/', async (req, res) => {
     const data = await Post.aggregate([
       { $match: publishedPostFilter },
       { $sort: { createdAt: -1 } },
-      { 
-        $lookup: { 
-          from: "categories", 
-          localField: "category", 
-          foreignField: "_id", 
-          as: "category" 
-        } 
+    
+      // 👉 Traer la categoría
+      {
+        $lookup: {
+          from: "categories",
+          localField: "category",
+          foreignField: "_id",
+          as: "category"
+        }
       },
-      { 
-        $unwind: { 
-          path: "$category", 
-          preserveNullAndEmptyArrays: true 
-        } 
+      {
+        $unwind: {
+          path: "$category",
+          preserveNullAndEmptyArrays: true
+        }
       },
-      { 
-        $lookup: { 
-          from: "users", 
-          localField: "author", 
-          foreignField: "_id", 
-          as: "author" 
-        } 
+    
+      // 👉 Traer el autor
+      {
+        $lookup: {
+          from: "users",
+          localField: "author",
+          foreignField: "_id",
+          as: "author"
+        }
       },
-      { 
-        $unwind: { 
-          path: "$author", 
-          preserveNullAndEmptyArrays: true 
-        } 
+      {
+        $unwind: {
+          path: "$author",
+          preserveNullAndEmptyArrays: true
+        }
       },
+    
+      // ✅ 👉 Traer los tags si son referencias (solo si usas ObjectId)
+      {
+        $lookup: {
+          from: "tags",
+          localField: "tags",
+          foreignField: "_id",
+          as: "tags"
+        }
+      },
+    
+      // 👉 Qué campos queremos mostrar
       {
         $project: {
           title: 1,
-          slug:1,
-          summary: 1, // ✅ Incluimos el resumen del post
-          images: 1, // ✅ Aquí se incluye el campo
+          slug: 1,
+          summary: 1,
+          images: 1,
+          tags: 1, // ✅ los tags ya vienen del lookup
           publishDate: 1,
           "category.name": 1,
+          "category.slug": 1,
           "author.username": 1,
           formattedPublishDate: {
             $dateToString: { format: "%d-%m-%Y", date: "$publishDate" }
           }
         }
       },
+    
       { $skip: perPage * (page - 1) },
       { $limit: perPage }
     ]).allowDiskUse(true);
@@ -525,26 +532,28 @@ router.get('/category/:slug', async (req, res) => {
   }
 });
 
-// ✅ POST DETALLE POR SLUG
 router.get('/post/:slug', async (req, res) => {
   try {
     const { slug } = req.params;
 
     const post = await Post.findOne({ slug })
       .populate('author', 'username')
-      .populate('category', 'name')
-      .populate('tags', 'name'); // <-- los tags se cargan
+      .populate('category', 'name slug')
+      .populate('tags', 'name slug')
+      .populate('likes', '_id') // usuarios que dieron like
+      .populate('favoritedBy', '_id'); // usuarios que marcaron favorito
 
     if (!post) {
       return res.status(404).render('404', { title: "Artículo no encontrado" });
     }
 
-    const postId = post._id.toString(); // usamos el ID real para los comentarios
+    const postId = post._id.toString();
 
-    const comments = await getNestedComments(postId); // comentarios siguen yendo por ID
+    // Obtener comentarios anidados
+    const comments = await getNestedComments(postId);
     const recentPosts = await getRecentPosts();
 
-    let user = req.user;
+    const user = req.user;
     const userId = user?._id?.toString();
 
     const isLiked = userId ? post.likes.some(u => u._id.toString() === userId) : false;
@@ -568,7 +577,6 @@ router.get('/post/:slug', async (req, res) => {
     res.status(500).render('500', { title: "Error del servidor" });
   }
 });
-
 
 /**
  * GET /

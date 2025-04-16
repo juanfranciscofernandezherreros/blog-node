@@ -41,18 +41,28 @@
         </a>
       </p>
       <!-- Mostrar categoría -->
-      <p class="text-muted">Categoría: <%= data.category?.name %></p>
+      <% if (data.category) { %>
+        <p class="text-muted">
+          📂 Categoría:
+          <a href="/category/<%= data.category.slug %>" class="text-decoration-none">
+            <%= data.category.name %>
+          </a>
+        </p>
+      <% } %>
 
       <!-- Mostrar tags -->
-      <div class="tags">
-        <% if (data.tags && data.tags.length > 0) { %>
+      <% if (data.tags && data.tags.length > 0) { %>
+        <p>
+          🏷️ Etiquetas:
           <% data.tags.forEach(tag => { %>
-            <span class="badge bg-secondary"><%= tag.name %></span>
+            <a href="/articles/tags/<%= tag.slug %>" class="badge bg-secondary text-decoration-none me-1">
+              <%= tag.name %>
+            </a>
           <% }) %>
-        <% } else { %>
-          <span class="text-muted">Sin etiquetas</span>
-        <% } %>
-      </div>
+        </p>
+      <% } else { %>
+        <p class="text-muted">Sin etiquetas</p>
+      <% } %>
 
       <!-- 🔥 Estado del post -->
       <p class="text-muted">

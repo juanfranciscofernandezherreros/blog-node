@@ -1,47 +1,20 @@
-<div class="container">
-  <div class="row">    
-    
-    <!-- 🔹 Sección principal con los artículos (8 columnas en pantallas grandes) -->
+<div class="container-fluid px-4">
+  <div class="row">
+
+    <!-- 🔹 Sección principal de artículos -->
     <div class="col-lg-8">
-      
-      <div class="row">
-        <% if (data.length > 0) { %> 
-          <% data.forEach((post, index) => { %> 
-            <div class="col-md-6 mb-4">
+      <% if (data.length > 0) { %>
+        <div class="row">
+          <% data.forEach((post, index) => { %>
+            <div class="col-12 mb-4">
               <div class="blog-entry blog-entry-search-item align-items-start">
 
-                <!-- 🔹 Imagen principal del artículo optimizada -->
-<% if (post.images) { %>
-  <picture>
-    <source srcset="/uploads/<%= post.images.replace(/\.[^/.]+$/, '.webp') %>" type="image/webp">
-    <img 
-      src="/uploads/<%= post.images %>" 
-      alt="Imagen del post" 
-      class="img-thumbnail mb-2" 
-      style="width: 100%; height: 300px; object-fit: cover;" 
-      loading="lazy"
-    />
-  </picture>
-<% } else { %>
-  <link rel="preload" as="image" href="/images/default.webp">
-  <picture>
-    <source srcset="/images/default.webp" type="image/webp">
-    <img 
-      src="/images/default.png" 
-      alt="Sin imagen" 
-      class="img-thumbnail mb-2" 
-      style="width: 100%; height: 300px; object-fit: cover;" 
-      loading="lazy"
-    />
-  </picture>
-<% } %>
-
-                <div class="p-2">
+                <div class="p-2" style="text-align: justify;">
+                  <!-- 🔹 Fecha y Categoría -->
                   <span class="date text-muted d-block mb-2">
-                    <a href="/articles?date=<%= encodeURIComponent(post.formattedPublishDate) %>">                    
+                    <a href="/articles?date=<%= encodeURIComponent(post.formattedPublishDate) %>">
                       <%= post.formattedPublishDate %>
-                    </a> 
-                    
+                    </a>
                     <% if (post.category && post.category.name) { %>
                       <a href="/category/<%= post.category.slug %>" class="text-primary ms-2">
                         <%= post.category.name %>
@@ -56,12 +29,12 @@
                     <a href="/post/<%= post.slug %>" class="text-dark fw-bold">
                       <%= post.title %>
                     </a>
-                  </h2>      
+                  </h2>
 
                   <!-- 🔹 Autor -->
                   <p class="text-muted small mb-1">
-                    <strong>Autor:</strong> 
-                    <% if (post.author) { %>
+                    <strong>Autor:</strong>
+                    <% if (post.author && post.author.username) { %>
                       <a href="/users_articles/<%= post.author.username %>" class="text-primary">
                         <%= post.author.username %>
                       </a>
@@ -72,37 +45,43 @@
 
                   <!-- 🔹 Resumen -->
                   <p class="text-muted small mb-2">
-                    <%= post.summary %>                    
+                    <%= post.summary %>
                   </p>
+
+                  <!-- 🔹 Tags -->
+                  <% if (post.tags && post.tags.length > 0) { %>
+                    <div class="mb-2">
+                      <% post.tags.forEach(tag => { %>
+                        <a href="/articles/tags/<%= tag.slug %>" class="badge bg-secondary text-decoration-none me-1">
+                          <%= tag.name %>
+                        </a>
+                      <% }) %>
+                    </div>
+                  <% } %>
 
                   <!-- 🔹 Leer más -->
                   <a href="/post/<%= post.slug %>" class="btn btn-sm btn-outline-primary">Leer más</a>
-
                 </div>
               </div>
             </div>
 
-            <!-- 🔹 Cierre y apertura de fila para cada 2 columnas -->
-            <% if ((index + 1) % 2 === 0) { %>
+            <% if ((index + 1) % 2 === 0 && index + 1 !== data.length) { %>
               </div><div class="row">
             <% } %>
-
           <% }) %>
-        <% } else { %>
-          <div class="text-center mt-5">
-            <h3 class="text-muted">No hay artículos disponibles en este momento.</h3>
-            <p class="text-muted">Vuelve más tarde para ver nuevas publicaciones.</p>
-          </div>
-        <% } %>
-      </div>
+        </div>
+      <% } else { %>
+        <div class="text-center mt-5">
+          <h3 class="text-muted">No hay artículos disponibles en este momento.</h3>
+          <p class="text-muted">Vuelve más tarde para ver nuevas publicaciones.</p>
+        </div>
+      <% } %>
 
-      <!-- 🔹 Paginación -->
       <% if (totalPages > 1) { %>
         <div class="row text-center pt-5 border-top">
           <div class="col-md-12">
             <nav aria-label="Page navigation">
               <div class="d-flex justify-content-center">
-                
                 <% if (currentPage > 1) { %>
                   <a href="/?page=<%= currentPage - 1 %>" class="btn btn-outline-primary me-2">Anterior</a>
                 <% } %>
@@ -118,7 +97,6 @@
                 <% if (currentPage < totalPages) { %>
                   <a href="/?page=<%= currentPage + 1 %>" class="btn btn-outline-primary ms-2">Siguiente</a>
                 <% } %>
-
               </div>
             </nav>
           </div>
@@ -126,7 +104,7 @@
       <% } %>
     </div>
 
-    <!-- 🔹 Sidebar en el lateral derecho -->
+    <!-- 🔹 Sidebar -->
     <div class="col-lg-4 sidebar">
       <%- include('partials/sidebar') %>
     </div>
