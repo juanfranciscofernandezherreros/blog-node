@@ -17,6 +17,7 @@ const Category = require('./server/models/Category');
 const Post = require('./server/models/Post');
 const Comment = require('./server/models/Comment');
 const User = require('./server/models/User');
+const Tags = require('./server/models/Tags');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -67,11 +68,12 @@ app.use((req, res, next) => {
   next();
 });
 // ✅ Middleware para cargar Tags aleatorios y Categorías ordenadas
+// ✅ Middleware para cargar Tags y Categorías en todas las vistas
 app.use(async (req, res, next) => {
   try {
     const [tags, categories] = await Promise.all([
-      Tag.aggregate([{ $sample: { size: 20 } }]), // 20 tags aleatorios
-      Category.find({}).sort({ name: 1 })         // categorías ordenadas
+      Tag.find({}).sort({ name: 1 }),
+      Category.find({}).sort({ name: 1 })
     ]);
 
     res.locals.tags = tags || [];

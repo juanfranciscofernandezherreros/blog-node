@@ -270,29 +270,97 @@ router.get('/articles', async (req, res) => {
     const [day, month, year] = date.split('-').map(Number);
     const filterDate = new Date(Date.UTC(year, month - 1, day));
 
+    // Día siguiente para filtrar entre 00:00 y 23:59 UTC
+    const nextDay = new Date(filterDate);
+    nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+
     const perPage = req.app.locals.perPage || 10;
     const page = parseInt(req.query.page) || 1;
 
-    const query = {
-      publishDate: filterDate,
+    const data = await Post.aggregate([
+      {
+        $match: {
+          publishDate: { $gte: filterDate, $lt: nextDay },
+          status: 'published',
+          isVisible: true
+        }
+      },
+      { $sort: { createdAt: -1 } },
+
+      // Traer categoría
+      {
+        $lookup: {
+          from: "categories",
+          localField: "category",
+          foreignField: "_id",
+          as: "category"
+        }
+      },
+      {
+        $unwind: {
+          path: "$category",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+
+      // Traer autor
+      {
+        $lookup: {
+          from: "users",
+          localField: "author",
+          foreignField: "_id",
+          as: "author"
+        }
+      },
+      {
+        $unwind: {
+          path: "$author",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+
+      // Traer tags
+      {
+        $lookup: {
+          from: "tags",
+          localField: "tags",
+          foreignField: "_id",
+          as: "tags"
+        }
+      },
+
+      // Proyección final
+      {
+        $project: {
+          title: 1,
+          slug: 1,
+          summary: 1,
+          images: 1,
+          tags: 1,
+          publishDate: 1,
+          "category.name": 1,
+          "category.slug": 1,
+          "author.username": 1,
+          formattedPublishDate: {
+            $dateToString: { format: "%d-%m-%Y", date: "$publishDate" }
+          }
+        }
+      },
+
+      { $skip: perPage * (page - 1) },
+      { $limit: perPage }
+    ]).allowDiskUse(true);
+
+    const count = await Post.countDocuments({
+      publishDate: { $gte: filterDate, $lt: nextDay },
       status: 'published',
       isVisible: true
-    };
+    });
 
-    const posts = await Post.find(query)
-      .populate('category', 'name slug')         // ✅ categoría con slug
-      .populate('author', 'username')            // ✅ autor
-      .populate('tags', 'name slug')             // ✅ tags con slug
-      .sort({ createdAt: -1 })
-      .skip(perPage * (page - 1))
-      .limit(perPage)
-      .lean(); // opcional, si no necesitas métodos de mongoose
-
-    const count = await Post.countDocuments(query);
     const totalPages = Math.ceil(count / perPage);
     const recentPosts = await getRecentPosts();
 
-    if (posts.length === 0) {
+    if (data.length === 0) {
       return res.render('index', {
         locals: {
           title: `Sin artículos el ${date}`,
@@ -313,7 +381,7 @@ router.get('/articles', async (req, res) => {
         title: `Artículos del ${date}`,
         description: `Lista de artículos publicados el ${date}.`
       },
-      data: posts,
+      data,
       recentPosts,
       currentPage: page,
       totalPages,
@@ -423,11 +491,14 @@ router.get('/articles/users/:username', async (req, res) => {
       .limit(perPage)
       .lean();
 
-    // Añadir fecha formateada a cada post (si es necesario)
+    // ✅ Formatear fecha publishDate en dd-MM-yyyy
     posts.forEach(post => {
       if (post.publishDate instanceof Date) {
         const date = new Date(post.publishDate);
-        post.formattedPublishDate = date.toLocaleDateString('es-ES');
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        post.formattedPublishDate = `${day}-${month}-${year}`;
       }
     });
 
@@ -486,10 +557,12 @@ router.get('/articles/categories/:slug', async (req, res) => {
     posts.forEach(post => {
       if (post.publishDate instanceof Date) {
         const date = new Date(post.publishDate);
-        post.formattedPublishDate = date.toLocaleDateString('es-ES'); // o formato personalizado
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        post.formattedPublishDate = `${day}-${month}-${year}`;
       }
     });
-
     const count = await Post.countDocuments(query);
     const totalPages = Math.ceil(count / perPage);
     const recentPosts = await getRecentPosts();
@@ -538,6 +611,17 @@ router.get('/articles/tags/:slug', async (req, res) => {
       .limit(perPage)
       .lean();
 
+    // ✅ Formatear fecha publishDate en dd-MM-yyyy
+    posts.forEach(post => {
+      if (post.publishDate instanceof Date) {
+        const date = new Date(post.publishDate);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        post.formattedPublishDate = `${day}-${month}-${year}`;
+      }
+    });
+
     const count = await Post.countDocuments(query);
     const totalPages = Math.ceil(count / perPage);
     const recentPosts = await getRecentPosts();
@@ -561,6 +645,7 @@ router.get('/articles/tags/:slug', async (req, res) => {
     res.status(500).json({ error: "❌ Error del servidor" });
   }
 });
+
 
 
 router.get('/post/:slug', async (req, res) => {
