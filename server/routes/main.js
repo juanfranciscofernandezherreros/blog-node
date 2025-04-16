@@ -250,30 +250,33 @@ router.get('/', async (req, res) => {
   }
 });
 
+// ✅ ARTÍCULOS POR FECHA DE PUBLICACIÓN
 
-// ✅ ARTÍCULOS POR FECHA
+// 🧨 FILTRAR ARTÍCULOS POR FECHA EXACTA
 router.get('/articles', async (req, res) => {
   try {
     const { date } = req.query;
 
-    // ✅ Validar formato DD-MM-YYYY
+    // ⚠️ Validar formato correcto
     if (!date || !/^\d{2}-\d{2}-\d{4}$/.test(date)) {
-      return res.status(400).json({ error: "❌ Debes proporcionar una fecha válida en formato DD-MM-YYYY" });
+      return res.status(400).json({ error: "❌ Formato de fecha inválido. Usa DD-MM-YYYY" });
     }
 
+    // 📅 Convertir a Date en UTC sin hora
     const [day, month, year] = date.split('-').map(Number);
-    const startDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
-    const endDate = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
+    const filterDate = new Date(Date.UTC(year, month - 1, day)); // T00:00:00.000Z exacto
 
+    // 🔎 Buscar artículos con publishDate exacto
     const perPage = req.app.locals.perPage || 10;
     const page = parseInt(req.query.page) || 1;
 
     const query = {
-      publishDate: { $gte: startDate, $lte: endDate },
-      ...publishedPostFilter
+      publishDate: filterDate,
+      status: 'published',
+      isVisible: true
     };
 
-    const data = await Post.find(query)
+    const posts = await Post.find(query)
       .populate('category', 'name')
       .populate('author', 'username')
       .sort({ createdAt: -1 })
@@ -284,12 +287,28 @@ router.get('/articles', async (req, res) => {
     const totalPages = Math.ceil(count / perPage);
     const recentPosts = await getRecentPosts();
 
+    if (posts.length === 0) {
+      return res.render('index', {
+        locals: {
+          title: `Sin artículos el ${date}`,
+          description: `No hay artículos publicados exactamente el ${date}.`
+        },
+        data: [],
+        recentPosts,
+        currentPage: page,
+        totalPages: 0,
+        hasNextPage: false,
+        hasPrevPage: false,
+        currentRoute: `/articles?date=${date}`
+      });
+    }
+
     res.render('index', {
       locals: {
         title: `Artículos del ${date}`,
-        description: "Lista de artículos publicados en la fecha seleccionada."
+        description: `Lista de artículos publicados el ${date}.`
       },
-      data,
+      data: posts,
       recentPosts,
       currentPage: page,
       totalPages,
@@ -299,11 +318,10 @@ router.get('/articles', async (req, res) => {
     });
 
   } catch (error) {
-    console.error("❌ Error al obtener artículos:", error);
+    console.error("❌ Error en /articles:", error);
     res.status(500).json({ error: "❌ Error del servidor" });
   }
 });
-
 
 /**
  * POST /keyword/search
@@ -374,18 +392,21 @@ router.post('/keyword/search', async (req, res) => {
 });
 
 
-// ✅ ARTÍCULOS POR TAG
-router.get('/articles/tags/:tagId', async (req, res) => {
+// ✅ ARTÍCULOS POR TAG (usando slug)
+router.get('/articles/tags/:slug', async (req, res) => {
   try {
-    const { tagId } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(tagId)) {
-      return res.status(400).json({ error: "❌ Tag ID inválido." });
-    }
-
+    const { slug } = req.params;
     const perPage = req.app.locals.perPage;
     const page = parseInt(req.query.page) || 1;
 
-    const query = { tags: tagId, ...publishedPostFilter };
+    // Buscar el tag por su slug
+    const tag = await Tag.findOne({ slug });
+
+    if (!tag) {
+      return res.status(404).render('404', { title: "Tag no encontrado" });
+    }
+
+    const query = { tags: tag._id, ...publishedPostFilter };
 
     const data = await Post.find(query)
       .populate('category', 'name')
@@ -396,10 +417,7 @@ router.get('/articles/tags/:tagId', async (req, res) => {
 
     const count = await Post.countDocuments(query);
     const totalPages = Math.ceil(count / perPage);
-    const tag = await Tag.findById(tagId);
     const recentPosts = await getRecentPosts();
-
-    if (!tag) return res.status(404).render('404', { title: "Tag no encontrado" });
 
     res.render('index', {
       locals: {
@@ -412,14 +430,15 @@ router.get('/articles/tags/:tagId', async (req, res) => {
       totalPages,
       hasNextPage: page < totalPages,
       hasPrevPage: page > 1,
-      currentRoute: `/articles/tags/${tagId}`
+      currentRoute: `/articles/tags/${slug}`
     });
 
   } catch (error) {
-    console.error("❌ Error al obtener artículos por tag:", error);
+    console.error("❌ Error al obtener artículos por tag (slug):", error);
     res.status(500).json({ error: "❌ Error del servidor" });
   }
 });
+
 
 // ✅ ARTÍCULOS POR USUARIO
 router.get('/users_articles/:username', async (req, res) => {
@@ -506,22 +525,23 @@ router.get('/category/:slug', async (req, res) => {
   }
 });
 
-// ✅ POST DETALLE
-router.get('/post/:id', async (req, res) => {
+// ✅ POST DETALLE POR SLUG
+router.get('/post/:slug', async (req, res) => {
   try {
-    const { id: postId } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(postId)) {
-      return res.status(400).render('404', { title: "ID inválido" });
-    }
+    const { slug } = req.params;
 
-    const post = await Post.findById(postId)
+    const post = await Post.findOne({ slug })
       .populate('author', 'username')
       .populate('category', 'name')
-      .populate('tags', 'name');
+      .populate('tags', 'name'); // <-- los tags se cargan
 
-    if (!post) return res.status(404).render('404', { title: "Artículo no encontrado" });
+    if (!post) {
+      return res.status(404).render('404', { title: "Artículo no encontrado" });
+    }
 
-    const comments = await getNestedComments(postId);
+    const postId = post._id.toString(); // usamos el ID real para los comentarios
+
+    const comments = await getNestedComments(postId); // comentarios siguen yendo por ID
     const recentPosts = await getRecentPosts();
 
     let user = req.user;
@@ -535,7 +555,7 @@ router.get('/post/:id', async (req, res) => {
       data: post,
       comments,
       recentPosts,
-      currentRoute: `/post/${postId}`,
+      currentRoute: `/post/${slug}`,
       isLiked,
       isFavorited,
       likesCount: post.likes.length,

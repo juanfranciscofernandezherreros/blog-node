@@ -40,28 +40,19 @@
           <%= data.author ? data.author.username : 'Anónimo' %>
         </a>
       </p>
+      <!-- Mostrar categoría -->
+      <p class="text-muted">Categoría: <%= data.category?.name %></p>
 
-      <!-- ✅ Categoría del artículo -->
-      <% if (data.category) { %>
-        <p class="mb-3">
-          <span class="fw-bold">📂 Categoría:</span>
-          <a href="/category/<%= encodeURIComponent(data.category.slug) %>" class="badge bg-primary fs-6 text-decoration-none">
-            <%= data.category.name %>
-          </a>
-        </p>
-      <% } %>
-
-      <!-- ✅ Tags del artículo -->
-      <% if (data.tags && data.tags.length > 0) { %>
-        <div class="mb-3">
-          <span class="fw-bold">🏷️ Tags:</span>
+      <!-- Mostrar tags -->
+      <div class="tags">
+        <% if (data.tags && data.tags.length > 0) { %>
           <% data.tags.forEach(tag => { %>
-            <a href="/articles/tags/<%= encodeURIComponent(tag._id) %>" class="badge bg-secondary text-decoration-none me-1">
-              #<%= tag.name %>
-            </a>
+            <span class="badge bg-secondary"><%= tag.name %></span>
           <% }) %>
-        </div>
-      <% } %>
+        <% } else { %>
+          <span class="text-muted">Sin etiquetas</span>
+        <% } %>
+      </div>
 
       <!-- 🔥 Estado del post -->
       <p class="text-muted">
