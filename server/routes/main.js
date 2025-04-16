@@ -164,7 +164,7 @@ router.get('/', async (req, res) => {
       learning: "Aprende con @kiferhe"
     };
 
-    const perPage = req.app.locals.perPage || 10;
+    const perPage = req.app.locals.perPage || 4;
     const page = parseInt(req.query.page) || 1;
 
     const data = await Post.aggregate([

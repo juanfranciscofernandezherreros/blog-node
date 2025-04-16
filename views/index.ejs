@@ -62,6 +62,10 @@
                   <!-- 🔹 Leer más -->
                   <a href="/post/<%= post.slug %>" class="btn btn-sm btn-outline-primary">Leer más</a>
                 </div>
+
+                <% if (index + 1 !== data.length) { %>
+                  <hr class="my-4" />
+                <% } %>
               </div>
             </div>
 
@@ -77,31 +81,32 @@
         </div>
       <% } %>
 
-      <% if (totalPages > 1) { %>
-        <div class="row text-center pt-5 border-top">
-          <div class="col-md-12">
-            <nav aria-label="Page navigation">
-              <div class="d-flex justify-content-center">
-                <% if (currentPage > 1) { %>
-                  <a href="/?page=<%= currentPage - 1 %>" class="btn btn-outline-primary me-2">Anterior</a>
-                <% } %>
+      <!-- 🔹 Paginación visible desde 4 artículos -->
+      <div class="row text-center pt-5 border-top">
+        <div class="col-md-12">
+          <nav aria-label="Page navigation">
+            <div class="d-flex justify-content-center align-items-center gap-2 flex-wrap">
+              <span class="text-muted small me-2">Página <%= currentPage %> de <%= totalPages %></span>
 
-                <ul class="pagination mb-0">
-                  <% for (let i = 1; i <= totalPages; i++) { %>
-                    <li class="page-item <%= i === currentPage ? 'active' : '' %>">
-                      <a class="page-link" href="/?page=<%= i %>"><%= i %></a>
-                    </li>
-                  <% } %>
-                </ul>
+              <% if (currentPage > 1) { %>
+                <a href="/?page=<%= currentPage - 1 %>" class="btn btn-outline-primary btn-sm">Anterior</a>
+              <% } %>
 
-                <% if (currentPage < totalPages) { %>
-                  <a href="/?page=<%= currentPage + 1 %>" class="btn btn-outline-primary ms-2">Siguiente</a>
+              <ul class="pagination mb-0">
+                <% for (let i = 1; i <= totalPages; i++) { %>
+                  <li class="page-item <%= i === currentPage ? 'active' : '' %>">
+                    <a class="page-link" href="/?page=<%= i %>"><%= i %></a>
+                  </li>
                 <% } %>
-              </div>
-            </nav>
-          </div>
+              </ul>
+
+              <% if (currentPage < totalPages) { %>
+                <a href="/?page=<%= currentPage + 1 %>" class="btn btn-outline-primary btn-sm">Siguiente</a>
+              <% } %>
+            </div>
+          </nav>
         </div>
-      <% } %>
+      </div>
     </div>
 
     <!-- 🔹 Sidebar -->
