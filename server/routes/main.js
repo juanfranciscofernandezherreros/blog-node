@@ -423,7 +423,7 @@ router.post('/keyword/search', async (req, res) => {
     }
 
     const perPage = req.app.locals.perPage || 10;
-    const page = 1; // Por POST no tiene sentido paginar directamente, si quieres lo adaptamos luego
+    const page = 1; // Sin paginación de momento
 
     const searchRegex = new RegExp(keyword.trim(), 'i');
 
@@ -431,15 +431,30 @@ router.post('/keyword/search', async (req, res) => {
       ...publishedPostFilter,
       $or: [
         { title: searchRegex },
+        { summary: searchRegex },
+        { body: searchRegex },
         { content: searchRegex }
       ]
     };
 
     const data = await Post.find(query)
-      .populate('category', 'name')
+      .populate('category', 'name slug')
       .populate('author', 'username')
+      .populate('tags', 'name slug') // ✅ incluir los tags
       .sort({ createdAt: -1 })
-      .limit(perPage);
+      .limit(perPage)
+      .lean();
+
+    // ✅ Añadir fecha formateada
+    data.forEach(post => {
+      if (post.publishDate instanceof Date) {
+        const date = new Date(post.publishDate);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        post.formattedPublishDate = `${day}-${month}-${year}`;
+      }
+    });
 
     const count = await Post.countDocuments(query);
     const totalPages = Math.ceil(count / perPage);
@@ -464,6 +479,7 @@ router.post('/keyword/search', async (req, res) => {
     res.status(500).render('500', { title: 'Error del servidor' });
   }
 });
+
 
 /**
  * GET /articles/users/:username
